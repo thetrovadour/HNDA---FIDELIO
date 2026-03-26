@@ -1,0 +1,20 @@
+{
+  "name": "hnda-fidelio",
+  "version": "0.1.0",
+  "private": true,
+  "description": "FIDELIO — Digital loyalty point system for Honduran tourism (HNDA)",
+  "workspaces": [
+    "packages/contracts",
+    "packages/merlink/bridge",
+    "packages/backend",
+    "packages/web"
+  ],
+  "scripts": {
+    "build": "turbo run build",
+    "test": "turbo run test",
+    "dev": "turbo run dev"
+  },
+  "devDependencies": {
+    "turbo": "^2.0.0"
+  }
+}
