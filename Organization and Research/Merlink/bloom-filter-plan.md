@@ -1,5 +1,7 @@
 # FIDELIO — Architecture Review & Bloom Filter Plan
 
+**Status:** Implementation complete (2026-03-25)
+
 ---
 
 ## The 8 Components (Numbered)
@@ -21,51 +23,57 @@
 
 The architecture defines these 4 C++ modules for Etapa 1:
 
-| File | Module | Purpose |
-|------|--------|---------|
-| `email_parser.cpp` | Email Notification Parser | Monitors HNDA inbox, parses Atlántida bank notifications, extracts amount + reference |
-| `bloom_filter.cpp` | Duplicate Prevention Engine | Ultra-fast "have I seen this reference?" check |
-| `retry_queue.cpp` | Retry Queue Engine | Failed mint transactions retried with exponential backoff, survives restarts |
-| `vault_monitor.cpp` | Vault Monitor | Polls vault balance ratios (67/33 USDT/fiat), alerts when below threshold |
+| File | Module | Purpose | Status |
+|------|--------|---------|--------|
+| `email_parser.cpp` | Email Notification Parser | Monitors HNDA inbox, parses Atlántida bank notifications, extracts amount + reference | Pending |
+| `bloom_filter.cpp` | Duplicate Prevention Engine | Ultra-fast "have I seen this reference?" check | ✅ Implemented |
+| `retry_queue.cpp` | Retry Queue Engine | Failed mint transactions retried with exponential backoff, survives restarts | Pending |
+| `vault_monitor.cpp` | Vault Monitor | Polls vault balance ratios (67/33 USDT/fiat), alerts when below threshold | Pending |
 
-**Status:** ✅ Architecture matches — all 4 specified, all C++, all Etapa 1.
+**Architecture check:** ✅ All 4 specified, all C++, all Etapa 1.
 
 ---
 
-## Organization Review
-
-Current project structure:
+## Project Structure (Current)
 
 ```
 HNDA---FIDELIO/
+├── package.json                         ✅ Root monorepo workspace config
+├── turbo.json                           ✅ Turborepo build pipeline
 ├── ClaudeProfile/
-│   └── CLAUDE.md                          ✅ AI workspace guidelines
+│   └── CLAUDE.md                        ✅ AI workspace guidelines
 ├── Organization and Research/
-│   ├── CLAUDE.md                          ✅ Working rules
-│   ├── Fidelio-Architecture-Planv1.1.md   ✅ Main blueprint
-│   ├── FIDELIO-Learning-Plan.md           ✅ Learning resources
-│   ├── learning-plan.md                   ✅ Education plan
-│   └── sources-and-resources.md           ✅ References
+│   ├── CLAUDE.md                        ✅ Working rules
+│   ├── Fidelio-Architecture-Planv1.1.md ✅ Main blueprint
+│   ├── FIDELIO-Learning-Plan.md         ✅ Learning resources
+│   ├── learning-plan.md                 ✅ Education plan
+│   ├── sources-and-resources.md         ✅ References
+│   ├── organization-explanation.md      ✅ Full folder/file organization guide
+│   └── Merlink/
+│       └── bloom-filter-plan.md         ✅ This file
 └── packages/
-    ├── contracts/                          ✅ Created (empty — Component 1)
+    ├── contracts/                       ✅ Created (empty — Component 1)
+    ├── backend/
+    │   └── src/                         ✅ Created (empty — Component 2)
+    ├── web/
+    │   └── app/                         ✅ Created (empty — Component 3)
     └── merlink/
-        └── core/
-            ├── include/                   ✅ Created (empty — headers)
-            └── src/                       ✅ Created (empty — C++ source)
+        ├── core/
+        │   ├── CMakeLists.txt           ✅ CMake build config
+        │   ├── include/
+        │   │   └── bloom_filter.h       ✅ BloomFilter class header
+        │   ├── src/
+        │   │   ├── bloom_filter.cpp     ✅ Full implementation
+        │   │   ├── murmurhash3.h        ✅ MurmurHash3 header
+        │   │   └── murmurhash3.cpp      ✅ MurmurHash3 implementation
+        │   └── tests/                   ✅ Created (empty — awaiting tests)
+        └── bridge/
+            └── src/                     ✅ Created (empty — Node.js Bridge)
 ```
-
-**What's set up:** Docs are organized, merlink/core directory scaffold is ready.
-
-**What's missing (expected — not yet in scope):**
-- `packages/merlink/bridge/` — Node.js Bridge
-- `packages/backend/` — Backend API
-- `packages/web/` — Web Application
-- `CMakeLists.txt` in merlink/core
-- Root `package.json`, `turbo.json`
 
 ---
 
-## Bloom Filter — Implementation Plan
+## Bloom Filter — Design & Implementation
 
 ### Context
 
@@ -97,78 +105,73 @@ Even at 100,000 elements → ~120 KB. Extremely lightweight.
 
 **Key property:** False positives are safe (system falls back to PostgreSQL check). False negatives are **impossible** — a bloom filter will never say "not seen" for something it has seen.
 
-### Class Design
+### Implemented API
 
 **Header:** `packages/merlink/core/include/bloom_filter.h`
 **Source:** `packages/merlink/core/src/bloom_filter.cpp`
 
 ```cpp
-// bloom_filter.h
-#pragma once
-#include <vector>
-#include <string>
-#include <mutex>
-#include <cstdint>
-
 namespace merlink {
 
 class BloomFilter {
 public:
-    // Construct with expected capacity and target false positive rate
-    BloomFilter(uint64_t expected_elements, double false_positive_rate = 0.01);
+    // Construct — auto-calculates optimal m and k from capacity + FP rate
+    explicit BloomFilter(uint64_t expected_elements, double false_positive_rate = 0.01);
 
     // Core operations
     void add(const std::string& reference);
     bool possibly_contains(const std::string& reference) const;
 
-    // Persistence — save/load bit array to disk
+    // Persistence — survives server restarts
     bool save(const std::string& filepath) const;
     bool load(const std::string& filepath);
 
     // Stats
-    uint64_t bit_count() const;        // m
-    uint32_t hash_count() const;       // k
-    uint64_t element_count() const;    // items added
-    double current_false_positive_rate() const;
+    uint64_t bit_count() const;                  // m
+    uint32_t hash_count() const;                 // k
+    uint64_t element_count() const;              // items added
+    double current_false_positive_rate() const;  // estimated FP rate
 
 private:
-    std::vector<uint8_t> bits_;        // bit array
-    uint64_t m_;                       // total bits
-    uint32_t k_;                       // number of hash functions
-    uint64_t count_;                   // elements inserted
-    mutable std::mutex mutex_;         // thread safety
+    std::vector<uint8_t> bits_;
+    uint64_t m_;
+    uint32_t k_;
+    uint64_t count_;
+    mutable std::mutex mutex_;
 
-    // Double hashing: h(i) = h1 + i*h2  (Kirsch-Mitzenmacher optimization)
-    // Only need 2 base hashes to generate k hash functions
     std::pair<uint64_t, uint64_t> hash(const std::string& data) const;
     void set_bit(uint64_t index);
     bool get_bit(uint64_t index) const;
+    static uint64_t optimal_m(uint64_t n, double p);
+    static uint32_t optimal_k(uint64_t m, uint64_t n);
 };
 
 } // namespace merlink
 ```
 
-### Hashing Strategy
+### Hashing Strategy (Implemented)
 
-Use **MurmurHash3** (128-bit variant) to produce two 64-bit hashes (h1, h2). Then derive k hash functions via:
+Uses **MurmurHash3** (128-bit x64 variant) to produce two 64-bit hashes (h1, h2). Derives k hash functions via Kirsch-Mitzenmacher optimization:
 
 ```
 hash_i(x) = (h1 + i * h2) % m,  for i = 0..k-1
 ```
 
-This is the Kirsch-Mitzenmacher optimization — mathematically proven to have the same false positive guarantees as k independent hash functions, but only requires one hash computation.
+Mathematically proven to have the same false positive guarantees as k independent hash functions, but only requires one hash computation.
 
-**MurmurHash3** is chosen because:
-- Public domain, no dependencies
+**MurmurHash3** was chosen because:
+- Public domain, no external dependencies
 - Excellent distribution
 - Very fast on x86/x64
 - Widely used in bloom filter implementations
 
-### Persistence
+**Seed:** `0xF1DE0001` (FIDELIO-themed constant)
 
-The filter must survive server restarts (architecture requirement).
+### Persistence (Implemented)
 
-**File format (binary):**
+The filter survives server restarts via binary file save/load.
+
+**File format:**
 ```
 [8 bytes] magic number: "MRLKBLM\0"
 [8 bytes] m (bit count)
@@ -178,15 +181,16 @@ The filter must survive server restarts (architecture requirement).
 [4 bytes] CRC32 checksum of everything above
 ```
 
-- `save()` writes atomically (write to `.tmp`, then rename)
-- `load()` validates magic number + CRC32 before accepting
-- On corrupt/missing file → start with empty filter (safe: causes no false negatives)
+**Safety guarantees:**
+- `save()` writes atomically (write to `.tmp`, then rename) — no half-written files
+- `load()` validates magic number + CRC32 before accepting — rejects corruption
+- On corrupt/missing file → starts with empty filter (safe: no false negatives possible)
 
-### Thread Safety
+### Thread Safety (Implemented)
 
 - `std::mutex` guards all reads/writes to `bits_` and `count_`
 - `add()` locks, sets bits, increments count, unlocks
-- `possibly_contains()` locks (shared read in future with `std::shared_mutex` if needed), checks bits, unlocks
+- `possibly_contains()` locks, checks bits, unlocks
 - For Etapa 1 (single email parser thread polling every 60s), contention is zero — but the design is ready for concurrent modules
 
 ### Integration Flow
@@ -209,39 +213,20 @@ BloomFilter::possibly_contains(reference)
                                           INSERT into processed_references
 ```
 
-### Files to Create
+### Implemented Files
 
-| File | What |
-|------|------|
-| `packages/merlink/core/include/bloom_filter.h` | Class declaration |
-| `packages/merlink/core/src/bloom_filter.cpp` | Implementation (hashing, persistence, bit ops) |
-| `packages/merlink/core/src/murmurhash3.h` | MurmurHash3 header (public domain, inline) |
-| `packages/merlink/core/src/murmurhash3.cpp` | MurmurHash3 implementation |
-| `packages/merlink/core/CMakeLists.txt` | CMake build config |
-| `packages/merlink/core/tests/bloom_filter_test.cpp` | Unit tests |
+| File | Status |
+|------|--------|
+| `packages/merlink/core/include/bloom_filter.h` | ✅ Implemented |
+| `packages/merlink/core/src/bloom_filter.cpp` | ✅ Implemented |
+| `packages/merlink/core/src/murmurhash3.h` | ✅ Implemented |
+| `packages/merlink/core/src/murmurhash3.cpp` | ✅ Implemented |
+| `packages/merlink/core/CMakeLists.txt` | ✅ Created |
+| `packages/merlink/core/tests/bloom_filter_test.cpp` | Pending |
 
-### CMake Setup
+**Compilation verified:** Both `.cpp` files compile cleanly with `g++ -std=c++17`.
 
-```cmake
-cmake_minimum_required(VERSION 3.16)
-project(merlink_core LANGUAGES CXX)
-set(CMAKE_CXX_STANDARD 17)
-set(CMAKE_CXX_STANDARD_REQUIRED ON)
-
-add_library(merlink_core
-    src/bloom_filter.cpp
-    src/murmurhash3.cpp
-)
-target_include_directories(merlink_core PUBLIC include)
-
-# Tests
-enable_testing()
-add_executable(bloom_filter_test tests/bloom_filter_test.cpp)
-target_link_libraries(bloom_filter_test merlink_core)
-add_test(NAME bloom_filter_test COMMAND bloom_filter_test)
-```
-
-### Testing Strategy
+### Testing Strategy (Pending)
 
 1. **Basic membership:** Add reference → `possibly_contains` returns true
 2. **Non-membership:** Never-added reference → returns false
@@ -251,7 +236,7 @@ add_test(NAME bloom_filter_test COMMAND bloom_filter_test)
 6. **Duplicate reference format:** Test with actual `CATR-0x...-timestamp` format strings
 7. **Thread safety:** Concurrent adds from multiple threads → no crashes, no lost inserts
 
-### Verification
+### Build & Verify
 
 ```bash
 cd packages/merlink/core
