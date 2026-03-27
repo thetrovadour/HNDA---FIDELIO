@@ -1,0 +1,767 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>FIDELIO — Sistema de Lealtad Digital | HNDA</title>
+    <style>
+        /* ============ RESET & BASE ============ */
+        *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+        html { scroll-behavior: smooth; }
+        body {
+            font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+            color: #1a1a2e;
+            line-height: 1.6;
+        }
+        img { max-width: 100%; }
+        a { text-decoration: none; color: inherit; }
+
+        /* ============ COLOR TOKENS ============ */
+        :root {
+            /* CATR — yellowish-orange */
+            --catr-50:  #fff8e1;
+            --catr-100: #ffecb3;
+            --catr-200: #ffe082;
+            --catr-400: #ffca28;
+            --catr-500: #f5a623;
+            --catr-600: #e8920d;
+            --catr-700: #c77d00;
+            --catr-text: #4a3000;
+
+            /* GCA — blue bg, red & green accents */
+            --gca-bg:    #0d1b3e;
+            --gca-blue:  #1a3a6b;
+            --gca-red:   #e74c3c;
+            --gca-green: #2ecc71;
+            --gca-text:  #e8edf5;
+
+            /* Neutral */
+            --dark:   #1a1a2e;
+            --gray:   #6b7280;
+            --light:  #f9fafb;
+            --white:  #ffffff;
+        }
+
+        /* ============ UTILITY ============ */
+        .container {
+            max-width: 1140px;
+            margin: 0 auto;
+            padding: 0 1.5rem;
+        }
+        .section-title {
+            font-size: 2rem;
+            font-weight: 700;
+            margin-bottom: 0.5rem;
+        }
+        .section-subtitle {
+            font-size: 1.125rem;
+            color: var(--gray);
+            margin-bottom: 2.5rem;
+        }
+        .text-center { text-align: center; }
+
+        /* ============ NAV ============ */
+        nav {
+            position: fixed;
+            top: 0; left: 0; right: 0;
+            background: rgba(255,255,255,0.95);
+            backdrop-filter: blur(8px);
+            z-index: 100;
+            border-bottom: 1px solid #eee;
+        }
+        nav .container {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            height: 64px;
+        }
+        nav .logo {
+            font-weight: 800;
+            font-size: 1.25rem;
+            color: var(--catr-600);
+            letter-spacing: 1px;
+        }
+        nav .logo span { color: var(--dark); }
+        nav ul {
+            display: flex;
+            list-style: none;
+            gap: 2rem;
+        }
+        nav ul li a {
+            font-size: 0.9rem;
+            font-weight: 500;
+            color: var(--gray);
+            transition: color 0.2s;
+        }
+        nav ul li a:hover { color: var(--catr-600); }
+        .nav-toggle { display: none; background: none; border: none; font-size: 1.5rem; cursor: pointer; }
+
+        /* ============ HERO ============ */
+        .hero {
+            padding: 8rem 0 5rem;
+            background: linear-gradient(135deg, var(--catr-50) 0%, var(--white) 50%, var(--catr-100) 100%);
+            text-align: center;
+        }
+        .hero h1 {
+            font-size: 3rem;
+            font-weight: 800;
+            color: var(--dark);
+            margin-bottom: 0.75rem;
+        }
+        .hero h1 em {
+            font-style: normal;
+            color: var(--catr-600);
+        }
+        .hero p {
+            font-size: 1.25rem;
+            color: var(--gray);
+            max-width: 640px;
+            margin: 0 auto 2rem;
+        }
+        .hero-badge {
+            display: inline-block;
+            background: var(--catr-500);
+            color: var(--white);
+            padding: 0.5rem 1.5rem;
+            border-radius: 999px;
+            font-weight: 600;
+            font-size: 0.95rem;
+            margin-bottom: 2rem;
+        }
+        .hero-cta {
+            display: inline-flex;
+            gap: 1rem;
+            flex-wrap: wrap;
+            justify-content: center;
+        }
+        .btn {
+            padding: 0.75rem 2rem;
+            border-radius: 8px;
+            font-weight: 600;
+            font-size: 1rem;
+            cursor: pointer;
+            transition: transform 0.15s, box-shadow 0.15s;
+            border: none;
+        }
+        .btn:hover { transform: translateY(-2px); box-shadow: 0 4px 16px rgba(0,0,0,0.12); }
+        .btn-catr { background: var(--catr-500); color: var(--white); }
+        .btn-outline { background: transparent; border: 2px solid var(--catr-500); color: var(--catr-600); }
+
+        /* ============ WHAT IS FIDELIO ============ */
+        .about {
+            padding: 5rem 0;
+            background: var(--white);
+        }
+        .about-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 3rem;
+            align-items: center;
+        }
+        .about-text h2 {
+            font-size: 2rem;
+            margin-bottom: 1rem;
+            color: var(--dark);
+        }
+        .about-text p {
+            color: var(--gray);
+            margin-bottom: 1rem;
+            font-size: 1.05rem;
+        }
+        .about-visual {
+            background: var(--catr-50);
+            border: 2px solid var(--catr-200);
+            border-radius: 16px;
+            padding: 2rem;
+            text-align: center;
+        }
+        .arcade-diagram {
+            font-size: 0.95rem;
+            color: var(--catr-text);
+            line-height: 1.8;
+        }
+        .arcade-diagram .step {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            padding: 0.5rem 0;
+        }
+        .arcade-diagram .arrow {
+            font-size: 1.5rem;
+            color: var(--catr-500);
+            padding-left: 2.5rem;
+        }
+        .arcade-diagram .icon {
+            font-size: 1.75rem;
+        }
+
+        /* ============ CATR SERVICES ============ */
+        .catr-services {
+            padding: 5rem 0;
+            background: linear-gradient(180deg, var(--catr-50) 0%, var(--catr-100) 100%);
+        }
+        .catr-services .section-title { color: var(--catr-700); }
+        .catr-services .section-subtitle { color: var(--catr-text); }
+        .services-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 1.5rem;
+        }
+        .service-card {
+            background: var(--white);
+            border-radius: 12px;
+            padding: 2rem;
+            border: 1px solid var(--catr-200);
+            transition: transform 0.2s, box-shadow 0.2s;
+        }
+        .service-card:hover {
+            transform: translateY(-4px);
+            box-shadow: 0 8px 24px rgba(245,166,35,0.15);
+        }
+        .service-icon {
+            font-size: 2.5rem;
+            margin-bottom: 1rem;
+        }
+        .service-card h3 {
+            font-size: 1.2rem;
+            color: var(--catr-700);
+            margin-bottom: 0.5rem;
+        }
+        .service-card p {
+            color: var(--gray);
+            font-size: 0.95rem;
+        }
+        .service-card .tag {
+            display: inline-block;
+            margin-top: 0.75rem;
+            padding: 0.2rem 0.6rem;
+            background: var(--catr-100);
+            color: var(--catr-700);
+            border-radius: 4px;
+            font-size: 0.8rem;
+            font-weight: 600;
+        }
+
+        /* ============ HOW IT WORKS ============ */
+        .how-it-works {
+            padding: 5rem 0;
+            background: var(--white);
+        }
+        .steps {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 1.5rem;
+        }
+        .step-card {
+            text-align: center;
+            padding: 2rem 1rem;
+        }
+        .step-number {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            width: 48px;
+            height: 48px;
+            background: var(--catr-500);
+            color: var(--white);
+            border-radius: 50%;
+            font-weight: 700;
+            font-size: 1.25rem;
+            margin-bottom: 1rem;
+        }
+        .step-card h3 {
+            font-size: 1.1rem;
+            margin-bottom: 0.5rem;
+            color: var(--dark);
+        }
+        .step-card p {
+            font-size: 0.9rem;
+            color: var(--gray);
+        }
+
+        /* ============ REWARDS ============ */
+        .rewards {
+            padding: 5rem 0;
+            background: var(--catr-50);
+        }
+        .rewards .section-title { color: var(--catr-700); }
+        .reward-cards {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 1.5rem;
+        }
+        .reward-card {
+            background: var(--white);
+            border-radius: 12px;
+            padding: 2rem;
+            border-left: 4px solid var(--catr-500);
+        }
+        .reward-card h3 {
+            color: var(--catr-700);
+            margin-bottom: 0.5rem;
+        }
+        .reward-card .percentage {
+            font-size: 2rem;
+            font-weight: 800;
+            color: var(--catr-500);
+            margin-bottom: 0.5rem;
+        }
+        .reward-card p {
+            color: var(--gray);
+            font-size: 0.95rem;
+        }
+
+        /* ============ COMMISSION ============ */
+        .commission {
+            padding: 5rem 0;
+            background: var(--white);
+        }
+        .commission-visual {
+            max-width: 600px;
+            margin: 0 auto;
+        }
+        .commission-bar {
+            display: flex;
+            border-radius: 8px;
+            overflow: hidden;
+            height: 48px;
+            margin-bottom: 1rem;
+        }
+        .commission-bar .hnda-share {
+            flex: 75;
+            background: var(--catr-500);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: var(--white);
+            font-weight: 700;
+            font-size: 0.9rem;
+        }
+        .commission-bar .reward-share {
+            flex: 25;
+            background: var(--catr-700);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: var(--white);
+            font-weight: 700;
+            font-size: 0.9rem;
+        }
+        .commission-legend {
+            display: flex;
+            justify-content: center;
+            gap: 2rem;
+            font-size: 0.9rem;
+            color: var(--gray);
+        }
+        .commission-legend span {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+        .legend-dot {
+            width: 12px;
+            height: 12px;
+            border-radius: 3px;
+            display: inline-block;
+        }
+
+        /* ============ GCA SECTION ============ */
+        .gca {
+            padding: 5rem 0;
+            background: var(--gca-bg);
+            color: var(--gca-text);
+        }
+        .gca .section-title { color: var(--white); }
+        .gca .section-subtitle { color: rgba(232,237,245,0.7); }
+        .gca-content {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 3rem;
+            align-items: center;
+        }
+        .gca-text p {
+            color: var(--gca-text);
+            margin-bottom: 1rem;
+            font-size: 1.05rem;
+        }
+        .gca-features {
+            display: grid;
+            gap: 1rem;
+        }
+        .gca-feature {
+            background: var(--gca-blue);
+            border-radius: 10px;
+            padding: 1.25rem;
+            display: flex;
+            align-items: flex-start;
+            gap: 1rem;
+        }
+        .gca-feature .dot-red {
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+            background: var(--gca-red);
+            flex-shrink: 0;
+            margin-top: 6px;
+        }
+        .gca-feature .dot-green {
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+            background: var(--gca-green);
+            flex-shrink: 0;
+            margin-top: 6px;
+        }
+        .gca-feature h4 {
+            color: var(--white);
+            margin-bottom: 0.25rem;
+            font-size: 1rem;
+        }
+        .gca-feature p {
+            color: rgba(232,237,245,0.7);
+            font-size: 0.9rem;
+            margin: 0;
+        }
+        .gca-badge {
+            display: inline-block;
+            margin-top: 1rem;
+            padding: 0.4rem 1rem;
+            border: 1px solid var(--gca-green);
+            color: var(--gca-green);
+            border-radius: 999px;
+            font-size: 0.85rem;
+            font-weight: 600;
+        }
+
+        /* ============ FOOTER ============ */
+        footer {
+            padding: 3rem 0 2rem;
+            background: var(--dark);
+            color: rgba(255,255,255,0.7);
+        }
+        .footer-content {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            flex-wrap: wrap;
+            gap: 2rem;
+            margin-bottom: 2rem;
+        }
+        .footer-brand .logo {
+            font-weight: 800;
+            font-size: 1.25rem;
+            color: var(--catr-400);
+            margin-bottom: 0.5rem;
+        }
+        .footer-brand .logo span { color: var(--white); }
+        .footer-brand p {
+            font-size: 0.9rem;
+            max-width: 320px;
+        }
+        .footer-links h4 {
+            color: var(--white);
+            margin-bottom: 0.75rem;
+            font-size: 0.95rem;
+        }
+        .footer-links ul { list-style: none; }
+        .footer-links li {
+            margin-bottom: 0.4rem;
+            font-size: 0.9rem;
+        }
+        .footer-legal {
+            border-top: 1px solid rgba(255,255,255,0.1);
+            padding-top: 1.5rem;
+            text-align: center;
+            font-size: 0.8rem;
+        }
+        .footer-legal .compliance {
+            color: var(--catr-400);
+            font-weight: 500;
+        }
+
+        /* ============ RESPONSIVE ============ */
+        @media (max-width: 768px) {
+            .hero h1 { font-size: 2rem; }
+            .hero p { font-size: 1.05rem; }
+            .about-grid, .gca-content { grid-template-columns: 1fr; }
+            .steps { grid-template-columns: 1fr 1fr; }
+            nav ul { display: none; }
+            nav ul.open {
+                display: flex;
+                flex-direction: column;
+                position: absolute;
+                top: 64px;
+                left: 0; right: 0;
+                background: var(--white);
+                padding: 1rem 1.5rem;
+                border-bottom: 1px solid #eee;
+                gap: 1rem;
+            }
+            .nav-toggle { display: block; }
+        }
+        @media (max-width: 480px) {
+            .steps { grid-template-columns: 1fr; }
+            .hero { padding: 6rem 0 3rem; }
+        }
+    </style>
+</head>
+<body>
+
+<!-- ========== NAV ========== -->
+<nav>
+    <div class="container">
+        <div class="logo">FIDELIO <span>| HNDA</span></div>
+        <ul id="navMenu">
+            <li><a href="#about">¿Qué es FIDELIO?</a></li>
+            <li><a href="#services">Servicios CATR</a></li>
+            <li><a href="#how">Cómo Funciona.</a></li>
+            <li><a href="#rewards">Recompensas</a></li>
+            <li><a href="#gca">GCA</a></li>
+        </ul>
+        <button class="nav-toggle" onclick="document.getElementById('navMenu').classList.toggle('open')" aria-label="Menu">&#9776;</button>
+    </div>
+</nav>
+
+<!-- ========== HERO ========== -->
+<section class="hero" id="home">
+    <div class="container">
+        <div class="hero-badge">Powered by Base (Ethereum L2)</div>
+        <h1>Lealtad Digital para el<br>Turismo <em>Hondureño</em></h1>
+        <p>FIDELIO conecta clientes y comerciantes a través de <strong>CATR</strong> — puntos de lealtad digitales respaldados 1:1 por Lempiras, con recompensas automáticas y transparencia total.</p>
+        <div class="hero-cta">
+            <a href="#services" class="btn btn-catr">Explorar Servicios</a>
+            <a href="#how" class="btn btn-outline">Cómo Funciona</a>
+        </div>
+    </div>
+</section>
+
+<!-- ========== WHAT IS FIDELIO ========== -->
+<section class="about" id="about">
+    <div class="container">
+        <div class="about-grid">
+            <div class="about-text">
+                <h2>¿Qué es FIDELIO?</h2>
+                <p>Imaginá un arcade. Entrás, cambiás tu dinero (Lempiras) por fichas (CATR) en la caja. Usás las fichas para participar en cualquier actividad (comercios). Tus recompensas crecen si vas a varios comercios, y si logras referir. Los comercios juntan fichas y las cambian de vuelta por dinero real con HNDA.</p>
+                <p>FIDELIO es una <strong>red de lealtad privada y voluntaria</strong>. Su sistema de fidelización alimenta tres motores de recompensas para clientes con comercios afiliados.</p>
+            </div>
+            <div class="about-visual">
+                <div class="arcade-diagram">
+                    <div class="step">
+                        <span class="icon">💰</span>
+                        <span>Cliente cambia <strong>Lempiras → CATR</strong> en la caja</span>
+                    </div>
+                    <div class="arrow">↓</div>
+                    <div class="step">
+                        <span class="icon">🏪</span>
+                        <span>Usa <strong>CATR</strong> para pagar en comercios de la red</span>
+                    </div>
+                    <div class="arrow">↓</div>
+                    <div class="step">
+                        <span class="icon">🔄</span>
+                        <span>Comercio cambia <strong>CATR → Lempiras</strong> con HNDA</span>
+                    </div>
+                    <div class="arrow">↓</div>
+                    <div class="step">
+                        <span class="icon">🎁</span>
+                        <span>El 0.63% de cada transacción genera <strong>recompensas</strong></span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- ========== CATR SERVICES ========== -->
+<section class="catr-services" id="services">
+    <div class="container text-center">
+        <h2 class="section-title">Servicios CATR para Comercios Afiliados</h2>
+        <p class="section-subtitle">Todo lo que usar CATR ofrece dentro de la red FIDELIO</p>
+        <div class="services-grid">
+            <div class="service-card">
+                <div class="service-icon">🏦</div>
+                <h3>Pertenece a FIDELIO</h3>
+                <p>Crea una identidad completamente auténtica. Tus lempiras se guardan en CATR en una cuenta que solo tú conoces y solo tú puedes acceder. Sin accidentes o sorpresas. De esta forma 1 CATR = 1 Lempira. Canjealos con HNDA.</p>
+                <span class="tag">Creemos en tu identidad y tu crecimiento.</span>
+            </div>
+            <div class="service-card">
+                <div class="service-icon">📱</div>
+                <h3>Recompensa la Lealtad</h3>
+                <p>Haz que tus clientes escaneen el código QR de tu comercio para crear un record de fidelidad. Cada transacción queda registrada en el con total transparencia. Tus mejores clientes logran acceder a mejores recompensas en la red y tú tambien.</p>
+                <span class="tag">Fomentar el crecimiento económico a través de la confianza.</span>
+            </div>
+            <div class="service-card">
+                <div class="service-icon">💼</div>
+                <h3>Crea un Portafolio</h3>
+                <p>Cada transacción incrementa el valor de tu portafolio. Tus CATR guardados reflejan tu capacidad de incrementar tu valor en la red. Este reflejo crea un mejor perfil para optar a mejores recompensas para comercios afiliados.</p>
+                <span class="tag">Observa la GCA</span>
+            </div>
+            <div class="service-card">
+                <div class="service-icon">💵</div>
+                <h3>Independencia Total</h3>
+                <p>No pierdas las oportunidades de ingresos por depender de transferencias y efectivo solamente. Todos los movimientos están al alcance de tu NFC, al alcance de todos tus clientes que quieran pagar con tarjetas.</p>
+                <span class="tag">Tú comercio, tus reglas</span>
+        </div>
+    </div>
+</section>
+
+<!-- ========== HOW IT WORKS ========== -->
+<section class="how-it-works" id="how">
+    <div class="container text-center">
+        <h2 class="section-title">Cómo Funciona Para Clientes Fieles</h2>
+        <p class="section-subtitle">De Lempiras a recompensas en cuatro pasos</p>
+        <div class="steps">
+            <div class="step-card">
+                <div class="step-number">1</div>
+                <h3>Recibo</h3>
+                <p>En cada compra que hagas, FIDELIO detecta el pago con tu teléfono y hace una solicitud.</p>
+            </div>
+            <div class="step-card">
+                <div class="step-number">2</div>
+                <h3>Transferencia</h3>
+                <p>La CATR utiliza tecnología de blockchain para ejecutar movimientos transparentes. Una vez se confirma la solicitud, se vuelve segura.</p>
+            </div>
+            <div class="step-card">
+                <div class="step-number">3</div>
+                <h3>Ganá</h3>
+                <p>Cada transacción genera recompensas. Alcanzá hitos, visitá diferentes comercios y referí amigos para ganar más.</p>
+            </div>
+            <div class="step-card">
+                <div class="step-number">4</div>
+                <h3>Redimí</h3>
+                <p>Para Comercios Afiliados, sus CATR depositados se convierten devuelta a Lempiras a través de HNDA. Tanto de forma automática o directa.</p>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- ========== COMMISSION SPLIT ========== -->
+<section class="commission" id="commission">
+    <div class="container text-center">
+        <h2 class="section-title">Comisión Transparente: 0.63%</h2>
+        <p class="section-subtitle">Cada transacción aporta una micro-comisión para sostener el ecosistema de FIDELIO. Todos los flujos de comisiones en cada transacción que se preciben se dividen así:</p>
+        <div class="commission-visual">
+            <div class="commission-bar">
+                <div class="hnda-share">75% — HNDA</div>
+                <div class="reward-share">25% — Recompensas</div>
+            </div>
+            <div class="commission-legend">
+                <span><span class="legend-dot" style="background:var(--catr-500)"></span> Operación de la red</span>
+                <span><span class="legend-dot" style="background:var(--catr-700)"></span> Pool de recompensas</span>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- ========== REWARDS ========== -->
+<section class="rewards" id="rewards">
+    <div class="container text-center">
+        <h2 class="section-title">Sistema de Recompensas para Clientes Leales</h2>
+        <p class="section-subtitle">Tres motores que premian tu actividad dentro de la red</p>
+        <div class="reward-cards">
+            <div class="reward-card">
+                <div class="percentage">10%</div>
+                <h3>Hitos de Transacción</h3>
+                <p>Cada compra suma. Al llegar a la transacción #5, #10 y #25, desbloqueás bonos acumulados con multiplicadores crecientes. Las transacciones pequeñas valen la pena.</p>
+                <span class="tag">Aprende más aquí</span>
+            </div>
+            <div class="reward-card">
+                <div class="percentage">10%</div>
+                <h3>Bono Multi-Comercio</h3>
+                <p>¿Visitaste 3 o más comercios diferentes en 30 días? Recibís un multiplicador de 2x a 3x en tus recompensas. Descubrí nuevos comercios afiliados y ganá más.</p>
+                <span class="tag">Más información aquí</span>
+            </div>
+            <div class="reward-card">
+                <div class="percentage">5%</div>
+                <h3>Pool de Referidos</h3>
+                <p>Referí a un amigo que compre con CATR y ambos reciben un bono. Hasta 10 referidos por mes. Crecimiento orgánico sin publicidad pagada.</p>
+                <span class="tag">Mira el programa de referidos</span>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- ========== GCA SECTION ========== -->
+<section class="gca" id="gca">
+    <div class="container">
+        <div class="gca-content">
+            <div class="gca-text">
+                <h2 class="section-title">GCA — Token de Crecimiento</h2>
+                <p class="section-subtitle" style="color: rgba(232,237,245,0.7);">Participación en el crecimiento de la red para comercios comprometidos</p>
+                <p>El <strong style="color: var(--gca-green);">GCA</strong> (Hacer crecer la GUACA: Growth &amp; Commitment Award) es el segundo token de FIDELIO. Mientras CATR es un token de transacciones, GCA recompensa a los comercios que hacen crecer la red.</p>
+                <p>Los comercios que permanecen activos en FIDELIO acumulan GCA con un esquema de vesting de 4 años — alineando incentivos entre la red y sus participantes.</p>
+                <div class="gca-badge">Disponible en Etapa 2</div>
+                <div class="gca-badge">Aprender más</div>
+            </div>
+            <div class="gca-features">
+                <div class="gca-feature">
+                    <div class="dot-red"></div>
+                    <div>
+                        <h4>Vesting a 4 Años</h4>
+                        <p>GCA se acumula gradualmente, premiando la permanencia y el compromiso sostenido con la red.</p>
+                    </div>
+                </div>
+                <div class="gca-feature">
+                    <div class="dot-green"></div>
+                    <div>
+                        <h4>Participación en el Crecimiento</h4>
+                        <p>A medida que la red crece, los holders de GCA participan en el valor generado por la expansión.</p>
+                    </div>
+                </div>
+                <div class="gca-feature">
+                    <div class="dot-red"></div>
+                    <div>
+                        <h4>Registro On-Chain</h4>
+                        <p>Todas las asignaciones de GCA serán verificables en el blockchain, garantizando transparencia total.</p>
+                    </div>
+                </div>
+                <div class="gca-feature">
+                    <div class="dot-green"></div>
+                    <div>
+                        <h4>Exclusivo para Comercios</h4>
+                        <p>Solo los comercios registrados y activos en la red FIDELIO pueden acumular GCA.</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- ========== FOOTER ========== -->
+<footer>
+    <div class="container">
+        <div class="footer-content">
+            <div class="footer-brand">
+                <div class="logo">FIDELIO <span>| HNDA</span></div>
+                <p>Honduras Nativa Digital Answers — promoviendo AI, Crypto y digitalización de activos en Centroamérica.</p>
+            </div>
+            <div class="footer-links">
+                <h4>Navegación</h4>
+                <ul>
+                    <li><a href="#about">Qué es FIDELIO</a></li>
+                    <li><a href="#services">Servicios CATR</a></li>
+                    <li><a href="#how">Cómo Funciona</a></li>
+                    <li><a href="#rewards">Recompensas</a></li>
+                    <li><a href="#gca">Token GCA</a></li>
+                </ul>
+            </div>
+            <div class="footer-links">
+                <h4>Tecnología</h4>
+                <ul>
+                    <li>Base (Ethereum L2)</li>
+                    <li>Smart Contracts (Solidity)</li>
+                    <li>MerL1nk Engine</li>
+                    <li>Gnosis Safe Multi-sig</li>
+                </ul>
+            </div>
+        </div>
+        <div class="footer-legal">
+            <p class="compliance">Confirmado por BCH Departamento de Sistema de Pagos — CATR no califica como dinero electrónico bajo Decreto Legislativo No. 83-2021.</p>
+            <p style="margin-top: 0.5rem;">HNDA opera como una red de lealtad privada y voluntaria bajo ley comercial hondureña.</p>
+            <p style="margin-top: 0.75rem;">&copy; 2026 Honduras Nativa Digital Answers (HNDA). Todos los derechos reservados.</p>
+        </div>
+    </div>
+</footer>
+
+</body>
+</html>
