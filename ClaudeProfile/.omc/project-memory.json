@@ -119,6 +119,12 @@
       "type": "file"
     },
     {
+      "path": "CLAUDE.md",
+      "accessCount": 2,
+      "lastAccessed": 1774907425353,
+      "type": "file"
+    },
+    {
       "path": "packages/merlink/core/include/murmurhash3.h",
       "accessCount": 1,
       "lastAccessed": 1774896877717,
