@@ -1,0 +1,243 @@
+{
+  "version": "1.0.0",
+  "lastScanned": 1774926218137,
+  "projectRoot": "/home/cristian-rodriguez/proyectos/HNDA---FIDELIO",
+  "techStack": {
+    "languages": [
+      {
+        "name": "JavaScript/TypeScript",
+        "version": null,
+        "confidence": "high",
+        "markers": [
+          "package.json"
+        ]
+      }
+    ],
+    "frameworks": [],
+    "packageManager": "npm",
+    "runtime": null
+  },
+  "build": {
+    "buildCommand": "npm run build",
+    "testCommand": "npm test",
+    "lintCommand": null,
+    "devCommand": "npm run dev",
+    "scripts": {
+      "build": "turbo run build",
+      "test": "turbo run test",
+      "dev": "turbo run dev"
+    }
+  },
+  "conventions": {
+    "namingStyle": null,
+    "importStyle": null,
+    "testPattern": null,
+    "fileOrganization": null
+  },
+  "structure": {
+    "isMonorepo": true,
+    "workspaces": [
+      "packages/contracts",
+      "packages/merlink/bridge",
+      "packages/backend",
+      "packages/web"
+    ],
+    "mainDirectories": [],
+    "gitBranches": null
+  },
+  "customNotes": [],
+  "directoryMap": {
+    "ClaudeProfile": {
+      "path": "ClaudeProfile",
+      "purpose": null,
+      "fileCount": 1,
+      "lastAccessed": 1774926218122,
+      "keyFiles": [
+        "CLAUDE.md"
+      ]
+    },
+    "Organization and Research": {
+      "path": "Organization and Research",
+      "purpose": null,
+      "fileCount": 5,
+      "lastAccessed": 1774926218123,
+      "keyFiles": [
+        "FIDELIO-Learning-Plan.md",
+        "Fidelio-Architecture-Planv1.1.md",
+        "learning-plan.md",
+        "organization-explanation.md",
+        "sources-and-resources.md"
+      ]
+    },
+    "packages": {
+      "path": "packages",
+      "purpose": null,
+      "fileCount": 0,
+      "lastAccessed": 1774926218129,
+      "keyFiles": []
+    },
+    "website": {
+      "path": "website",
+      "purpose": null,
+      "fileCount": 2,
+      "lastAccessed": 1774926218133,
+      "keyFiles": [
+        "website.html",
+        "webspage-plan.md"
+      ]
+    }
+  },
+  "hotPaths": [
+    {
+      "path": "CLAUDE.md",
+      "accessCount": 11,
+      "lastAccessed": 1774928866511,
+      "type": "file"
+    },
+    {
+      "path": "packages/merlink/core/CMakeLists.txt",
+      "accessCount": 8,
+      "lastAccessed": 1774928382716,
+      "type": "file"
+    },
+    {
+      "path": "packages/merlink/core/tests/nfc_reader_test.cpp",
+      "accessCount": 3,
+      "lastAccessed": 1774928144710,
+      "type": "file"
+    },
+    {
+      "path": "ClaudeProfile/CLAUDE.md",
+      "accessCount": 2,
+      "lastAccessed": 1774926291182,
+      "type": "file"
+    },
+    {
+      "path": "packages/merlink/core/include/email_parser.h",
+      "accessCount": 2,
+      "lastAccessed": 1774926978043,
+      "type": "file"
+    },
+    {
+      "path": "packages/merlink/core/include/payment_event.h",
+      "accessCount": 2,
+      "lastAccessed": 1774926978533,
+      "type": "file"
+    },
+    {
+      "path": "packages/merlink/core/include/retry_queue.h",
+      "accessCount": 2,
+      "lastAccessed": 1774928130759,
+      "type": "file"
+    },
+    {
+      "path": "package.json",
+      "accessCount": 1,
+      "lastAccessed": 1774926242009,
+      "type": "file"
+    },
+    {
+      "path": "turbo.json",
+      "accessCount": 1,
+      "lastAccessed": 1774926248000,
+      "type": "file"
+    },
+    {
+      "path": "Organization and Research/Fidelio-Architecture-Planv1.1.md",
+      "accessCount": 1,
+      "lastAccessed": 1774926260092,
+      "type": "file"
+    },
+    {
+      "path": "packages/merlink/core/include/bloom_filter.h",
+      "accessCount": 1,
+      "lastAccessed": 1774926260339,
+      "type": "file"
+    },
+    {
+      "path": "packages/merlink/core/tests/email_parser_test.cpp",
+      "accessCount": 1,
+      "lastAccessed": 1774926983010,
+      "type": "file"
+    },
+    {
+      "path": "packages/merlink/core/src/email_parser.cpp",
+      "accessCount": 1,
+      "lastAccessed": 1774926983655,
+      "type": "file"
+    },
+    {
+      "path": "packages/merlink/core/include/webhook_receiver.h",
+      "accessCount": 1,
+      "lastAccessed": 1774927023170,
+      "type": "file"
+    },
+    {
+      "path": "packages/merlink/core/src/webhook_receiver.cpp",
+      "accessCount": 1,
+      "lastAccessed": 1774927043336,
+      "type": "file"
+    },
+    {
+      "path": "packages/merlink/core/tests/webhook_receiver_test.cpp",
+      "accessCount": 1,
+      "lastAccessed": 1774927061972,
+      "type": "file"
+    },
+    {
+      "path": "packages/merlink/core/tests/reports/2026-03-30_webhook_receiver_test_report.md",
+      "accessCount": 1,
+      "lastAccessed": 1774927168541,
+      "type": "file"
+    },
+    {
+      "path": "packages/merlink/core/include/nfc_reader.h",
+      "accessCount": 1,
+      "lastAccessed": 1774928060894,
+      "type": "file"
+    },
+    {
+      "path": "packages/merlink/core/src/nfc_reader.cpp",
+      "accessCount": 1,
+      "lastAccessed": 1774928074249,
+      "type": "file"
+    },
+    {
+      "path": "packages/merlink/core/tests/reports/2026-03-30_nfc_reader_test_report.md",
+      "accessCount": 1,
+      "lastAccessed": 1774928197653,
+      "type": "file"
+    },
+    {
+      "path": "packages/merlink/core/include/vault_monitor.h",
+      "accessCount": 1,
+      "lastAccessed": 1774928339031,
+      "type": "file"
+    },
+    {
+      "path": "packages/merlink/core/src/vault_monitor.cpp",
+      "accessCount": 1,
+      "lastAccessed": 1774928352229,
+      "type": "file"
+    },
+    {
+      "path": "packages/merlink/core/tests/vault_monitor_test.cpp",
+      "accessCount": 1,
+      "lastAccessed": 1774928371171,
+      "type": "file"
+    },
+    {
+      "path": "packages/merlink/core/tests/reports/2026-03-30_vault_monitor_test_report.md",
+      "accessCount": 1,
+      "lastAccessed": 1774928437444,
+      "type": "file"
+    },
+    {
+      "path": "Organization and Research/Seasons/Season 1: C++ and a new Journey ahead.md",
+      "accessCount": 1,
+      "lastAccessed": 1774928741096,
+      "type": "file"
+    }
+  ],
+  "userDirectives": []
+}

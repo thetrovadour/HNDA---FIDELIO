@@ -14,6 +14,9 @@ add_library(merlink_core
     src/murmurhash3.cpp
     src/retry_queue.cpp
     src/email_parser.cpp
+    src/webhook_receiver.cpp
+    src/nfc_reader.cpp
+    src/vault_monitor.cpp
 )
 target_include_directories(merlink_core PUBLIC include)
 target_include_directories(merlink_core PRIVATE ${CURL_INCLUDE_DIRS})
@@ -36,3 +39,15 @@ add_test(NAME retry_queue_test COMMAND retry_queue_test)
 add_executable(email_parser_test tests/email_parser_test.cpp)
 target_link_libraries(email_parser_test merlink_core Threads::Threads)
 add_test(NAME email_parser_test COMMAND email_parser_test)
+
+add_executable(webhook_receiver_test tests/webhook_receiver_test.cpp)
+target_link_libraries(webhook_receiver_test merlink_core Threads::Threads)
+add_test(NAME webhook_receiver_test COMMAND webhook_receiver_test)
+
+add_executable(nfc_reader_test tests/nfc_reader_test.cpp)
+target_link_libraries(nfc_reader_test merlink_core Threads::Threads)
+add_test(NAME nfc_reader_test COMMAND nfc_reader_test)
+
+add_executable(vault_monitor_test tests/vault_monitor_test.cpp)
+target_link_libraries(vault_monitor_test merlink_core Threads::Threads)
+add_test(NAME vault_monitor_test COMMAND vault_monitor_test)

@@ -1,0 +1,289 @@
+# CLAUDE.md
+
+This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
+
+---
+
+## Session Start — Always Do This First
+
+At the start of every session, remind Cristian of:
+1. **Current FIDELIO build phase** — which phase is active (A/B/C/D/E)
+2. **What is complete** — checked-off phases and modules
+3. **What is in progress** — current work
+4. **What is next** — immediate next step
+
+Continue doing this until FIDELIO is in complete production. Update this file when phase status changes.
+
+## Session End — Always Do This Last
+
+Before closing, ask:
+> "Before we close — do you want me to update CLAUDE.md with today's decisions?"
+
+Then update this file with any key decisions, new modules, or status changes.
+
+For additional project context, see `Organization and Research/Fidelio-Architecture-Planv1.1.md`.
+
+---
+
+**Current status (as of 2026-03-30):**
+
+| Phase | Deliverable | Status |
+|---|---|---|
+| A | CATRToken.sol on Base Sepolia + Gnosis Safe | ⬜ Not started |
+| B | MerL1nk Etapa 1 (C++ Core + Node.js Bridge) | 🔄 C++ Core complete — Node.js Bridge next |
+| C | Backend Core (Express API + PostgreSQL/Prisma) | ⬜ Not started |
+| D | Web MVP (client + merchant + admin views) | ⬜ Not started |
+| E | Integration — 5 end-to-end transactions | ⬜ Not started |
+
+**Phase B — C++ Core module status:**
+
+| Module | Status |
+|---|---|
+| `bloom_filter.cpp` + `murmurhash3.cpp` | ✅ Complete — 10/10 tests passing |
+| `payment_event.h` | ✅ Complete |
+| `retry_queue.cpp` | ✅ Complete — 8/8 tests passing |
+| `email_parser.cpp` | ✅ Complete — 12/12 tests passing |
+| `webhook_receiver.cpp` | ✅ Complete — 12/12 tests passing |
+| `nfc_reader.cpp` | ✅ Complete — 14/14 tests passing |
+| `vault_monitor.cpp` | ✅ Complete — 10/10 tests passing (stub backend, Phase A wires the real one) |
+| Node.js Bridge (`packages/merlink/bridge/`) | ⬜ Next |
+
+**Total tests passing: 66/66**
+
+---
+
+## How Cristian Thinks — Collaboration Style
+
+Cristian is an electrical engineer who thinks in blocks of knowledge linked by metaphors and analogies. He wants:
+- **Explanation before action** — justify every decision before coding it
+- **Plan before code** — always show the plan first, get approval, then implement
+- **ELI5 for complex topics** — explain like he's five when something is abstract
+- **Decision reports** — after each decision, a concise record of what was done and why
+- **Connections to the macro** — how does this piece connect to the full FIDELIO system?
+
+---
+
+## Build Commands
+
+### Monorepo (Turborepo)
+```bash
+npm run build        # Build all packages in dependency order
+npm run test         # Test all packages
+npm run dev          # Run all dev servers concurrently
+```
+
+### MerL1nk C++ Core
+```bash
+cd packages/merlink/core
+mkdir -p build && cd build
+cmake .. -DCMAKE_BUILD_TYPE=Release   # Must use Release — Debug + fsanitize breaks binaries
+make
+ctest                        # Run all C++ tests
+./bloom_filter_test          # Run individual test binaries
+./retry_queue_test
+./email_parser_test
+```
+
+### Smart Contracts (Phase A, not yet started)
+```bash
+cd packages/contracts && npx hardhat test
+cd packages/contracts && npx hardhat run scripts/deploy.ts --network base-sepolia
+```
+
+---
+
+## Architecture — The 8 Components
+
+```
+External World (bank emails, NFC, webhooks)
+        │
+        ▼
+[ Component 8: MerL1nk ]
+  C++ Core  ──IPC──►  Node.js Bridge
+  (validation,         (ethers.js:
+   bloom filter,        mint, burn,
+   retry queue,         reward, heartbeat)
+   vault monitor)
+        │
+        ▼
+[ Off-Chain Layer ]
+  Web App (Next.js) ◄──► Backend API (Express)
+                               │
+                         PostgreSQL (Prisma)
+        │
+        ▼
+[ On-Chain Layer — Base (Ethereum L2) ]
+  CATRToken.sol         Gnosis Safe 2/2
+  rewardPool wallet     HNDA treasury wallet
+```
+
+### Input Adapter Pattern
+
+All input sources produce a common `PaymentEvent` struct. Downstream pipeline never sees raw source format:
+
+```
+[ EmailParser  ]  ──┐
+[ NFCReader    ]  ──┼──►  PaymentEvent  ──►  RetryQueue  ──►  Bridge  ──►  Mint
+[ Webhook      ]  ──┘
+```
+
+Switching from email to NFC is a one-module swap — bloom filter, retry queue, and bridge are unchanged.
+
+---
+
+## Non-Negotiable Invariants
+
+Hardcoded in the smart contract — must never be violated at any layer:
+
+- **MINT-BEFORE-PAY**: payment confirmed → mint CATR → client receives → client pays merchant
+- **BURN-BEFORE-REDEEM**: merchant requests redemption → burn CATR on-chain → HNDA transfers Lempiras
+- **0.63% commission** on every CATR transfer: 75% → HNDA treasury, 25% → reward pool
+- **Only merchants** redeem CATR → Lempiras. Clients spend CATR only within the network.
+- **CATR supply cap: 50,000,000** — revolving closed-loop system (burn is justified)
+
+---
+
+## MerL1nk — Implemented Modules
+
+`packages/merlink/core/` — C++ core:
+
+- **bloom_filter.cpp** — probabilistic duplicate check (O(1)), seed `0xF1DE0001`, Kirsch-Mitzenmacher double-hashing with MurmurHash3
+- **murmurhash3.cpp** — hash function used by bloom filter
+- **payment_event.h** — shared `PaymentEvent` struct: `{reference_code, amount_lempiras, client_wallet, source, received_at}`
+- **retry_queue.cpp** — thread-safe FIFO queue; parser pushes, bridge pops; in-memory only (PostgreSQL `pending_mints` handles crash recovery)
+- **email_parser.cpp** — polls Gmail inbox via IMAP (libcurl, port 993, every 60s); parses Atlántida bank notification emails; pushes `PaymentEvent` to `RetryQueue`
+
+Remaining stubs: `vault_monitor`, `nfc_reader`, `webhook_receiver`
+
+All other packages (`contracts/`, `backend/`, `web/`, `merlink/bridge/`) have empty `src/` directories.
+
+---
+
+## Payment Flow (Etapa 1 — Manual Bank Transfer)
+
+1. Client enters amount → app generates reference code: `CATR-[wallet]-[timestamp]`
+2. Client manually transfers Lempiras to HNDA's Atlántida account with reference in memo
+3. Atlántida sends email notification to HNDA's dedicated Gmail inbox
+4. `email_parser` polls inbox via IMAP every 60s, parses notification
+5. `bloom_filter` checks for duplicate → false positives (~1%) fall back to `processed_references` table
+6. `retry_queue` receives `PaymentEvent`; Bridge pops and calls `contract.mint(clientWallet, amount)` on Base
+7. Client sees CATR in wallet
+
+*BAC Credomatic API replaces steps 2–4 in Etapa 2. NFC replaces steps 1–4 long-term.*
+
+---
+
+## Email Parser — Expected Format
+
+```
+Estimado HNDA,
+
+Banco Atlántida le informa que ha recibido la siguiente transferencia:
+
+Monto recibido: L. 500.00
+Referencia de pago: CATR-0xABCD1234-1711800000
+Nombre del ordenante: Juan Carlos Pérez
+Fecha: 30/03/2026 14:35:22
+```
+
+Key markers: `"Monto recibido: L. "` → amount as double | `"Referencia de pago: "` → reference code token
+
+---
+
+## Database Schema (Planned — Prisma, not yet created)
+
+11 tables: `users`, `wallets`, `merchants`, `transactions`, `pending_mints`, `processed_references`, `redemption_requests`, `reward_milestones`, `merchant_visits`, `referrals`, `reward_payout_queue`
+
+`pending_mints` is critical — tracks the gap between "payment confirmed" and "mint executed." Daily reconciliation cron (`jobs/reconciliation.ts`) resolves unresolved entries.
+
+---
+
+## Reward System
+
+| Pool | Commission Share | Trigger |
+|---|---|---|
+| Milestone Unlocks | 10% | Transaction #5, #10, #25 |
+| Cross-Merchant Bonus | 10% | 3+ unique merchants in 30 days |
+| Referral Pool | 5% | Referred user buys CATR |
+
+Payout authorization: <50 CATR → auto | 50–500 → admin approval | >500 → Gnosis Safe 2-of-2 (Cristian + Víctor the lawyer)
+
+---
+
+## Key Decisions
+
+- **Why C++ for MerL1nk Core?** Speed, determinism, no GC pauses, 24/7 operation.
+- **Why Node.js for the Bridge?** ethers.js is the best Ethereum interaction library.
+- **Why Base (L2)?** Low transaction costs for a Honduran loyalty network.
+- **Why custodial wallets?** Most clients won't have MetaMask.
+- **Why IMAP for email?** Zero cost — Gmail supports IMAP natively on port 993 with an App Password.
+- **Why RetryQueue instead of direct callback?** Decouples retry logic from parsing layer. Bridge failures don't corrupt the parser.
+- **Why input adapter pattern?** NFC tap-to-pay is the long-term goal. `PaymentEvent` makes that a one-module swap.
+- **cmake Release flag** — `cmake -DCMAKE_BUILD_TYPE=Release` required. Debug builds with `-fsanitize=address` cause mismatched-flag failures in test binaries.
+
+---
+
+## Test Reports
+
+Saved in `packages/merlink/core/tests/reports/`:
+- `2026-03-30_bloom_filter_test_report.md`
+- `2026-03-30_email_parser_retry_queue_test_report.md`
+- `2026-03-30_webhook_receiver_test_report.md`
+- `2026-03-30_nfc_reader_test_report.md`
+- `2026-03-30_vault_monitor_test_report.md`
+
+---
+
+## AI Development Stack
+
+- **Claude Code CLI** — autonomous agent in this repo
+- **oh-my-claudecode** — multi-agent orchestration (installed)
+- **Ollama + Qwen3** — local AI on aiControl (pending hardware)
+- **Hermes Agent** — persistent memory layer (pending aiControl)
+
+---
+
+## Session Log
+
+---
+
+### Session 1 — 2026-03-30
+**Location:** San Pedro Sula, Honduras (CST, UTC-6)
+**Start:** 14:10:05 CST | **End:** 21:46:43 CST | **Duration:** ~7h 36m
+
+#### What happened
+- Created root `CLAUDE.md` (moved from `ClaudeProfile/` to repo root for auto-load)
+- Built and tested 3 new C++ modules: `webhook_receiver`, `nfc_reader`, `vault_monitor`
+- **Phase B C++ Core declared complete** — 66/66 tests passing across 6 modules
+- Wrote 4 test reports saved in `packages/merlink/core/tests/reports/`
+- Created `Organization and Research/Seasons/` folder
+- Wrote Season 1 report: *"Season 1: C++ and a new Journey ahead"*
+
+#### Key insights from this session
+
+**1. The input adapter pattern is the most valuable decision of Phase B.**
+All three carriers (email, webhook, NFC) produce the same `PaymentEvent`. This was not obvious at the start — it emerged as the architecture took shape. The downstream pipeline never needed to change once, across three completely different input sources.
+
+**2. Abstract interfaces over concrete implementations, always.**
+`NfcHardware` and `VaultBackend` are both abstract because the real things don't exist yet. This wasn't a concession — it was deliberate. The tests are complete, the interfaces are correct, and the real implementations slot in without touching anything else.
+
+**3. Static parse methods are the right pattern for testability.**
+`EmailParser::parse_body`, `WebhookReceiver::parse_body`, `NfcReader::parse_payload` — all static. 52 of 66 tests run with no threads, no queues, no hardware, no network. Fast, deterministic, impossible to flake.
+
+**4. The bloom filter false positive rate (~1%) is a feature, not a bug.**
+The 1% that slip through get confirmed against PostgreSQL. The 99% that are clearly duplicates never touch the database. This is the correct tradeoff for a 24/7 payment system.
+
+**5. cmake -DCMAKE_BUILD_TYPE=Release is non-negotiable.**
+Debug builds with `-fsanitize=address` cause mismatched-flag failures when the library and test binaries are compiled with different sanitizer settings. Always Release for this project.
+
+**6. cpp-httplib is the right choice for the webhook receiver.**
+Single header file, zero new CMake dependencies, sufficient for one endpoint. Bringing in Boost.Beast for a single POST route would have been engineering for its own sake.
+
+**7. The Node.js Bridge is the most consequential piece left in Phase B.**
+Everything built so far moves data around in memory. The bridge is the first piece that writes to the blockchain. It is also the first piece where a bug has real financial consequences. It deserves the same rigor — and a slower, more deliberate design session.
+
+#### Next session agenda
+1. Design and build the Node.js Bridge (`packages/merlink/bridge/`)
+2. IPC mechanism between C++ core and Node.js (stdin/stdout pipe or Unix socket)
+3. ethers.js `contract.mint()` call on Base Sepolia
+4. Begin Phase A planning (CATRToken.sol)

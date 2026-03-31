@@ -212,6 +212,7 @@ Key markers the parser searches for:
 | Referral Pool | 5% | Referred user buys CATR |
 
 Payout authorization tiers: <50 CATR → auto | 50–500 → admin approval | >500 → Gnosis Safe 2-of-2 (Cristian + Víctor the lawyer).
+Pending review after pilot tests. 
 
 ---
 
