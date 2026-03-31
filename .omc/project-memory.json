@@ -90,8 +90,8 @@
   "hotPaths": [
     {
       "path": "CLAUDE.md",
-      "accessCount": 11,
-      "lastAccessed": 1774928866511,
+      "accessCount": 18,
+      "lastAccessed": 1774968641469,
       "type": "file"
     },
     {
@@ -101,9 +101,21 @@
       "type": "file"
     },
     {
+      "path": "packages/merlink/bridge/src/socket_server.ts",
+      "accessCount": 4,
+      "lastAccessed": 1774967936955,
+      "type": "file"
+    },
+    {
       "path": "packages/merlink/core/tests/nfc_reader_test.cpp",
       "accessCount": 3,
       "lastAccessed": 1774928144710,
+      "type": "file"
+    },
+    {
+      "path": "packages/contracts/test/CATRToken.test.ts",
+      "accessCount": 3,
+      "lastAccessed": 1774970555308,
       "type": "file"
     },
     {
@@ -128,6 +140,30 @@
       "path": "packages/merlink/core/include/retry_queue.h",
       "accessCount": 2,
       "lastAccessed": 1774928130759,
+      "type": "file"
+    },
+    {
+      "path": "packages/merlink/bridge/tests/socket_server.test.ts",
+      "accessCount": 2,
+      "lastAccessed": 1774967905567,
+      "type": "file"
+    },
+    {
+      "path": "packages/contracts/contracts/CATRToken.sol",
+      "accessCount": 2,
+      "lastAccessed": 1774970554861,
+      "type": "file"
+    },
+    {
+      "path": "packages/contracts/hardhat.config.ts",
+      "accessCount": 2,
+      "lastAccessed": 1774970554943,
+      "type": "file"
+    },
+    {
+      "path": "packages/contracts/scripts/deploy.ts",
+      "accessCount": 2,
+      "lastAccessed": 1774970556271,
       "type": "file"
     },
     {
@@ -236,6 +272,66 @@
       "path": "Organization and Research/Seasons/Season 1: C++ and a new Journey ahead.md",
       "accessCount": 1,
       "lastAccessed": 1774928741096,
+      "type": "file"
+    },
+    {
+      "path": "packages/merlink/bridge/src/types.ts",
+      "accessCount": 1,
+      "lastAccessed": 1774967644576,
+      "type": "file"
+    },
+    {
+      "path": "packages/merlink/bridge/src/minter.ts",
+      "accessCount": 1,
+      "lastAccessed": 1774967646244,
+      "type": "file"
+    },
+    {
+      "path": "packages/merlink/bridge/src/index.ts",
+      "accessCount": 1,
+      "lastAccessed": 1774967646712,
+      "type": "file"
+    },
+    {
+      "path": "packages/merlink/bridge/.env.example",
+      "accessCount": 1,
+      "lastAccessed": 1774967647477,
+      "type": "file"
+    },
+    {
+      "path": "packages/merlink/bridge/package.json",
+      "accessCount": 1,
+      "lastAccessed": 1774967648453,
+      "type": "file"
+    },
+    {
+      "path": "packages/merlink/bridge/tsconfig.json",
+      "accessCount": 1,
+      "lastAccessed": 1774967651627,
+      "type": "file"
+    },
+    {
+      "path": "packages/merlink/bridge/tests/minter.test.ts",
+      "accessCount": 1,
+      "lastAccessed": 1774967684221,
+      "type": "file"
+    },
+    {
+      "path": "packages/contracts/package.json",
+      "accessCount": 1,
+      "lastAccessed": 1774969053838,
+      "type": "file"
+    },
+    {
+      "path": "packages/contracts/tsconfig.json",
+      "accessCount": 1,
+      "lastAccessed": 1774969055523,
+      "type": "file"
+    },
+    {
+      "path": "packages/contracts/.env.example",
+      "accessCount": 1,
+      "lastAccessed": 1774969057475,
       "type": "file"
     }
   ],

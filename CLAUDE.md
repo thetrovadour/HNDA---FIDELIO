@@ -25,12 +25,12 @@ For additional project context, see `Organization and Research/Fidelio-Architect
 
 ---
 
-**Current status (as of 2026-03-30):**
+**Current status (as of 2026-03-31):**
 
 | Phase | Deliverable | Status |
 |---|---|---|
-| A | CATRToken.sol on Base Sepolia + Gnosis Safe | ⬜ Not started |
-| B | MerL1nk Etapa 1 (C++ Core + Node.js Bridge) | 🔄 C++ Core complete — Node.js Bridge next |
+| A | CATRToken.sol on Base Sepolia + VaultOp (Gnosis Safe 2-of-2) | 🔄 Contract complete — awaiting wallet deployment |
+| B | MerL1nk Etapa 1 (C++ Core + Node.js Bridge) | ✅ Complete — 74/74 tests passing |
 | C | Backend Core (Express API + PostgreSQL/Prisma) | ⬜ Not started |
 | D | Web MVP (client + merchant + admin views) | ⬜ Not started |
 | E | Integration — 5 end-to-end transactions | ⬜ Not started |
@@ -48,7 +48,7 @@ For additional project context, see `Organization and Research/Fidelio-Architect
 | `vault_monitor.cpp` | ✅ Complete — 10/10 tests passing (stub backend, Phase A wires the real one) |
 | Node.js Bridge (`packages/merlink/bridge/`) | ⬜ Next |
 
-**Total tests passing: 66/66**
+**Total tests passing: 87/87**
 
 ---
 
@@ -60,6 +60,7 @@ Cristian is an electrical engineer who thinks in blocks of knowledge linked by m
 - **ELI5 for complex topics** — explain like he's five when something is abstract
 - **Decision reports** — after each decision, a concise record of what was done and why
 - **Connections to the macro** — how does this piece connect to the full FIDELIO system?
+- **Modularity as a core principle** — Cristian sees programming as modular construction: the more independently a component can be built, tested, replaced, and restarted, the better. Architecture decisions should always favor loose coupling and clear boundaries between components.
 
 ---
 
@@ -113,7 +114,7 @@ External World (bank emails, NFC, webhooks)
         │
         ▼
 [ On-Chain Layer — Base (Ethereum L2) ]
-  CATRToken.sol         Gnosis Safe 2/2
+  CATRToken.sol         VaultOp (Gnosis Safe 2/2)  // manual gate for high-value redemptions (>500 CATR)
   rewardPool wallet     HNDA treasury wallet
 ```
 
@@ -206,7 +207,7 @@ Key markers: `"Monto recibido: L. "` → amount as double | `"Referencia de pago
 | Cross-Merchant Bonus | 10% | 3+ unique merchants in 30 days |
 | Referral Pool | 5% | Referred user buys CATR |
 
-Payout authorization: <50 CATR → auto | 50–500 → admin approval | >500 → Gnosis Safe 2-of-2 (Cristian + Víctor the lawyer)
+Payout authorization: <50 CATR → auto | 50–500 → admin approval | >500 → VaultOp 2-of-2 (Cristian + Víctor the lawyer) // VaultOp = Gnosis Safe; named for what it operates, not what operates it
 
 ---
 
@@ -231,6 +232,15 @@ Saved in `packages/merlink/core/tests/reports/`:
 - `2026-03-30_webhook_receiver_test_report.md`
 - `2026-03-30_nfc_reader_test_report.md`
 - `2026-03-30_vault_monitor_test_report.md`
+
+Saved in `packages/merlink/bridge/tests/reports/`:
+- `2026-03-31_nodejs_bridge_test_report.md`
+
+Saved in `packages/contracts/tests/reports/`:
+- `2026-03-31_CATRToken_test_report.md`
+
+Saved in `packages/contracts/Efficiency/`:
+- `2026-03-31_CATRToken_Gas_Analysis.md`
 
 ---
 
@@ -287,3 +297,52 @@ Everything built so far moves data around in memory. The bridge is the first pie
 2. IPC mechanism between C++ core and Node.js (stdin/stdout pipe or Unix socket)
 3. ethers.js `contract.mint()` call on Base Sepolia
 4. Begin Phase A planning (CATRToken.sol)
+
+---
+
+### Session 2 — 2026-03-31
+**Location:** San Pedro Sula, Honduras (CST, UTC-6)
+
+#### What happened
+- Built and tested **Node.js Bridge** (`packages/merlink/bridge/`) — 8/8 tests passing
+- Built and tested **CATRToken.sol** (`packages/contracts/`) — 13/13 tests passing
+- Ran full gas efficiency analysis on CATRToken.sol — report saved in `packages/contracts/Efficiency/`
+- **Phase B declared complete** — 74/74 tests (66 C++ core + 8 Node.js Bridge)
+- **Phase A contract declared complete** — pending real wallet deployment
+- **Total tests across all modules: 87/87 passing**
+
+#### Key decisions from this session
+
+**1. Unix domain socket chosen as IPC mechanism (rejected stdin/stdout pipe).**
+C++ core and Node.js bridge run as independent processes. Each restarts without killing the other. The socket reinforces the modularity boundary — which is the core design principle of FIDELIO.
+
+**2. Modularity is Cristian's core engineering principle.**
+Explicitly documented in "How Cristian Thinks." The more independently a component can be built, tested, replaced, and restarted, the better. Every architecture decision must favor loose coupling and clear boundaries.
+
+**3. "VaultOp" replaces "Gnosis Safe" as the name for the 2-of-2 multisig.**
+Named for what it *operates* (the vault / high-value redemptions), not what *operates it* (Gnosis Safe). All references in CLAUDE.md updated. Comment added: `// manual gate for high-value redemptions (>500 CATR)`.
+
+**4. Payout thresholds are backend configuration, not contract logic.**
+The contract does not enforce the <50 / 50–500 / >500 CATR tiers. The `redemption_requests` table and admin UI handle this. Changing thresholds after the pilot with Reina requires no contract redeploy.
+
+**5. VaultOp operator automation is a future phase.**
+Gnosis Safe supports modules that allow designated operators to approve mid-tier redemptions (50–500 CATR) without requiring both primary signers. Top tier (>500 CATR) stays 2-of-2 forever. Planned for after pilot data is collected.
+
+**6. Pilot thresholds should be calibrated from Reina's real transaction data.**
+Do not set thresholds by intuition. Run the pilot, observe the distribution (median, 95th percentile), then set admin threshold at ~3–5x median and VaultOp threshold where only genuine outliers trigger it.
+
+**7. CATRToken.sol transfer overhead (~90% vs standard ERC-20) is acceptable.**
+Three `_update` calls per transfer (recipient + treasury + rewardPool) costs 96,874 gas vs ~51,000 for a standard ERC-20. On Base L2, this is ~$0.0002 per transfer. Moving commission off-chain would save fractions of a cent at the cost of transparency and correctness. Not worth it.
+
+**8. Contract is ready to deploy — waiting on wallets.**
+`npx hardhat run scripts/deploy.ts --network base_sepolia` once `.env` is populated with real addresses (treasury, rewardPool, VaultOp Safe, bridge minter wallet).
+
+#### Test reports written
+- `packages/merlink/bridge/tests/reports/2026-03-31_nodejs_bridge_test_report.md`
+- `packages/contracts/tests/reports/2026-03-31_CATRToken_test_report.md`
+- `packages/contracts/Efficiency/2026-03-31_CATRToken_Gas_Analysis.md`
+
+#### Next session agenda
+1. Phase C — Express backend + PostgreSQL/Prisma
+2. OR: aiControl workstation setup (Ollama + Qwen3 + Hermes Agent)
+3. When wallets are ready: deploy CATRToken.sol to Base Sepolia + set up VaultOp Safe
