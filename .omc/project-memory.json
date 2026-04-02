@@ -1,6 +1,6 @@
 {
   "version": "1.0.0",
-  "lastScanned": 1774926218137,
+  "lastScanned": 1775101645670,
   "projectRoot": "/home/cristian-rodriguez/proyectos/HNDA---FIDELIO",
   "techStack": {
     "languages": [
@@ -51,7 +51,7 @@
       "path": "ClaudeProfile",
       "purpose": null,
       "fileCount": 1,
-      "lastAccessed": 1774926218122,
+      "lastAccessed": 1775101645657,
       "keyFiles": [
         "CLAUDE.md"
       ]
@@ -60,7 +60,7 @@
       "path": "Organization and Research",
       "purpose": null,
       "fileCount": 5,
-      "lastAccessed": 1774926218123,
+      "lastAccessed": 1775101645658,
       "keyFiles": [
         "FIDELIO-Learning-Plan.md",
         "Fidelio-Architecture-Planv1.1.md",
@@ -73,14 +73,14 @@
       "path": "packages",
       "purpose": null,
       "fileCount": 0,
-      "lastAccessed": 1774926218129,
+      "lastAccessed": 1775101645659,
       "keyFiles": []
     },
     "website": {
       "path": "website",
       "purpose": null,
       "fileCount": 2,
-      "lastAccessed": 1774926218133,
+      "lastAccessed": 1775101645665,
       "keyFiles": [
         "website.html",
         "webspage-plan.md"
@@ -90,8 +90,8 @@
   "hotPaths": [
     {
       "path": "CLAUDE.md",
-      "accessCount": 18,
-      "lastAccessed": 1774968641469,
+      "accessCount": 20,
+      "lastAccessed": 1775101962009,
       "type": "file"
     },
     {
@@ -102,8 +102,26 @@
     },
     {
       "path": "packages/merlink/bridge/src/socket_server.ts",
+      "accessCount": 6,
+      "lastAccessed": 1775101978150,
+      "type": "file"
+    },
+    {
+      "path": "packages/merlink/bridge/src/types.ts",
       "accessCount": 4,
-      "lastAccessed": 1774967936955,
+      "lastAccessed": 1775102202728,
+      "type": "file"
+    },
+    {
+      "path": "packages/merlink/bridge/src/minter.ts",
+      "accessCount": 4,
+      "lastAccessed": 1775102203198,
+      "type": "file"
+    },
+    {
+      "path": "packages/merlink/bridge/package.json",
+      "accessCount": 4,
+      "lastAccessed": 1775102684050,
       "type": "file"
     },
     {
@@ -116,6 +134,48 @@
       "path": "packages/contracts/test/CATRToken.test.ts",
       "accessCount": 3,
       "lastAccessed": 1774970555308,
+      "type": "file"
+    },
+    {
+      "path": "package.json",
+      "accessCount": 3,
+      "lastAccessed": 1775101962039,
+      "type": "file"
+    },
+    {
+      "path": "packages/merlink/bridge/src/index.ts",
+      "accessCount": 3,
+      "lastAccessed": 1775101972387,
+      "type": "file"
+    },
+    {
+      "path": "packages/merlink/bridge/tsconfig.json",
+      "accessCount": 3,
+      "lastAccessed": 1775101978256,
+      "type": "file"
+    },
+    {
+      "path": "packages/merlink/bridge/.env.example",
+      "accessCount": 3,
+      "lastAccessed": 1775101978714,
+      "type": "file"
+    },
+    {
+      "path": "packages/contracts/contracts/CATRToken.sol",
+      "accessCount": 3,
+      "lastAccessed": 1775101979372,
+      "type": "file"
+    },
+    {
+      "path": "packages/merlink/bridge/tests/socket_server.test.ts",
+      "accessCount": 3,
+      "lastAccessed": 1775101986416,
+      "type": "file"
+    },
+    {
+      "path": "turbo.json",
+      "accessCount": 3,
+      "lastAccessed": 1775101987045,
       "type": "file"
     },
     {
@@ -143,18 +203,6 @@
       "type": "file"
     },
     {
-      "path": "packages/merlink/bridge/tests/socket_server.test.ts",
-      "accessCount": 2,
-      "lastAccessed": 1774967905567,
-      "type": "file"
-    },
-    {
-      "path": "packages/contracts/contracts/CATRToken.sol",
-      "accessCount": 2,
-      "lastAccessed": 1774970554861,
-      "type": "file"
-    },
-    {
       "path": "packages/contracts/hardhat.config.ts",
       "accessCount": 2,
       "lastAccessed": 1774970554943,
@@ -167,15 +215,27 @@
       "type": "file"
     },
     {
-      "path": "package.json",
-      "accessCount": 1,
-      "lastAccessed": 1774926242009,
+      "path": "packages/contracts/package.json",
+      "accessCount": 2,
+      "lastAccessed": 1775101814785,
       "type": "file"
     },
     {
-      "path": "turbo.json",
-      "accessCount": 1,
-      "lastAccessed": 1774926248000,
+      "path": "packages/contracts/tsconfig.json",
+      "accessCount": 2,
+      "lastAccessed": 1775101814808,
+      "type": "file"
+    },
+    {
+      "path": "packages/merlink/bridge/tests/minter.test.ts",
+      "accessCount": 2,
+      "lastAccessed": 1775101986097,
+      "type": "file"
+    },
+    {
+      "path": "packages/backend/package.json",
+      "accessCount": 2,
+      "lastAccessed": 1775102829230,
       "type": "file"
     },
     {
@@ -275,63 +335,27 @@
       "type": "file"
     },
     {
-      "path": "packages/merlink/bridge/src/types.ts",
-      "accessCount": 1,
-      "lastAccessed": 1774967644576,
-      "type": "file"
-    },
-    {
-      "path": "packages/merlink/bridge/src/minter.ts",
-      "accessCount": 1,
-      "lastAccessed": 1774967646244,
-      "type": "file"
-    },
-    {
-      "path": "packages/merlink/bridge/src/index.ts",
-      "accessCount": 1,
-      "lastAccessed": 1774967646712,
-      "type": "file"
-    },
-    {
-      "path": "packages/merlink/bridge/.env.example",
-      "accessCount": 1,
-      "lastAccessed": 1774967647477,
-      "type": "file"
-    },
-    {
-      "path": "packages/merlink/bridge/package.json",
-      "accessCount": 1,
-      "lastAccessed": 1774967648453,
-      "type": "file"
-    },
-    {
-      "path": "packages/merlink/bridge/tsconfig.json",
-      "accessCount": 1,
-      "lastAccessed": 1774967651627,
-      "type": "file"
-    },
-    {
-      "path": "packages/merlink/bridge/tests/minter.test.ts",
-      "accessCount": 1,
-      "lastAccessed": 1774967684221,
-      "type": "file"
-    },
-    {
-      "path": "packages/contracts/package.json",
-      "accessCount": 1,
-      "lastAccessed": 1774969053838,
-      "type": "file"
-    },
-    {
-      "path": "packages/contracts/tsconfig.json",
-      "accessCount": 1,
-      "lastAccessed": 1774969055523,
-      "type": "file"
-    },
-    {
       "path": "packages/contracts/.env.example",
       "accessCount": 1,
       "lastAccessed": 1774969057475,
+      "type": "file"
+    },
+    {
+      "path": "packages/backend/tsconfig.json",
+      "accessCount": 1,
+      "lastAccessed": 1775102735875,
+      "type": "file"
+    },
+    {
+      "path": "packages/backend/.env.example",
+      "accessCount": 1,
+      "lastAccessed": 1775102737505,
+      "type": "file"
+    },
+    {
+      "path": "packages/backend/src/index.ts",
+      "accessCount": 1,
+      "lastAccessed": 1775102747958,
       "type": "file"
     }
   ],

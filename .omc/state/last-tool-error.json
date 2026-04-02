@@ -1,0 +1,7 @@
+{
+  "tool_name": "Bash",
+  "tool_input_preview": "{\"command\":\"cd /home/cristian-rodriguez/proyectos/HNDA---FIDELIO/packages/backend && npm run build 2>&1 && echo \\\"--- BUILD OK ---\\\" && npm test 2>&1 && echo \\\"--- TESTS OK ---\\\"\",\"description\":\"Verif...",
+  "error": "Exit code 1\n\n> @hnda/backend@0.1.0 build\n> tsc\n\n--- BUILD OK ---\n\n> @hnda/backend@0.1.0 test\n> jest\n\nNo tests found, exiting with code 1\nRun with `--passWithNoTests` to exit with code 0\nIn /home/cristian-rodriguez/proyectos/HNDA---FIDELIO/packages/backend\n  4 files checked.\n  testMatch: **/tests/**/*.test.ts - 0 matches\n  testPathIgnorePatterns: /node_modules/ - 4 matches\n  testRegex:  - 0 matches\nPattern:  - 0 matches\nnpm error Lifecycle script `test` failed with error:\nnpm error code 1\nnpm err...",
+  "timestamp": "2026-04-02T04:07:03.685Z",
+  "retry_count": 1
+}
