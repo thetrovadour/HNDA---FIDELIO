@@ -153,3 +153,49 @@ These are documented for reference, not recommended for implementation:
 ---
 
 *Analysis performed with Hardhat gas reporter, Solidity 0.8.20, optimizer enabled (200 runs). USD estimates assume ETH at $2,500.*
+
+---
+
+## 9. Phase A Deployment Budget (added 2026-04-06)
+
+### One-time deployment costs (Base mainnet)
+
+| Item | Cost (typical) | Cost (congested) |
+|---|---|---|
+| CATRToken.sol deployment | $0.002 | $0.12 |
+| VaultOp (Gnosis Safe setup) | ~$1–3 | ~$5–10 |
+| `grantRole` (bridge minter wallet) | $0.0001 | $0.006 |
+| Config transactions | ~$0.01 | ~$0.10 |
+| **Total deployment** | **~$2–4** | **~$10–15** |
+
+Gnosis Safe is the biggest line item: it deploys a proxy contract, sets owners (Cristian + Víctor), and sets the 2-of-2 threshold — 2–3 transactions.
+
+### Bridge minter wallet — ongoing gas budget
+
+| Scenario | Daily mints | Daily cost | Monthly cost |
+|---|---|---|---|
+| Reina pilot | ~16 | $0.003 | $0.10 |
+| 10× Reina | ~160 | $0.03 | $1.00 |
+| Full network (100 merchants) | ~1,600 | $0.32 | $10.00 |
+
+### Wallet funding requirements
+
+| Wallet | Needs ETH? | Recommended starting amount |
+|---|---|---|
+| Bridge minter wallet | Yes — pays gas per mint | $25 |
+| Treasury wallet | No — receives CATR commissions | $0 |
+| RewardPool wallet | No — receives CATR commissions | $0 |
+| VaultOp (Gnosis Safe) | Tiny — occasional approval txs | $5 |
+
+### Total budget
+
+| Category | Recommended | Cristian's target (2×) |
+|---|---|---|
+| Deployment (one-time) | $5–15 | $30 |
+| Minter wallet gas reserve | $25 | $50 |
+| VaultOp operational reserve | $5 | $10 |
+| **Total** | **$35–45** | **$90** |
+
+At ETH ~$2,500: recommended = ~0.018 ETH / Cristian's target = ~0.036 ETH.
+
+*At Reina's pilot volume (~16 mints/day), $25 in the minter wallet covers approximately 16–25 years of gas at typical Base prices.*
