@@ -1,0 +1,18 @@
+{
+  "name": "@hnda/e2e",
+  "version": "0.1.0",
+  "description": "FIDELIO Phase E — end-to-end integration tests",
+  "private": true,
+  "scripts": {
+    "start": "ts-node src/run.ts",
+    "test": "ts-node src/run.ts"
+  },
+  "dependencies": {
+    "dotenv": "^16.4.5"
+  },
+  "devDependencies": {
+    "@types/node": "^20.14.2",
+    "ts-node": "^10.9.2",
+    "typescript": "^5.4.5"
+  }
+}

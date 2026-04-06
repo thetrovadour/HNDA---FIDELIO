@@ -7,7 +7,8 @@
     "packages/contracts",
     "packages/merlink/bridge",
     "packages/backend",
-    "packages/web"
+    "packages/web",
+    "packages/e2e"
   ],
   "scripts": {
     "build": "turbo run build",

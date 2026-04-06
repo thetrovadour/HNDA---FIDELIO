@@ -33,7 +33,7 @@ For additional project context, see `Organization and Research/Fidelio-Architect
 | B | MerL1nk Etapa 1 (C++ Core + Node.js Bridge) | ✅ Complete — 74/74 tests passing |
 | C | Backend Core (Express API + PostgreSQL/Prisma) | ✅ Complete — 44/44 tests passing |
 | D | Web MVP (client + merchant + admin views) | ✅ Complete — build passing |
-| E | Integration — 5 end-to-end transactions | ⬜ Not started |
+| E | Integration — 5 end-to-end transactions | ✅ Complete — 16/16 checks passing |
 
 **Phase B — C++ Core module status:**
 
@@ -405,6 +405,42 @@ The bridge already speaks HTTP out. Adding a second Unix socket to the backend w
 1. Phase D — Web MVP (Next.js: client, merchant, admin views) talking to `/api/*` routes
 2. OR: Phase A wallet deployment — populate `.env` with real addresses → deploy CATRToken.sol to Base Sepolia + set up VaultOp Safe
 3. OR: aiControl workstation setup (Ollama + Qwen3 + Hermes Agent)
+
+---
+
+### Session 5 — 2026-04-06
+
+#### What happened
+- **Phase E declared complete** — 16/16 integration checks passing
+- Created `packages/e2e/` — standalone integration test harness
+- Added `@hnda/e2e` to root workspace (`package.json`)
+- Ran 5 end-to-end mint transactions against the live backend + real PostgreSQL
+- Verified: duplicate rejection, 5 confirmed transactions, TX_5 milestone unlocked
+- Wrote test report: `packages/e2e/tests/reports/2026-04-06_phase_e_integration_test_report.md`
+
+#### What was built
+
+| File | Purpose |
+|---|---|
+| `packages/e2e/src/run.ts` | End-to-end test script — seeds data, runs 5 mints, verifies DB state via HTTP |
+| `packages/e2e/package.json` | Standalone TS package, `npx ts-node src/run.ts` |
+| `packages/e2e/tsconfig.json` | TypeScript config with `skipLibCheck` (mocha/jest type conflict in shared node_modules) |
+| `packages/e2e/.env.example` | `BACKEND_URL` + `BRIDGE_SECRET` |
+
+#### Key decisions from this session
+
+**1. E2E hits the backend HTTP layer directly — no C++ or bridge process required.**
+The C++ core and Node.js bridge are already tested (Phase B, 74/74). Phase E validates the layer that wasn't exercised: the backend's MintService pipeline end-to-end against real PostgreSQL.
+
+**2. Mock tx hashes are correct and intentional.**
+The bridge's `minter.mint()` is the on-chain call. It is deferred to Phase A deployment. Everything downstream of the mint (PendingMint creation, CONFIRMED update, reward evaluation) is fully real and was proven in this session.
+
+**3. Test data stays in `fidelio_dev` — no cleanup.**
+Each run creates a timestamped user (`e2e-<ts>@test.fidelio`). Identifiable, harmless in a dev database, and available for post-run inspection.
+
+#### Next session agenda
+1. **Phase A deployment** — populate `.env` with real wallet addresses → deploy CATRToken.sol to Base Sepolia → set up VaultOp (Gnosis Safe 2-of-2)
+2. **Security review** — before mainnet, review CATRToken.sol and backend auth
 
 ---
 
