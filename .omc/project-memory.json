@@ -1,6 +1,6 @@
 {
   "version": "1.0.0",
-  "lastScanned": 1775101645670,
+  "lastScanned": 1775490658427,
   "projectRoot": "/home/cristian-rodriguez/proyectos/HNDA---FIDELIO",
   "techStack": {
     "languages": [
@@ -51,7 +51,7 @@
       "path": "ClaudeProfile",
       "purpose": null,
       "fileCount": 1,
-      "lastAccessed": 1775101645657,
+      "lastAccessed": 1775490658407,
       "keyFiles": [
         "CLAUDE.md"
       ]
@@ -60,7 +60,7 @@
       "path": "Organization and Research",
       "purpose": null,
       "fileCount": 5,
-      "lastAccessed": 1775101645658,
+      "lastAccessed": 1775490658408,
       "keyFiles": [
         "FIDELIO-Learning-Plan.md",
         "Fidelio-Architecture-Planv1.1.md",
@@ -73,14 +73,14 @@
       "path": "packages",
       "purpose": null,
       "fileCount": 0,
-      "lastAccessed": 1775101645659,
+      "lastAccessed": 1775490658417,
       "keyFiles": []
     },
     "website": {
       "path": "website",
       "purpose": null,
       "fileCount": 2,
-      "lastAccessed": 1775101645665,
+      "lastAccessed": 1775490658420,
       "keyFiles": [
         "website.html",
         "webspage-plan.md"
@@ -108,8 +108,8 @@
     },
     {
       "path": "packages/merlink/bridge/src/types.ts",
-      "accessCount": 4,
-      "lastAccessed": 1775102202728,
+      "accessCount": 5,
+      "lastAccessed": 1775131345153,
       "type": "file"
     },
     {
@@ -125,6 +125,12 @@
       "type": "file"
     },
     {
+      "path": "package.json",
+      "accessCount": 4,
+      "lastAccessed": 1775493072552,
+      "type": "file"
+    },
+    {
       "path": "packages/merlink/core/tests/nfc_reader_test.cpp",
       "accessCount": 3,
       "lastAccessed": 1774928144710,
@@ -134,12 +140,6 @@
       "path": "packages/contracts/test/CATRToken.test.ts",
       "accessCount": 3,
       "lastAccessed": 1774970555308,
-      "type": "file"
-    },
-    {
-      "path": "package.json",
-      "accessCount": 3,
-      "lastAccessed": 1775101962039,
       "type": "file"
     },
     {
@@ -356,6 +356,36 @@
       "path": "packages/backend/src/index.ts",
       "accessCount": 1,
       "lastAccessed": 1775102747958,
+      "type": "file"
+    },
+    {
+      "path": "packages/backend/src/db.ts",
+      "accessCount": 1,
+      "lastAccessed": 1775131341637,
+      "type": "file"
+    },
+    {
+      "path": "packages/backend/src/types.ts",
+      "accessCount": 1,
+      "lastAccessed": 1775131355338,
+      "type": "file"
+    },
+    {
+      "path": "packages/backend/src",
+      "accessCount": 1,
+      "lastAccessed": 1775493063108,
+      "type": "directory"
+    },
+    {
+      "path": "packages/backend/src/app.ts",
+      "accessCount": 1,
+      "lastAccessed": 1775493066067,
+      "type": "file"
+    },
+    {
+      "path": "packages/backend/src/routes/users.ts",
+      "accessCount": 1,
+      "lastAccessed": 1775493066444,
       "type": "file"
     }
   ],

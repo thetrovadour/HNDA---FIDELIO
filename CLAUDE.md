@@ -25,14 +25,14 @@ For additional project context, see `Organization and Research/Fidelio-Architect
 
 ---
 
-**Current status (as of 2026-03-31):**
+**Current status (as of 2026-04-06):**
 
 | Phase | Deliverable | Status |
 |---|---|---|
 | A | CATRToken.sol on Base Sepolia + VaultOp (Gnosis Safe 2-of-2) | 🔄 Contract complete — awaiting wallet deployment |
 | B | MerL1nk Etapa 1 (C++ Core + Node.js Bridge) | ✅ Complete — 74/74 tests passing |
-| C | Backend Core (Express API + PostgreSQL/Prisma) | ⬜ Not started |
-| D | Web MVP (client + merchant + admin views) | ⬜ Not started |
+| C | Backend Core (Express API + PostgreSQL/Prisma) | ✅ Complete — 44/44 tests passing |
+| D | Web MVP (client + merchant + admin views) | ✅ Complete — build passing |
 | E | Integration — 5 end-to-end transactions | ⬜ Not started |
 
 **Phase B — C++ Core module status:**
@@ -156,7 +156,7 @@ Hardcoded in the smart contract — must never be violated at any layer:
 
 Remaining stubs: `vault_monitor`, `nfc_reader`, `webhook_receiver`
 
-All other packages (`contracts/`, `backend/`, `web/`, `merlink/bridge/`) have empty `src/` directories.
+Phase C backend scaffold is in `packages/backend/` — see Phase C section below.
 
 ---
 
@@ -191,11 +191,13 @@ Key markers: `"Monto recibido: L. "` → amount as double | `"Referencia de pago
 
 ---
 
-## Database Schema (Planned — Prisma, not yet created)
+## Database Schema (Phase C — Prisma, migrated ✅)
 
-11 tables: `users`, `wallets`, `merchants`, `transactions`, `pending_mints`, `processed_references`, `redemption_requests`, `reward_milestones`, `merchant_visits`, `referrals`, `reward_payout_queue`
+11 tables live in `fidelio_dev` PostgreSQL: `User`, `Wallet`, `Merchant`, `Transaction`, `PendingMint`, `ProcessedReference`, `RedemptionRequest`, `RewardMilestone`, `MerchantVisit`, `Referral`, `RewardPayoutQueue`
 
-`pending_mints` is critical — tracks the gap between "payment confirmed" and "mint executed." Daily reconciliation cron (`jobs/reconciliation.ts`) resolves unresolved entries.
+Schema: `packages/backend/prisma/schema.prisma` | Migration: `prisma/migrations/20260402041651_init/`
+
+`PendingMint` is critical — tracks the gap between "payment confirmed" and "mint executed." Daily reconciliation cron (`jobs/reconciliation.ts`) resolves unresolved entries.
 
 ---
 
@@ -346,3 +348,116 @@ Three `_update` calls per transfer (recipient + treasury + rewardPool) costs 96,
 1. Phase C — Express backend + PostgreSQL/Prisma
 2. OR: aiControl workstation setup (Ollama + Qwen3 + Hermes Agent)
 3. When wallets are ready: deploy CATRToken.sol to Base Sepolia + set up VaultOp Safe
+
+---
+
+### Session 3 — 2026-04-02
+**Location:** San Pedro Sula, Honduras (CST, UTC-6)
+
+#### What happened
+- Installed PostgreSQL 16 server (only client was present — server package was missing)
+- Created `fidelio_dev` database and `fidelio` user with CREATEDB permission
+- **Phase C Steps 1–2:** Scaffold (`package.json`, `tsconfig.json`, `.env.example`) + Prisma schema + migration
+- **Phase C Steps 3–12:** Full backend implementation — all 12 steps completed in one session
+- **Phase C declared complete** — 44/44 tests passing
+- **Project total: 131/131 tests passing** (87 Phase A+B + 44 Phase C)
+
+#### What was built in Phase C
+
+| Layer | Files |
+|---|---|
+| Services | `MintService`, `RedemptionService`, `TransactionService`, `UserService`, `RewardService` |
+| Routes | `bridge_events`, `users`, `wallets`, `merchants`, `transactions`, `redemptions`, `rewards`, `health` |
+| Middleware | `auth` (bridge secret + JWT), `validate` (Zod), `error_handler` |
+| Jobs | `ReconciliationJob` (cron 02:00 CST / 08:00 UTC) |
+| Tests | 44 tests across 7 suites |
+
+#### Key decisions from this session
+
+**1. PostgreSQL only had the client package installed — server was missing.**
+`pg_isready` reported no response. `psql --version` showed 16.13. `initdb` and `pg_ctl` were absent. Required `sudo apt install postgresql-16`. Good to know for aiControl setup.
+
+**2. `app.ts` factory pattern enforces testability at the route level.**
+`createApp()` returns a configured Express app without calling `.listen()`. Route tests import `createApp` + `supertest` — no port is ever bound. Same principle as C++ static parse methods and bridge's SocketServer separation.
+
+**3. `PaymentEventDTO` is a local copy, not imported from the bridge package.**
+The backend and bridge are independent services. If the bridge type ever changes, the DTO is the deliberate translation layer. No cross-package coupling.
+
+**4. `$transaction()` wraps all multi-table writes in MintService.**
+`PendingMint + ProcessedReference + Transaction` are written atomically. If any write fails, none are committed. This is the DB-level enforcement of MINT-BEFORE-PAY integrity.
+
+**5. Redemption tier thresholds live in env vars, not hardcoded.**
+`REDEMPTION_TIER_ADMIN_MIN=50`, `REDEMPTION_TIER_VAULT_MIN=500` — calibrated from Reina's pilot data after launch, no redeploy needed.
+
+**6. ReconciliationJob.run() is extracted from schedule() for testability.**
+The cron scheduler is never instantiated in tests. `run()` is called directly with mock data. Same principle as static parse methods in Phase B.
+
+**7. RewardMilestone @@unique([user_id, type]) is the race-condition guard.**
+TX_5 can only be inserted once per user at the DB level. No application-level locking needed. Prisma will throw a unique constraint error on a duplicate attempt — service catches and ignores it.
+
+**8. Bridge → Backend connection is HTTP, not Unix socket.**
+The bridge already speaks HTTP out. Adding a second Unix socket to the backend would couple two unrelated concerns. The internal routes (`/internal/bridge/*`) use a shared `BRIDGE_SECRET` header — static secret is the right complexity level for localhost process-to-process communication.
+
+#### Test report written
+- `packages/backend/tests/reports/2026-04-02_backend_test_report.md`
+
+#### Next session agenda
+1. Phase D — Web MVP (Next.js: client, merchant, admin views) talking to `/api/*` routes
+2. OR: Phase A wallet deployment — populate `.env` with real addresses → deploy CATRToken.sol to Base Sepolia + set up VaultOp Safe
+3. OR: aiControl workstation setup (Ollama + Qwen3 + Hermes Agent)
+
+---
+
+### Session 4 — 2026-04-06
+**Location:** San Pedro Sula, Honduras (CST, UTC-6)
+
+#### What happened
+- **Phase D declared complete** — Web MVP built and build passing
+- Created `packages/web/` from scratch — Next.js 14 (App Router), Tailwind CSS
+- Built three views: client dashboard, merchant dashboard, admin dashboard
+- Built 6 reusable components and a full `lib/api.ts` wrapping every `/api/*` route
+- Fixed `next.config.mjs` — removed TypeScript syntax from `.mjs` file (ESM doesn't support `import type`)
+- **Project total: 131/131 tests passing** (Phase D has no automated tests — build passing is the verification)
+
+#### What was built in Phase D
+
+| File | Purpose |
+|---|---|
+| `src/lib/api.ts` | Typed fetch wrappers for all backend routes |
+| `src/app/client/page.tsx` | Client dashboard — CATR balance, transaction history, reward milestones, spend form |
+| `src/app/merchant/page.tsx` | Merchant dashboard — info display + redemption request form |
+| `src/app/admin/page.tsx` | Admin dashboard — merchants, redemptions, reward payouts with approve/reject |
+| `src/components/TransactionList.tsx` | Transaction history table |
+| `src/components/RedemptionForm.tsx` | Merchant redemption request form |
+| `src/components/RewardStatus.tsx` | Unlocked milestone list |
+| `src/components/MerchantList.tsx` | Admin merchant management table + add form |
+| `src/components/RedemptionQueue.tsx` | Admin redemption queue with filter + approve/reject |
+| `src/components/RewardPayoutQueue.tsx` | Admin reward payout queue with approve |
+
+#### Key decisions from this session
+
+**1. All three views are client components — no server-side data fetching for MVP.**
+Admin JWT is pasted manually into an input field and stored in component state. No session management, no cookies. This is intentional — it's an internal tool used by Cristian and Víctor only. Phase E will wire real authentication.
+
+**2. User and merchant identity via query param for MVP.**
+`/client?userId=<uuid>` and `/merchant?merchantId=<uuid>`. No login flow. The pilot with Reina will use pre-configured URLs. Real wallet-based identity comes in Phase E.
+
+**3. Admin tab pattern chosen over separate routes.**
+Three tabs (Merchants / Redemptions / Reward Payouts) in one page, toggled with component state. Simpler than three separate admin routes for a two-person operation.
+
+**4. `next.config.mjs` requires plain JS, not TypeScript.**
+`.mjs` is an ESM module — `import type` is TypeScript syntax and not valid in a plain ESM file. Switched to JSDoc type annotation (`/** @type {import('next').NextConfig} */`). Note for future: use `next.config.ts` only if the project uses `ts-node` or `tsx` to run config.
+
+#### To run the full stack
+```bash
+# Terminal 1
+cd packages/backend && npm run dev   # Express on :3001
+
+# Terminal 2
+cd packages/web && npm run dev       # Next.js on :3000
+```
+
+#### Next session agenda
+1. Phase E — 5 end-to-end integration transactions (full stack: MerL1nk → Backend → Contract → Web)
+2. OR: Phase A wallet deployment — populate `.env` → deploy CATRToken.sol to Base Sepolia + set up VaultOp Safe
+3. OR: aiControl workstation setup (Ollama + Qwen3 + Hermes Agent)
