@@ -603,3 +603,36 @@ The committed `.env` from Phase C contained only `change_me_in_production` place
 1. Live `mint()` test — call from minter wallet on Base Sepolia v2 contract
 2. Pentest with Kali against hardened backend
 3. Pilot preparation — Reina onboarding
+
+---
+
+### Session 8 — 2026-04-07
+
+#### What happened
+- **Live mint() test attempted** — script written at `packages/merlink/bridge/scripts/test-mint.ts`
+- **Two blockers discovered** — test could not complete; documented below
+
+#### Blockers found
+
+**1. Minter wallet has zero Base Sepolia ETH.**
+`0x3A0bEC7F585Ce2A28e1ECe6f15389b15f4158290` (the wallet granted `MINTER_ROLE` at deploy time) has no ETH for gas. Cristian will ask Víctor to fund it via a Base Sepolia faucet.
+
+**2. Wrong private key in `packages/merlink/bridge/.env`.**
+The `PRIVATE_KEY` currently in `.env` derives to `0x92817E49983A4Ee3C3332955061EdAd46d1C2dc6` — not the registered minter. The contract rejected the call with `AccessControlUnauthorizedAccount`. The `.env` must be updated with the private key for `0x3A0bEC7F585Ce2A28e1ECe6f15389b15f4158290`.
+
+Note: `0x92817...` has ~0.05 Base Sepolia ETH but no `MINTER_ROLE` — it cannot mint.
+
+#### Test script
+`packages/merlink/bridge/scripts/test-mint.ts` is ready. Once the correct private key and ETH are in place, run:
+```bash
+cd packages/merlink/bridge
+npx ts-node scripts/test-mint.ts [optional_recipient_wallet]
+```
+The script checks ETH balance, prints the tx hash and BaseScan link, waits for confirmation, and shows CATR balance before/after.
+
+#### Next session agenda
+1. Update `packages/merlink/bridge/.env` with correct private key for `0x3A0bEC7F585Ce2A28e1ECe6f15389b15f4158290`
+2. Confirm minter wallet funded with Base Sepolia ETH (ask Víctor)
+3. Re-run `test-mint.ts` — verify live mint on Base Sepolia v2 contract
+4. Pentest with Kali against hardened backend
+5. Pilot preparation — Reina onboarding

@@ -1,0 +1,7 @@
+{
+  "tool_name": "Bash",
+  "tool_input_preview": "{\"command\":\"npx ts-node scripts/test-mint.ts 2>&1\"}",
+  "error": "Exit code 1\n=== FIDELIO — Live mint() test ===\nContract  : 0xee6d5E14dc3EB458990fB1C3fe591A2081bcb215\nMinter    : 0x92817E49983A4Ee3C3332955061EdAd46d1C2dc6\nRecipient : 0x92817E49983A4Ee3C3332955061EdAd46d1C2dc6\nAmount    : 10 CATR\n\nMinter ETH balance : 0.049982007625570016 ETH\nRecipient CATR before : 0.0 CATR\n\nSending mint() transaction...\n❌  Unexpected error: Error: execution reverted (unknown custom error) (action=\"estimateGas\", data=\"0xe2517d3f00000000000000000000000092817e49983a4ee3c3332955...",
+  "timestamp": "2026-04-07T14:34:42.522Z",
+  "retry_count": 1
+}

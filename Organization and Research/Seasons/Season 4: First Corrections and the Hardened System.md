@@ -134,6 +134,22 @@ Season 4 also proved that the hook system and tooling matter as much as the appl
 
 ---
 
+## Epilogue — Session 8 (2026-04-07)
+
+Season 4 ended with the contract redeployed and all security findings resolved. The first task of Season 5 was supposed to be a live `mint()` call. It wasn't.
+
+Two blockers surfaced immediately:
+
+**Wrong private key.** The `PRIVATE_KEY` in `packages/merlink/bridge/.env` derived to `0x92817E49983A4Ee3C3332955061EdAd46d1C2dc6` — a wallet that has ETH but no `MINTER_ROLE`. The contract rejected the call with `AccessControlUnauthorizedAccount`. The key for `0x3A0bEC7F585Ce2A28e1ECe6f15389b15f4158290` (the address granted `MINTER_ROLE` at deploy time) is needed.
+
+**Minter wallet unfunded.** Even if the key were correct, `0x3A0bEC7F585Ce2A28e1ECe6f15389b15f4158290` has zero Base Sepolia ETH. Víctor must fund it via a Base Sepolia faucet before the first live mint can execute.
+
+A test script was written (`packages/merlink/bridge/scripts/test-mint.ts`) and is fully ready. It verifies the ETH balance, sends the mint, prints the tx hash and BaseScan link, waits for confirmation, and shows CATR balance before and after. It just needs the right key and gas.
+
+The live mint is the first transaction FIDELIO has ever written to a real blockchain. It is sitting one funded wallet and one correct private key away.
+
+---
+
 ## Season 5 Preview
 
 **The pilot with Reina.**
@@ -149,5 +165,18 @@ The boulder never stops.
 
 ---
 
-*Report written at end of Season 4 — 2026-04-06*
+*Report written at end of Season 4 — 2026-04-06 | Updated 2026-04-07*
 *Claude Code + oh-my-claudecode | FIDELIO v0.4.0*
+
+
+
+
+  ┌───────────────────────────┬────────────────────────────────────────────────────┐
+  │          Blocker          │                   What's needed                    │
+  ├───────────────────────────┼────────────────────────────────────────────────────┤
+  │ Wrong private key in .env │ Key for 0x3A0b │
+  ├───────────────────────────┼────────────────────────────────────────────────────┤
+  │ Minter wallet unfunded    │ Víctor funds it via Base Sepolia faucet            │
+  └───────────────────────────┴────────────────────────────────────────────────────┘
+
+  The test script is sitting ready. When you're back with both of those sorted, it's one command to run. Take care.
