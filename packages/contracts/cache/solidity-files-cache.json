@@ -2,8 +2,8 @@
   "_format": "hh-sol-cache-2",
   "files": {
     "/home/cristian-rodriguez/proyectos/HNDA---FIDELIO/packages/contracts/contracts/CATRToken.sol": {
-      "lastModificationDate": 1774969043536,
-      "contentHash": "e4b069bb6e2af4a8d4cf7e764ec46b05",
+      "lastModificationDate": 1775529622273,
+      "contentHash": "61dc5a332cdfbc7d5a047b9036bac0d4",
       "sourceName": "contracts/CATRToken.sol",
       "solcConfig": {
         "version": "0.8.20",

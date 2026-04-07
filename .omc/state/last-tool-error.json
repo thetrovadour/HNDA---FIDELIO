@@ -1,7 +1,0 @@
-{
-  "tool_name": "Bash",
-  "tool_input_preview": "{\"command\":\"cd /home/cristian-rodriguez/proyectos/HNDA---FIDELIO/packages/e2e && npx tsc --noEmit 2>&1\",\"description\":\"Type-check e2e package\"}",
-  "error": "Exit code 2\n../../node_modules/@types/mocha/index.d.ts(2652,13): error TS2403: Subsequent variable declarations must have the same type.  Variable 'beforeEach' must be of type 'Lifecycle', but here has type 'HookFunction<Hook>'.\n../../node_modules/@types/mocha/index.d.ts(2670,13): error TS2403: Subsequent variable declarations must have the same type.  Variable 'afterEach' must be of type 'Lifecycle', but here has type 'HookFunction<Hook>'.\n../../node_modules/@types/mocha/index.d.ts(2686,13): er...",
-  "timestamp": "2026-04-06T21:22:18.448Z",
-  "retry_count": 1
-}

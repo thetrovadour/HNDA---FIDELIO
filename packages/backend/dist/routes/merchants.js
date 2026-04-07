@@ -23,11 +23,11 @@ const UpdateMerchantSchema = zod_1.z.object({
 });
 function merchantsRouter() {
     const router = (0, express_1.Router)();
-    router.get('/', async (_req, res) => {
+    router.get('/', auth_1.adminAuth, async (_req, res) => {
         const merchants = await db_1.default.merchant.findMany();
         res.status(200).json({ data: merchants });
     });
-    router.get('/:id', async (req, res) => {
+    router.get('/:id', auth_1.adminAuth, async (req, res) => {
         const merchant = await db_1.default.merchant.findUnique({ where: { id: req.params.id } });
         if (!merchant) {
             res.status(404).json({ error: 'Merchant not found', code: 'NOT_FOUND' });

@@ -26,6 +26,7 @@ import type {
 export interface CATRTokenInterface extends Interface {
   getFunction(
     nameOrSignature:
+      | "BURNER_ROLE"
       | "DEFAULT_ADMIN_ROLE"
       | "MINTER_ROLE"
       | "allowance"
@@ -59,6 +60,10 @@ export interface CATRTokenInterface extends Interface {
       | "Transfer"
   ): EventFragment;
 
+  encodeFunctionData(
+    functionFragment: "BURNER_ROLE",
+    values?: undefined
+  ): string;
   encodeFunctionData(
     functionFragment: "DEFAULT_ADMIN_ROLE",
     values?: undefined
@@ -133,6 +138,10 @@ export interface CATRTokenInterface extends Interface {
   ): string;
   encodeFunctionData(functionFragment: "treasury", values?: undefined): string;
 
+  decodeFunctionResult(
+    functionFragment: "BURNER_ROLE",
+    data: BytesLike
+  ): Result;
   decodeFunctionResult(
     functionFragment: "DEFAULT_ADMIN_ROLE",
     data: BytesLike
@@ -315,6 +324,8 @@ export interface CATRToken extends BaseContract {
     event?: TCEvent
   ): Promise<this>;
 
+  BURNER_ROLE: TypedContractMethod<[], [string], "view">;
+
   DEFAULT_ADMIN_ROLE: TypedContractMethod<[], [string], "view">;
 
   MINTER_ROLE: TypedContractMethod<[], [string], "view">;
@@ -407,6 +418,9 @@ export interface CATRToken extends BaseContract {
     key: string | FunctionFragment
   ): T;
 
+  getFunction(
+    nameOrSignature: "BURNER_ROLE"
+  ): TypedContractMethod<[], [string], "view">;
   getFunction(
     nameOrSignature: "DEFAULT_ADMIN_ROLE"
   ): TypedContractMethod<[], [string], "view">;

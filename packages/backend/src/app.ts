@@ -1,4 +1,6 @@
 import express from 'express';
+import cors from 'cors';
+import rateLimit from 'express-rate-limit';
 import db from './db';
 import { bridgeAuth } from './middleware/auth';
 import { errorHandler } from './middleware/error_handler';
@@ -16,9 +18,25 @@ import { merchantsRouter } from './routes/merchants';
 import { transactionsRouter } from './routes/transactions';
 import { rewardsRouter } from './routes/rewards';
 
+const globalLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  max: 100,
+  standardHeaders: true,
+  legacyHeaders: false,
+});
+
+const sensitiveLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  max: 20,
+  standardHeaders: true,
+  legacyHeaders: false,
+});
+
 export function createApp(): express.Application {
   const app = express();
-  app.use(express.json());
+  app.use(cors({ origin: process.env.ALLOWED_ORIGIN || 'http://localhost:3000' }));
+  app.use(express.json({ limit: '100kb' }));
+  app.use(globalLimiter);
 
   // Services
   const rewardService = new RewardService(db);
@@ -29,13 +47,13 @@ export function createApp(): express.Application {
 
   // Routes
   app.use('/health', healthRouter());
-  app.use('/internal/bridge', bridgeAuth, bridgeEventsRouter(mintService));
+  app.use('/internal/bridge', sensitiveLimiter, bridgeAuth, bridgeEventsRouter(mintService));
   app.use('/api/users', usersRouter(userService, transactionService));
   app.use('/api/wallets', walletsRouter(userService));
   app.use('/api/merchants', merchantsRouter());
   app.use('/api/transactions', transactionsRouter(transactionService));
-  app.use('/api/redemptions', redemptionsRouter(redemptionService));
-  app.use('/api/rewards', rewardsRouter());
+  app.use('/api/redemptions', sensitiveLimiter, redemptionsRouter(redemptionService));
+  app.use('/api/rewards', sensitiveLimiter, rewardsRouter());
 
   // Error handler (last middleware)
   app.use(errorHandler);

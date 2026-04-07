@@ -11,7 +11,7 @@ const CreateRedemptionSchema = zod_1.z.object({
 });
 function redemptionsRouter(redemptionService) {
     const router = (0, express_1.Router)();
-    router.post('/', (0, validate_1.validate)(CreateRedemptionSchema), async (req, res) => {
+    router.post('/', auth_1.adminAuth, (0, validate_1.validate)(CreateRedemptionSchema), async (req, res) => {
         try {
             const result = await redemptionService.createRequest(req.body.merchant_id, req.body.amount_catr);
             res.status(201).json({ data: result });
@@ -20,7 +20,7 @@ function redemptionsRouter(redemptionService) {
             res.status(400).json({ error: err.message, code: 'BAD_REQUEST' });
         }
     });
-    router.get('/:id', async (req, res) => {
+    router.get('/:id', auth_1.adminAuth, async (req, res) => {
         try {
             const { db } = redemptionService;
             const request = await db.redemptionRequest.findUnique({ where: { id: req.params.id } });

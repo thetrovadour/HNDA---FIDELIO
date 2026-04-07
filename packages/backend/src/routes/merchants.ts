@@ -21,12 +21,12 @@ const UpdateMerchantSchema = z.object({
 export function merchantsRouter(): Router {
   const router = Router();
 
-  router.get('/', async (_req: Request, res: Response) => {
+  router.get('/', adminAuth, async (_req: Request, res: Response) => {
     const merchants = await db.merchant.findMany();
     res.status(200).json({ data: merchants });
   });
 
-  router.get('/:id', async (req: Request, res: Response) => {
+  router.get('/:id', adminAuth, async (req: Request, res: Response) => {
     const merchant = await db.merchant.findUnique({ where: { id: req.params.id } });
     if (!merchant) {
       res.status(404).json({ error: 'Merchant not found', code: 'NOT_FOUND' });

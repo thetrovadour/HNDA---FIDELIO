@@ -90,8 +90,32 @@
   "hotPaths": [
     {
       "path": "CLAUDE.md",
-      "accessCount": 20,
-      "lastAccessed": 1775101962009,
+      "accessCount": 31,
+      "lastAccessed": 1775531331623,
+      "type": "file"
+    },
+    {
+      "path": "packages/backend/src/app.ts",
+      "accessCount": 15,
+      "lastAccessed": 1775530651899,
+      "type": "file"
+    },
+    {
+      "path": "packages/contracts/contracts/CATRToken.sol",
+      "accessCount": 12,
+      "lastAccessed": 1775530085276,
+      "type": "file"
+    },
+    {
+      "path": "packages/contracts/test/CATRToken.test.ts",
+      "accessCount": 10,
+      "lastAccessed": 1775529751918,
+      "type": "file"
+    },
+    {
+      "path": "packages/backend/src/routes/users.ts",
+      "accessCount": 9,
+      "lastAccessed": 1775530074588,
       "type": "file"
     },
     {
@@ -101,9 +125,21 @@
       "type": "file"
     },
     {
+      "path": "packages/contracts/scripts/deploy.ts",
+      "accessCount": 8,
+      "lastAccessed": 1775529751528,
+      "type": "file"
+    },
+    {
       "path": "packages/merlink/bridge/src/socket_server.ts",
       "accessCount": 7,
       "lastAccessed": 1775509883392,
+      "type": "file"
+    },
+    {
+      "path": "packages/contracts/hardhat.config.ts",
+      "accessCount": 7,
+      "lastAccessed": 1775522163249,
       "type": "file"
     },
     {
@@ -131,9 +167,21 @@
       "type": "file"
     },
     {
+      "path": "packages/backend/.env.example",
+      "accessCount": 5,
+      "lastAccessed": 1775530666164,
+      "type": "file"
+    },
+    {
       "path": "packages/merlink/bridge/src/index.ts",
       "accessCount": 4,
       "lastAccessed": 1775509878606,
+      "type": "file"
+    },
+    {
+      "path": "packages/merlink/bridge/.env.example",
+      "accessCount": 4,
+      "lastAccessed": 1775521041935,
       "type": "file"
     },
     {
@@ -143,27 +191,9 @@
       "type": "file"
     },
     {
-      "path": "packages/contracts/test/CATRToken.test.ts",
-      "accessCount": 3,
-      "lastAccessed": 1774970555308,
-      "type": "file"
-    },
-    {
       "path": "packages/merlink/bridge/tsconfig.json",
       "accessCount": 3,
       "lastAccessed": 1775101978256,
-      "type": "file"
-    },
-    {
-      "path": "packages/merlink/bridge/.env.example",
-      "accessCount": 3,
-      "lastAccessed": 1775101978714,
-      "type": "file"
-    },
-    {
-      "path": "packages/contracts/contracts/CATRToken.sol",
-      "accessCount": 3,
-      "lastAccessed": 1775101979372,
       "type": "file"
     },
     {
@@ -185,15 +215,9 @@
       "type": "file"
     },
     {
-      "path": "packages/contracts/scripts/deploy.ts",
+      "path": "packages/contracts/.env.example",
       "accessCount": 3,
-      "lastAccessed": 1775511448089,
-      "type": "file"
-    },
-    {
-      "path": "packages/contracts/hardhat.config.ts",
-      "accessCount": 3,
-      "lastAccessed": 1775511448426,
+      "lastAccessed": 1775518670974,
       "type": "file"
     },
     {
@@ -239,27 +263,9 @@
       "type": "file"
     },
     {
-      "path": "packages/backend/src/app.ts",
-      "accessCount": 2,
-      "lastAccessed": 1775510133439,
-      "type": "file"
-    },
-    {
       "path": "packages/backend/src/types.ts",
       "accessCount": 2,
       "lastAccessed": 1775510138651,
-      "type": "file"
-    },
-    {
-      "path": "packages/backend/.env.example",
-      "accessCount": 2,
-      "lastAccessed": 1775510146615,
-      "type": "file"
-    },
-    {
-      "path": "packages/backend/src/routes/users.ts",
-      "accessCount": 2,
-      "lastAccessed": 1775510210571,
       "type": "file"
     },
     {
@@ -269,9 +275,15 @@
       "type": "file"
     },
     {
-      "path": "packages/contracts/.env.example",
+      "path": "packages/backend/src",
       "accessCount": 2,
-      "lastAccessed": 1775511448706,
+      "lastAccessed": 1775530105336,
+      "type": "directory"
+    },
+    {
+      "path": "Organization and Research/Seasons/Season 1: C++ and a new Journey ahead.md",
+      "accessCount": 2,
+      "lastAccessed": 1775530892111,
       "type": "file"
     },
     {
@@ -359,12 +371,6 @@
       "type": "file"
     },
     {
-      "path": "Organization and Research/Seasons/Season 1: C++ and a new Journey ahead.md",
-      "accessCount": 1,
-      "lastAccessed": 1774928741096,
-      "type": "file"
-    },
-    {
       "path": "packages/backend/tsconfig.json",
       "accessCount": 1,
       "lastAccessed": 1775102735875,
@@ -381,12 +387,6 @@
       "accessCount": 1,
       "lastAccessed": 1775131341637,
       "type": "file"
-    },
-    {
-      "path": "packages/backend/src",
-      "accessCount": 1,
-      "lastAccessed": 1775493063108,
-      "type": "directory"
     }
   ],
   "userDirectives": []

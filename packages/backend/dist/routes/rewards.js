@@ -9,15 +9,15 @@ const auth_1 = require("../middleware/auth");
 const db_1 = __importDefault(require("../db"));
 function rewardsRouter() {
     const router = (0, express_1.Router)();
-    router.get('/:user_id', async (req, res) => {
+    router.get('/queue', auth_1.adminAuth, async (_req, res) => {
+        const queue = await db_1.default.rewardPayoutQueue.findMany();
+        res.status(200).json({ data: queue });
+    });
+    router.get('/:user_id', auth_1.adminAuth, async (req, res) => {
         const milestones = await db_1.default.rewardMilestone.findMany({
             where: { user_id: req.params.user_id },
         });
         res.status(200).json({ data: milestones });
-    });
-    router.get('/queue', auth_1.adminAuth, async (_req, res) => {
-        const queue = await db_1.default.rewardPayoutQueue.findMany();
-        res.status(200).json({ data: queue });
     });
     router.patch('/queue/:id/approve', auth_1.adminAuth, async (req, res) => {
         try {

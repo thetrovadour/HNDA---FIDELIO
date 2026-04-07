@@ -6,6 +6,7 @@ Object.defineProperty(exports, "__esModule", { value: true });
 exports.walletsRouter = walletsRouter;
 const express_1 = require("express");
 const zod_1 = require("zod");
+const auth_1 = require("../middleware/auth");
 const validate_1 = require("../middleware/validate");
 const db_1 = __importDefault(require("../db"));
 const CreateWalletSchema = zod_1.z.object({
@@ -14,7 +15,7 @@ const CreateWalletSchema = zod_1.z.object({
 });
 function walletsRouter(userService) {
     const router = (0, express_1.Router)();
-    router.post('/', (0, validate_1.validate)(CreateWalletSchema), async (req, res) => {
+    router.post('/', auth_1.adminAuth, (0, validate_1.validate)(CreateWalletSchema), async (req, res) => {
         try {
             const wallet = await userService.createWallet(req.body.user_id, req.body.address);
             res.status(201).json({ data: wallet });
@@ -23,7 +24,7 @@ function walletsRouter(userService) {
             res.status(400).json({ error: err.message, code: 'BAD_REQUEST' });
         }
     });
-    router.get('/:address', async (req, res) => {
+    router.get('/:address', auth_1.adminAuth, async (req, res) => {
         const wallet = await db_1.default.wallet.findUnique({ where: { address: req.params.address } });
         if (!wallet) {
             res.status(404).json({ error: 'Wallet not found', code: 'NOT_FOUND' });

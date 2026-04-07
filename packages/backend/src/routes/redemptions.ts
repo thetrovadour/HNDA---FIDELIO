@@ -12,7 +12,7 @@ const CreateRedemptionSchema = z.object({
 export function redemptionsRouter(redemptionService: RedemptionService): Router {
   const router = Router();
 
-  router.post('/', validate(CreateRedemptionSchema), async (req: Request, res: Response) => {
+  router.post('/', adminAuth, validate(CreateRedemptionSchema), async (req: Request, res: Response) => {
     try {
       const result = await redemptionService.createRequest(req.body.merchant_id, req.body.amount_catr);
       res.status(201).json({ data: result });
@@ -21,7 +21,7 @@ export function redemptionsRouter(redemptionService: RedemptionService): Router 
     }
   });
 
-  router.get('/:id', async (req: Request, res: Response) => {
+  router.get('/:id', adminAuth, async (req: Request, res: Response) => {
     try {
       const { db } = redemptionService as any;
       const request = await db.redemptionRequest.findUnique({ where: { id: req.params.id } });

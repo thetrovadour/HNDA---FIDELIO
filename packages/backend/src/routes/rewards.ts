@@ -5,16 +5,16 @@ import db from '../db';
 export function rewardsRouter(): Router {
   const router = Router();
 
-  router.get('/:user_id', async (req: Request, res: Response) => {
+  router.get('/queue', adminAuth, async (_req: Request, res: Response) => {
+    const queue = await db.rewardPayoutQueue.findMany();
+    res.status(200).json({ data: queue });
+  });
+
+  router.get('/:user_id', adminAuth, async (req: Request, res: Response) => {
     const milestones = await db.rewardMilestone.findMany({
       where: { user_id: req.params.user_id },
     });
     res.status(200).json({ data: milestones });
-  });
-
-  router.get('/queue', adminAuth, async (_req: Request, res: Response) => {
-    const queue = await db.rewardPayoutQueue.findMany();
-    res.status(200).json({ data: queue });
   });
 
   router.patch('/queue/:id/approve', adminAuth, async (req: Request, res: Response) => {

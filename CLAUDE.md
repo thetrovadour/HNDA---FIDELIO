@@ -29,7 +29,7 @@ For additional project context, see `Organization and Research/Fidelio-Architect
 
 | Phase | Deliverable | Status |
 |---|---|---|
-| A | CATRToken.sol on Base Sepolia + VaultOp (Gnosis Safe 2-of-2) | 🔄 Contract complete — awaiting wallet deployment |
+| A | CATRToken.sol on Base Sepolia + VaultOp (Gnosis Safe 2-of-2) | ✅ Complete — redeployed with BURNER_ROLE `0xee6d5E14dc3EB458990fB1C3fe591A2081bcb215` |
 | B | MerL1nk Etapa 1 (C++ Core + Node.js Bridge) | ✅ Complete — 74/74 tests passing |
 | C | Backend Core (Express API + PostgreSQL/Prisma) | ✅ Complete — 44/44 tests passing |
 | D | Web MVP (client + merchant + admin views) | ✅ Complete — build passing |
@@ -250,6 +250,12 @@ Saved in `packages/contracts/Efficiency/`:
 
 - **Claude Code CLI** — autonomous agent in this repo
 - **oh-my-claudecode** — multi-agent orchestration (installed)
+- **ecc (everything-claude-code)** — extended skill library (installed 2026-04-06): security-review, cpp-review, cpp-testing, e2e-testing, tdd, defi-amm-security, evm-token-decimals, and 80+ others
+- **superpowers** — parallel agent execution and planning skills (installed 2026-04-06)
+- **claude-md-management** — CLAUDE.md revision and improvement (installed 2026-04-06)
+- **clangd-lsp** — C++ LSP server for MerL1nk core analysis (installed 2026-04-06)
+- **Playwright MCP** — browser automation for web UI testing
+- **GitHub MCP** — direct GitHub operations from Claude Code
 - **Ollama + Qwen3** — local AI on aiControl (pending hardware)
 - **Hermes Agent** — persistent memory layer (pending aiControl)
 
@@ -408,6 +414,67 @@ The bridge already speaks HTTP out. Adding a second Unix socket to the backend w
 
 ---
 
+### Session 6 — 2026-04-06
+
+#### What happened
+- **Phase A declared complete** — CATRToken.sol deployed to Base Sepolia
+- Contract address: `0xDbf22d63A084DA0B5af08e55B1644fFE75D130b5`
+- Fixed constructor: added `_minter` param so `MINTER_ROLE` is granted atomically at deploy time (no post-deploy `grantRole` call needed)
+- Updated `packages/merlink/bridge/.env` with contract address and minter private key
+- **All 5 phases now complete**
+
+#### Key decisions from this session
+
+**1. `MINTER_ROLE` moved into the constructor.**
+Original deploy script tried to call `grantRole` after deployment, but `DEFAULT_ADMIN_ROLE` was granted to the VaultOp Safe — not the deployer. The deployer had no rights to call `grantRole`. Fix: pass `_minter` to the constructor and call `_grantRole(MINTER_ROLE, _minter)` internally. Cleaner, cheaper (one less transaction), and atomic.
+
+**2. Bridge `.env` populated with live contract address.**
+`packages/merlink/bridge/.env` now points to the live contract. The bridge is ready to call `mint()` on Base Sepolia.
+
+#### Deployed addresses
+| Role | Address |
+|---|---|
+| CATRToken contract (v2 — BURNER_ROLE) | `0xee6d5E14dc3EB458990fB1C3fe591A2081bcb215` |
+| Treasury | `0x10039B003AE9c0Ef55218D38f0c8Db088B35E2ED` |
+| RewardPool | `0x9E6cF98F2412E4E959863C68a154d9a2f834ac9c` |
+| VaultOp Safe (Admin) | `0x43E528d658dB911F8cbc77620Ed2A7c0F0226AB7` |
+| Bridge Minter | `0x3A0bEC7F585Ce2A28e1ECe6f15389b15f4158290` |
+
+#### Key decisions from this session (continued)
+
+**3. Etherscan V2 API required for hardhat-verify.**
+The network-specific `apiKey` object format is deprecated. Switched to a single string `apiKey: process.env.ETHERSCAN_API_KEY`. BaseScan uses a custom chain config pointing to `https://api-sepolia.basescan.org/api`.
+
+**4. Contract source verified on BaseScan.**
+Full Solidity source is now publicly readable at `https://sepolia.basescan.org/address/0xDbf22d63A084DA0B5af08e55B1644fFE75D130b5#code`. Anyone auditing the contract can verify the commission logic, role assignments, and supply cap without trusting the bytecode alone.
+
+#### Security fixes applied in this session
+
+| Finding | Fix | Status |
+|---|---|---|
+| C1 — Unauthenticated financial endpoints | Added `adminAuth` to 7 routes + fixed L3 route ordering bug | ✅ Fixed — 44/44 tests passing |
+| C2 — Next.js CVEs | Upgraded Next.js 14.2.3 → 16.2.2 | ✅ Fixed — 0 vulnerabilities |
+
+**Security fixes completed (Session 7 — 2026-04-06):**
+- H1 — BURNER_ROLE separated ✅ — contract redeployed `0xee6d5E14dc3EB458990fB1C3fe591A2081bcb215`
+- H2 — Timing-safe bridge secret comparison ✅
+- H3 — Rate limiting on all endpoints ✅
+- H4 — JWT algorithm pinned to HS256 ✅
+- Wallet routes, transactions IDOR, merchants data leak — all fixed ✅
+- CORS, body size limit, error handler hardened ✅
+
+**Remaining security work:**
+- Pentest with Kali against hardened backend
+- M2 — User-owned data auth (IDOR on `/api/users/:id`) — before mainnet
+
+#### Next session agenda
+1. ~~H1, H2, H3, H4 security fixes~~ ✅ Done in Session 7
+2. Live contract test — call `mint()` from minter wallet on Base Sepolia
+3. Pentest with Kali
+4. Pilot preparation — Reina onboarding
+
+---
+
 ### Session 5 — 2026-04-06
 
 #### What happened
@@ -497,3 +564,42 @@ cd packages/web && npm run dev       # Next.js on :3000
 1. Phase E — 5 end-to-end integration transactions (full stack: MerL1nk → Backend → Contract → Web)
 2. OR: Phase A wallet deployment — populate `.env` → deploy CATRToken.sol to Base Sepolia + set up VaultOp Safe
 3. OR: aiControl workstation setup (Ollama + Qwen3 + Hermes Agent)
+
+---
+
+### Session 7 — 2026-04-06
+
+#### What happened
+- **Hook system repaired** — created `~/.claude/hooks/lib/stdin.mjs` and `atomic-write.mjs` (missing files causing all hook events to fail)
+- **H1-H4 security fixes** — all implemented via Ralph PRD session, architect-verified
+- **Security review v2.0** — full second pass; 7 additional findings identified and fixed
+- **Contract redeployed** — `CATRToken.sol` v2 with BURNER_ROLE live on Base Sepolia
+- **Season 2, 3, 4 reports written** — full narrative documentation in `Organization and Research/Seasons/`
+
+#### Key decisions from this session
+
+**1. VaultOp Safe as BURNER_ROLE holder.**
+Burn operations are irreversible and high-value. The same 2-of-2 gate that controls Lempira redemptions above 500 CATR now also controls token burns. A compromised minter key cannot destroy anyone's balance.
+
+**2. `Buffer.alloc(secretBuf.length)` for timing-safe comparison.**
+Pre-sizing the provided buffer to the secret's length before copying prevents a secondary timing channel — the `timingSafeEqual` throw on unequal lengths would itself leak information.
+
+**3. All routes now require auth — no exceptions.**
+`GET /api/wallets`, `GET /api/merchants`, `GET /api/transactions/:id` were all unauthenticated. All now require `adminAuth`. The only unauthenticated routes are `/health` and the bridge's internal routes (which use `bridgeAuth`).
+
+**4. Git history confirmed clean.**
+The committed `.env` from Phase C contained only `change_me_in_production` placeholder values. No private keys were ever committed.
+
+#### New contract address
+| Role | Address |
+|---|---|
+| CATRToken v2 (with BURNER_ROLE) | `0xee6d5E14dc3EB458990fB1C3fe591A2081bcb215` |
+| BURNER_ROLE holder | `0x43E528d658dB911F8cbc77620Ed2A7c0F0226AB7` (VaultOp Safe) |
+
+#### Notes
+- Created a buddy named Mottle. He is kinda snarky.
+
+#### Next session agenda
+1. Live `mint()` test — call from minter wallet on Base Sepolia v2 contract
+2. Pentest with Kali against hardened backend
+3. Pilot preparation — Reina onboarding

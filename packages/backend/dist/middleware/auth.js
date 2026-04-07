@@ -6,9 +6,18 @@ Object.defineProperty(exports, "__esModule", { value: true });
 exports.bridgeAuth = bridgeAuth;
 exports.adminAuth = adminAuth;
 const jsonwebtoken_1 = __importDefault(require("jsonwebtoken"));
+const crypto_1 = require("crypto");
 function bridgeAuth(req, res, next) {
     const secret = process.env.BRIDGE_SECRET;
-    if (!secret || req.headers['x-bridge-secret'] !== secret) {
+    const provided = req.headers['x-bridge-secret'];
+    if (!secret || typeof provided !== 'string') {
+        res.status(401).json({ error: 'Unauthorized', code: 'INVALID_BRIDGE_SECRET' });
+        return;
+    }
+    const secretBuf = Buffer.from(secret);
+    const providedBuf = Buffer.alloc(secretBuf.length);
+    Buffer.from(provided).copy(providedBuf);
+    if (!(0, crypto_1.timingSafeEqual)(secretBuf, providedBuf)) {
         res.status(401).json({ error: 'Unauthorized', code: 'INVALID_BRIDGE_SECRET' });
         return;
     }
@@ -27,7 +36,7 @@ function adminAuth(req, res, next) {
         return;
     }
     try {
-        const decoded = jsonwebtoken_1.default.verify(token, jwtSecret);
+        const decoded = jsonwebtoken_1.default.verify(token, jwtSecret, { algorithms: ['HS256'] });
         req.admin = decoded;
         next();
     }

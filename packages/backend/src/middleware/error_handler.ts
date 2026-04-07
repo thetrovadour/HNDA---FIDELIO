@@ -4,7 +4,7 @@ import { ApiError } from '../types';
 export function errorHandler(err: Error, _req: Request, res: Response, _next: NextFunction): void {
   console.error(err);
   const body: ApiError = {
-    error: err.message || 'Internal server error',
+    error: 'Internal server error',
     code: 'INTERNAL_ERROR',
   };
   res.status(500).json(body);

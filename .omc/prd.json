@@ -1,0 +1,62 @@
+{
+  "task": "implement H1-H4 security fixes",
+  "stories": [
+    {
+      "id": "US-001",
+      "title": "H2 — Timing-safe bridge secret comparison",
+      "priority": 1,
+      "passes": true,
+      "description": "Replace direct string comparison of bridge secret with crypto.timingSafeEqual to prevent timing attacks.",
+      "acceptanceCriteria": [
+        "auth.ts bridgeAuth uses crypto.timingSafeEqual instead of !== for secret comparison ✅",
+        "Both buffers are the same byte length before comparison (no length leak) ✅",
+        "A request with wrong secret still returns 401 ✅",
+        "A request with correct secret still passes through ✅",
+        "npm run build in packages/backend succeeds with 0 TypeScript errors ✅",
+        "npm test in packages/backend passes all 44 tests ✅"
+      ]
+    },
+    {
+      "id": "US-002",
+      "title": "H4 — Pin JWT algorithm to HS256",
+      "priority": 2,
+      "passes": true,
+      "description": "Pass { algorithms: ['HS256'] } to jwt.verify() to prevent algorithm confusion attacks.",
+      "acceptanceCriteria": [
+        "auth.ts adminAuth calls jwt.verify(token, jwtSecret, { algorithms: ['HS256'] }) ✅",
+        "npm run build in packages/backend succeeds with 0 TypeScript errors ✅",
+        "npm test in packages/backend passes all 44 tests ✅"
+      ]
+    },
+    {
+      "id": "US-003",
+      "title": "H3 — Rate limiting on all endpoints",
+      "priority": 3,
+      "passes": true,
+      "description": "Add express-rate-limit middleware globally and tighter limits on sensitive routes.",
+      "acceptanceCriteria": [
+        "express-rate-limit installed in packages/backend/package.json ✅",
+        "Global rate limit of 100 req/15min applied to all routes ✅",
+        "Tighter limit of 20 req/15min on /internal/bridge/* ✅",
+        "Tighter limit of 20 req/15min on /api/redemptions ✅",
+        "npm run build succeeds ✅",
+        "npm test passes all 44 tests ✅"
+      ]
+    },
+    {
+      "id": "US-004",
+      "title": "H1 — Separate BURNER_ROLE in CATRToken",
+      "priority": 4,
+      "passes": true,
+      "description": "Add BURNER_ROLE so bridge minter cannot burn tokens.",
+      "acceptanceCriteria": [
+        "CATRToken.sol defines BURNER_ROLE ✅",
+        "burn() restricted to onlyRole(BURNER_ROLE) ✅",
+        "Constructor accepts _burner and grants BURNER_ROLE ✅",
+        "deploy.ts passes _burner address ✅",
+        "Hardhat tests: mint works with MINTER_ROLE, burn requires BURNER_ROLE, minter burn reverts ✅ (14/14 passing)",
+        "REDEPLOY_REQUIRED.md written ✅"
+      ]
+    }
+  ]
+}

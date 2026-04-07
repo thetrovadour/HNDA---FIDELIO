@@ -44,6 +44,7 @@ describe('POST /api/redemptions', () => {
 
     const res = await request(app)
       .post('/api/redemptions')
+      .set('Authorization', `Bearer ${adminToken}`)
       .send({ merchant_id: 'a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a11', amount_catr: '30' });
 
     expect(res.status).toBe(201);
@@ -53,6 +54,7 @@ describe('POST /api/redemptions', () => {
   it('returns 400 with missing fields', async () => {
     const res = await request(app)
       .post('/api/redemptions')
+      .set('Authorization', `Bearer ${adminToken}`)
       .send({ merchant_id: 'not-a-uuid' });
 
     expect(res.status).toBe(400);
@@ -75,7 +77,8 @@ describe('GET /api/redemptions/:id', () => {
     });
 
     const res = await request(app)
-      .get('/api/redemptions/r1');
+      .get('/api/redemptions/r1')
+      .set('Authorization', `Bearer ${adminToken}`);
 
     expect(res.status).toBe(200);
     expect(res.body.data.id).toBe('r1');

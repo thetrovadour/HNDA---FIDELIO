@@ -1,5 +1,6 @@
 import { Router, Request, Response } from 'express';
 import { z } from 'zod';
+import { adminAuth } from '../middleware/auth';
 import { validate } from '../middleware/validate';
 import { UserService } from '../services/user_service';
 import db from '../db';
@@ -12,7 +13,7 @@ const CreateWalletSchema = z.object({
 export function walletsRouter(userService: UserService): Router {
   const router = Router();
 
-  router.post('/', validate(CreateWalletSchema), async (req: Request, res: Response) => {
+  router.post('/', adminAuth, validate(CreateWalletSchema), async (req: Request, res: Response) => {
     try {
       const wallet = await userService.createWallet(req.body.user_id, req.body.address);
       res.status(201).json({ data: wallet });
@@ -21,7 +22,7 @@ export function walletsRouter(userService: UserService): Router {
     }
   });
 
-  router.get('/:address', async (req: Request, res: Response) => {
+  router.get('/:address', adminAuth, async (req: Request, res: Response) => {
     const wallet = await db.wallet.findUnique({ where: { address: req.params.address } });
     if (!wallet) {
       res.status(404).json({ error: 'Wallet not found', code: 'NOT_FOUND' });

@@ -4,22 +4,23 @@ import { ethers } from "hardhat";
 
 describe("CATRToken", function () {
   async function deployFixture() {
-    const [deployer, treasury, rewardPool, admin, minter, user1, user2] =
+    const [deployer, treasury, rewardPool, admin, minter, burner, user1, user2] =
       await ethers.getSigners();
 
     const CATRToken = await ethers.getContractFactory("CATRToken");
     const token = await CATRToken.deploy(
       treasury.address,
       rewardPool.address,
-      admin.address
+      admin.address,
+      minter.address,
+      burner.address
     );
     await token.waitForDeployment();
 
-    // Grant MINTER_ROLE to minter
     const MINTER_ROLE = await token.MINTER_ROLE();
-    await token.connect(admin).grantRole(MINTER_ROLE, minter.address);
+    const BURNER_ROLE = await token.BURNER_ROLE();
 
-    return { token, deployer, treasury, rewardPool, admin, minter, user1, user2, MINTER_ROLE };
+    return { token, deployer, treasury, rewardPool, admin, minter, burner, user1, user2, MINTER_ROLE, BURNER_ROLE };
   }
 
   describe("Deployment", function () {
@@ -69,16 +70,25 @@ describe("CATRToken", function () {
   });
 
   describe("Burn", function () {
-    it("minter can burn tokens from an address", async function () {
-      const { token, minter, user1 } = await loadFixture(deployFixture);
+    it("burner can burn tokens from an address", async function () {
+      const { token, minter, burner, user1 } = await loadFixture(deployFixture);
       const amount = ethers.parseEther("1000");
       await token.connect(minter).mint(user1.address, amount);
-      await token.connect(minter).burn(user1.address, amount);
+      await token.connect(burner).burn(user1.address, amount);
       expect(await token.balanceOf(user1.address)).to.equal(0n);
       expect(await token.totalSupply()).to.equal(0n);
     });
 
-    it("non-minter cannot burn", async function () {
+    it("minter cannot burn (BURNER_ROLE required)", async function () {
+      const { token, minter, user1 } = await loadFixture(deployFixture);
+      const amount = ethers.parseEther("1000");
+      await token.connect(minter).mint(user1.address, amount);
+      await expect(
+        token.connect(minter).burn(user1.address, amount)
+      ).to.be.revertedWithCustomError(token, "AccessControlUnauthorizedAccount");
+    });
+
+    it("non-burner cannot burn", async function () {
       const { token, minter, user1, user2 } = await loadFixture(deployFixture);
       const amount = ethers.parseEther("1000");
       await token.connect(minter).mint(user1.address, amount);
@@ -133,7 +143,7 @@ describe("CATRToken", function () {
 
   describe("No commission on burn", function () {
     it("treasury and rewardPool balances unchanged after burn", async function () {
-      const { token, minter, treasury, rewardPool, user1 } =
+      const { token, minter, burner, treasury, rewardPool, user1 } =
         await loadFixture(deployFixture);
 
       await token.connect(minter).mint(user1.address, ethers.parseEther("1000"));
@@ -141,7 +151,7 @@ describe("CATRToken", function () {
       const treasuryBefore = await token.balanceOf(treasury.address);
       const rewardPoolBefore = await token.balanceOf(rewardPool.address);
 
-      await token.connect(minter).burn(user1.address, ethers.parseEther("1000"));
+      await token.connect(burner).burn(user1.address, ethers.parseEther("1000"));
 
       expect(await token.balanceOf(treasury.address)).to.equal(treasuryBefore);
       expect(await token.balanceOf(rewardPool.address)).to.equal(rewardPoolBefore);

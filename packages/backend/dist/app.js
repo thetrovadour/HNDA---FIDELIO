@@ -5,6 +5,8 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.createApp = createApp;
 const express_1 = __importDefault(require("express"));
+const cors_1 = __importDefault(require("cors"));
+const express_rate_limit_1 = __importDefault(require("express-rate-limit"));
 const db_1 = __importDefault(require("./db"));
 const auth_1 = require("./middleware/auth");
 const error_handler_1 = require("./middleware/error_handler");
@@ -21,9 +23,23 @@ const wallets_1 = require("./routes/wallets");
 const merchants_1 = require("./routes/merchants");
 const transactions_1 = require("./routes/transactions");
 const rewards_1 = require("./routes/rewards");
+const globalLimiter = (0, express_rate_limit_1.default)({
+    windowMs: 15 * 60 * 1000,
+    max: 100,
+    standardHeaders: true,
+    legacyHeaders: false,
+});
+const sensitiveLimiter = (0, express_rate_limit_1.default)({
+    windowMs: 15 * 60 * 1000,
+    max: 20,
+    standardHeaders: true,
+    legacyHeaders: false,
+});
 function createApp() {
     const app = (0, express_1.default)();
-    app.use(express_1.default.json());
+    app.use((0, cors_1.default)({ origin: process.env.ALLOWED_ORIGIN || 'http://localhost:3000' }));
+    app.use(express_1.default.json({ limit: '100kb' }));
+    app.use(globalLimiter);
     // Services
     const rewardService = new reward_service_1.RewardService(db_1.default);
     const mintService = new mint_service_1.MintService(db_1.default, rewardService);
@@ -32,13 +48,13 @@ function createApp() {
     const userService = new user_service_1.UserService(db_1.default);
     // Routes
     app.use('/health', (0, health_1.healthRouter)());
-    app.use('/internal/bridge', auth_1.bridgeAuth, (0, bridge_events_1.bridgeEventsRouter)(mintService));
+    app.use('/internal/bridge', sensitiveLimiter, auth_1.bridgeAuth, (0, bridge_events_1.bridgeEventsRouter)(mintService));
     app.use('/api/users', (0, users_1.usersRouter)(userService, transactionService));
     app.use('/api/wallets', (0, wallets_1.walletsRouter)(userService));
     app.use('/api/merchants', (0, merchants_1.merchantsRouter)());
     app.use('/api/transactions', (0, transactions_1.transactionsRouter)(transactionService));
-    app.use('/api/redemptions', (0, redemptions_1.redemptionsRouter)(redemptionService));
-    app.use('/api/rewards', (0, rewards_1.rewardsRouter)());
+    app.use('/api/redemptions', sensitiveLimiter, (0, redemptions_1.redemptionsRouter)(redemptionService));
+    app.use('/api/rewards', sensitiveLimiter, (0, rewards_1.rewardsRouter)());
     // Error handler (last middleware)
     app.use(error_handler_1.errorHandler);
     return app;

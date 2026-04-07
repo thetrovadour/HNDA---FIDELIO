@@ -1,6 +1,7 @@
 import { Router, Request, Response } from 'express';
 import { z } from 'zod';
 import { validate } from '../middleware/validate';
+import { adminAuth } from '../middleware/auth';
 import { TransactionService } from '../services/transaction_service';
 import db from '../db';
 
@@ -13,7 +14,7 @@ const SpendSchema = z.object({
 export function transactionsRouter(transactionService: TransactionService): Router {
   const router = Router();
 
-  router.get('/:id', async (req: Request, res: Response) => {
+  router.get('/:id', adminAuth, async (req: Request, res: Response) => {
     const tx = await db.transaction.findUnique({ where: { id: req.params.id } });
     if (!tx) {
       res.status(404).json({ error: 'Transaction not found', code: 'NOT_FOUND' });
@@ -22,7 +23,7 @@ export function transactionsRouter(transactionService: TransactionService): Rout
     res.status(200).json({ data: tx });
   });
 
-  router.post('/spend', validate(SpendSchema), async (req: Request, res: Response) => {
+  router.post('/spend', adminAuth, validate(SpendSchema), async (req: Request, res: Response) => {
     try {
       const tx = await transactionService.recordSpend(req.body);
       res.status(201).json({ data: tx });

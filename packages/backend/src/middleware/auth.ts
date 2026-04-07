@@ -1,9 +1,18 @@
 import { Request, Response, NextFunction } from 'express';
 import jwt from 'jsonwebtoken';
+import { timingSafeEqual } from 'crypto';
 
 export function bridgeAuth(req: Request, res: Response, next: NextFunction): void {
   const secret = process.env.BRIDGE_SECRET;
-  if (!secret || req.headers['x-bridge-secret'] !== secret) {
+  const provided = req.headers['x-bridge-secret'];
+  if (!secret || typeof provided !== 'string') {
+    res.status(401).json({ error: 'Unauthorized', code: 'INVALID_BRIDGE_SECRET' });
+    return;
+  }
+  const secretBuf = Buffer.from(secret);
+  const providedBuf = Buffer.alloc(secretBuf.length);
+  Buffer.from(provided).copy(providedBuf);
+  if (!timingSafeEqual(secretBuf, providedBuf)) {
     res.status(401).json({ error: 'Unauthorized', code: 'INVALID_BRIDGE_SECRET' });
     return;
   }
@@ -23,7 +32,7 @@ export function adminAuth(req: Request, res: Response, next: NextFunction): void
     return;
   }
   try {
-    const decoded = jwt.verify(token, jwtSecret);
+    const decoded = jwt.verify(token, jwtSecret, { algorithms: ['HS256'] });
     (req as any).admin = decoded;
     next();
   } catch {
