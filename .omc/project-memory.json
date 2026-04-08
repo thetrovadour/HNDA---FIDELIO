@@ -1,6 +1,6 @@
 {
   "version": "1.0.0",
-  "lastScanned": 1775490658427,
+  "lastScanned": 1775608392968,
   "projectRoot": "/home/cristian-rodriguez/proyectos/HNDA---FIDELIO",
   "techStack": {
     "languages": [
@@ -40,7 +40,8 @@
       "packages/contracts",
       "packages/merlink/bridge",
       "packages/backend",
-      "packages/web"
+      "packages/web",
+      "packages/e2e"
     ],
     "mainDirectories": [],
     "gitBranches": null
@@ -51,7 +52,7 @@
       "path": "ClaudeProfile",
       "purpose": null,
       "fileCount": 1,
-      "lastAccessed": 1775490658407,
+      "lastAccessed": 1775608392946,
       "keyFiles": [
         "CLAUDE.md"
       ]
@@ -59,28 +60,38 @@
     "Organization and Research": {
       "path": "Organization and Research",
       "purpose": null,
-      "fileCount": 5,
-      "lastAccessed": 1775490658408,
+      "fileCount": 6,
+      "lastAccessed": 1775608392948,
       "keyFiles": [
         "FIDELIO-Learning-Plan.md",
         "Fidelio-Architecture-Planv1.1.md",
+        "deployment-steps.md",
         "learning-plan.md",
-        "organization-explanation.md",
-        "sources-and-resources.md"
+        "organization-explanation.md"
       ]
     },
     "packages": {
       "path": "packages",
       "purpose": null,
       "fileCount": 0,
-      "lastAccessed": 1775490658417,
+      "lastAccessed": 1775608392956,
       "keyFiles": []
+    },
+    "reviews": {
+      "path": "reviews",
+      "purpose": null,
+      "fileCount": 2,
+      "lastAccessed": 1775608392958,
+      "keyFiles": [
+        "2026-04-06_security_review.md",
+        "2026-04-06_security_review_2.0.md"
+      ]
     },
     "website": {
       "path": "website",
       "purpose": null,
       "fileCount": 2,
-      "lastAccessed": 1775490658420,
+      "lastAccessed": 1775608392961,
       "keyFiles": [
         "website.html",
         "webspage-plan.md"

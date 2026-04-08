@@ -636,3 +636,45 @@ The script checks ETH balance, prints the tx hash and BaseScan link, waits for c
 3. Re-run `test-mint.ts` — verify live mint on Base Sepolia v2 contract
 4. Pentest with Kali against hardened backend
 5. Pilot preparation — Reina onboarding
+
+---
+
+### Session 9 — 2026-04-07
+**Location:** San Pedro Sula, Honduras (CST, UTC-6)
+
+#### What happened
+- **Live mint() test completed** — all blockers from Session 8 resolved
+- **Minter private key corrected** — `packages/merlink/bridge/.env` updated with key for `0x3A0bEC7F585Ce2A28e1ECe6f15389b15f4158290`
+- **Minter wallet funded** — 0.05 Base Sepolia ETH via Coinbase faucet
+- **3 successful live mints** — wallet now holds 30 CATR on Base Sepolia v2 contract
+- **test-mint.ts display bug fixed** — RPC timing issue + `decimals()` BigInt cast
+- **Pentest completed** — 10 attack vectors tested against hardened backend; 2 bugs found and fixed
+- **Pentest report written** — `Organization and Research/Security/2026-04-07_pentest_report.md`
+
+#### Key decisions from this session
+
+**1. `tx.wait(2)` instead of `tx.wait()` for reliable balance reads.**
+After a confirmed mint, querying `balanceOf` immediately returned stale data — the RPC node hadn't indexed the new block yet. Waiting for 2 confirmations before reading balance gives the node time to catch up. The on-chain data was always correct; the display was reading too early.
+
+**2. `Number(await contract.decimals())` — ethers v6 returns BigInt for uint8.**
+`formatUnits` expects a JavaScript `number` for the decimals argument. ethers v6 returns all integers as BigInt, including small ones like `decimals()`. Explicit `Number()` cast is required.
+
+**3. Error handler updated to distinguish error types.**
+The catch-all `errorHandler` was returning 500 for all errors, including malformed JSON (should be 400) and oversized payloads (should be 413). Fixed by checking `err instanceof SyntaxError` and `err.type === 'entity.too.large'` before falling through to the generic 500.
+
+**4. CORS sends allowed origin header to all requests — this is correct behavior.**
+When `evil.com` sends a request, the server responds with `Access-Control-Allow-Origin: http://localhost:3000`. The browser compares this to the actual request origin and blocks it. The server does NOT reflect the attacker's origin back. This is the correct pattern.
+
+**5. 1 CATR = 1 HNL peg is maintained by collateral, not algorithm.**
+Every CATR in circulation has a matching HNL in HNDA's Atlántida bank account. Mint = deposit confirmed. Burn = Lempiras released. No oracle, no AMM, no algorithmic stabilizer needed. HNDA is the counterparty — identical in structure to how USDC works with Circle.
+
+#### Pentest results summary
+All 10 attack vectors tested — 8 passed clean, 2 bugs found and fixed during the session:
+- **Fixed:** Malformed JSON returned 500 → now returns 400
+- **Fixed:** Oversized payload returned unhandled → now returns 413
+- Full report: `Organization and Research/Security/2026-04-07_pentest_report.md`
+
+#### Next session agenda
+1. Pilot preparation — Reina onboarding
+2. M2 security fix — user-owned data auth (IDOR on `/api/users/:id`) — before mainnet
+3. aiControl workstation setup (Ollama + Qwen3 + Hermes Agent)
