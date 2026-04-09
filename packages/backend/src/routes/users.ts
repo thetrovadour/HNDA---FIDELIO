@@ -1,7 +1,7 @@
 import { Router, Request, Response } from 'express';
 import { z } from 'zod';
 import { validate } from '../middleware/validate';
-import { adminAuth } from '../middleware/auth';
+import { adminAuth, selfOrAdmin } from '../middleware/auth';
 import { UserService } from '../services/user_service';
 import { TransactionService } from '../services/transaction_service';
 
@@ -23,7 +23,7 @@ export function usersRouter(userService: UserService, transactionService: Transa
     }
   });
 
-  router.get('/:id', adminAuth, async (req: Request, res: Response) => {
+  router.get('/:id', selfOrAdmin, async (req: Request, res: Response) => {
     const user = await userService.getUser(req.params.id);
     if (!user) {
       res.status(404).json({ error: 'User not found', code: 'NOT_FOUND' });
@@ -32,7 +32,7 @@ export function usersRouter(userService: UserService, transactionService: Transa
     res.status(200).json({ data: user });
   });
 
-  router.get('/:id/transactions', adminAuth, async (req: Request, res: Response) => {
+  router.get('/:id/transactions', selfOrAdmin, async (req: Request, res: Response) => {
     const page = parseInt(req.query.page as string) || 1;
     const limit = parseInt(req.query.limit as string) || 20;
     const result = await transactionService.getUserTransactions(req.params.id, page, limit);

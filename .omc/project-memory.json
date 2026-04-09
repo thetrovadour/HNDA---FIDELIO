@@ -101,14 +101,20 @@
   "hotPaths": [
     {
       "path": "CLAUDE.md",
-      "accessCount": 31,
-      "lastAccessed": 1775531331623,
+      "accessCount": 35,
+      "lastAccessed": 1775696872772,
       "type": "file"
     },
     {
       "path": "packages/backend/src/app.ts",
       "accessCount": 15,
       "lastAccessed": 1775530651899,
+      "type": "file"
+    },
+    {
+      "path": "packages/backend/src/routes/users.ts",
+      "accessCount": 13,
+      "lastAccessed": 1775614742989,
       "type": "file"
     },
     {
@@ -121,12 +127,6 @@
       "path": "packages/contracts/test/CATRToken.test.ts",
       "accessCount": 10,
       "lastAccessed": 1775529751918,
-      "type": "file"
-    },
-    {
-      "path": "packages/backend/src/routes/users.ts",
-      "accessCount": 9,
-      "lastAccessed": 1775530074588,
       "type": "file"
     },
     {
@@ -190,6 +190,12 @@
       "type": "file"
     },
     {
+      "path": "Organization and Research/Fidelio-Architecture-Planv1.1.md",
+      "accessCount": 5,
+      "lastAccessed": 1775696385493,
+      "type": "file"
+    },
+    {
       "path": "packages/merlink/bridge/.env.example",
       "accessCount": 4,
       "lastAccessed": 1775521041935,
@@ -230,6 +236,12 @@
       "accessCount": 3,
       "lastAccessed": 1775518670974,
       "type": "file"
+    },
+    {
+      "path": "packages/backend/src",
+      "accessCount": 3,
+      "lastAccessed": 1775614445097,
+      "type": "directory"
     },
     {
       "path": "ClaudeProfile/CLAUDE.md",
@@ -278,18 +290,6 @@
       "accessCount": 2,
       "lastAccessed": 1775510138651,
       "type": "file"
-    },
-    {
-      "path": "Organization and Research/Fidelio-Architecture-Planv1.1.md",
-      "accessCount": 2,
-      "lastAccessed": 1775511365089,
-      "type": "file"
-    },
-    {
-      "path": "packages/backend/src",
-      "accessCount": 2,
-      "lastAccessed": 1775530105336,
-      "type": "directory"
     },
     {
       "path": "Organization and Research/Seasons/Season 1: C++ and a new Journey ahead.md",

@@ -25,7 +25,7 @@ For additional project context, see `Organization and Research/Fidelio-Architect
 
 ---
 
-**Current status (as of 2026-04-06):**
+**Current status (as of 2026-04-08):**
 
 | Phase | Deliverable | Status |
 |---|---|---|
@@ -678,3 +678,81 @@ All 10 attack vectors tested — 8 passed clean, 2 bugs found and fixed during t
 1. Pilot preparation — Reina onboarding
 2. M2 security fix — user-owned data auth (IDOR on `/api/users/:id`) — before mainnet
 3. aiControl workstation setup (Ollama + Qwen3 + Hermes Agent)
+
+---
+
+### Session 10 — 2026-04-08
+
+#### What happened
+- **Season 5 started** — wallet-connect UI integration (RainbowKit + wagmi)
+- **Next.js App Router fixed** — all routes now building and serving correctly
+- **F1 complete** — Connect Wallet button live in navbar on all pages
+
+#### Bugs found and fixed
+
+**1. Empty `packages/web/app/` directory shadowing `src/app/`.**
+Next.js finds the first `app/` directory it encounters. An empty `packages/web/app/` existed at root level, so Next.js used it (zero routes) and ignored `src/app/` entirely. Fix: removed the empty directory.
+
+**2. wagmi version conflict (v3 local vs v2 root).**
+`packages/web` had wagmi@3.6.1 installed locally. Root monorepo had wagmi@2.19.5. RainbowKit@2 requires wagmi@2. Two versions created two separate React contexts — `ConnectButton` couldn't find `WagmiProvider`. Fix: deleted lock file, removed local node_modules, fresh install from root. wagmi@2.19.5 now resolves from root.
+
+**3. Turborepo `pipeline` → `tasks` rename.**
+`turbo.json` used the old `pipeline` field (Turbo 1.x). Turbo 2.x requires `tasks`. Fixed.
+
+**4. Missing `packageManager` field.**
+Root `package.json` lacked `"packageManager": "npm@10.9.2"`. Turbo 2.x requires it for workspace resolution. Fixed.
+
+#### Config changes
+- `packages/web/.env.local` — `NEXT_PUBLIC_WALLETCONNECT_PROJECT_ID` set to live Reown project ID
+- `packages/web/src/app/layout.tsx` — added RainbowKit CSS, `globals.css`, `Providers` wrapper
+- `packages/web/src/app/providers.tsx` — `Navbar` moved inside provider tree so `ConnectButton` always has wagmi context
+- `packages/web/src/app/page.tsx` — restored redirect to `/client`
+- `packages/web/package.json` — wagmi pinned to `^2.19.5`
+- `turbo.json` — `pipeline` renamed to `tasks`
+- `package.json` (root) — added `"packageManager": "npm@10.9.2"`
+
+#### Next session agenda
+1. Faster filesystem — move `.next/dev` or full project to native Linux path to resolve WSL2 slowness warning
+2. F2 — network guard: lock users to Base Sepolia, show warning if wrong network
+3. Pilot preparation — Reina onboarding
+4. M2 security fix — IDOR on `/api/users/:id`
+
+---
+
+### Session 11 — 2026-04-08 (thinking session)
+
+#### What happened
+- **Season 5 closed** — open questions documented, Season 6 opened
+- **Home pilot designed** — sibling test with CATR + GCA at home on localhost
+- **GCA architecture settled** — full tokenomics reviewed against whitepaper
+- **Multi-bank parser strategy decided** — dynamic template engine, not hardcoded parsers
+
+#### Key decisions from this session
+
+**1. Home pilot uses manual confirmation first.**
+Sibling deposits HNL to Cristian's BAC account. Cristian approves via admin dashboard. CATR mints. Automatic parsing comes after the manual flow is proven.
+
+**2. Email parser becomes a template engine.**
+Instead of a BAC parser and an Atlántida parser, a single engine loads bank templates (JSON/YAML config files) at startup. Matching is done by sender domain. New bank = new config file, no code change. This is the architecture that scales to any country.
+
+**3. GCA deployed in simplified form for the home pilot.**
+1,200 GCA gifted to merchant-siblings at registration. Daily dividends (instead of monthly) for fast visual feedback. No vesting. Both CATR and GCA contracts redeployed after pilot.
+
+**4. GCA stays internal — not tradeable.**
+Making GCA tradeable creates regulatory exposure (security classification). Ruled out. GCA is a restricted participation token, non-transferable outside the network.
+
+**5. GCA's entropy mechanism is honest — no forced decay needed.**
+The whitepaper already has it: exit burn (merchants return GCA on departure), dividend pressure (shrinking revenue = shrinking dividends), vesting lock (illiquid for years). No artificial decay rate required.
+
+**6. GCA value is backed by HNDA's revenue, not the vault.**
+CATR is backed by HNL in the vault (1:1). GCA is backed by HNDA's growth — commission revenue distributed as dividends. At 1,000 active merchants: ~$12 USD/GCA, ~$876 USD/year per merchant holding 1,200 GCA.
+
+**7. Whitepaper (v1.0, March 2026) is now indexed.**
+Full document at `Organization and Research/Whitepaper_CATR_GUACA_v1_APA.pdf`. Key numbers: 3,000,000 GCA cap, 1,200 GCA per merchant, 67% USDT / 33% fiat vault, progressive dividend structure (20%→40%→60% by etapa).
+
+#### Next session agenda
+1. Deploy simplified `GCAToken.sol` alongside CATR on Base Sepolia
+2. Home pilot UI — visual dashboards for non-technical siblings
+3. Email parser template engine — dynamic multi-bank config system
+4. F2 — network guard (lock to Base Sepolia)
+5. M2 — IDOR fix on `/api/users/:id`
