@@ -1,3 +1,79 @@
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
+
+:root {
+  --font-space: 'Space Grotesk', sans-serif;
+}
+
+* {
+  box-sizing: border-box;
+  -webkit-tap-highlight-color: transparent;
+}
+
+body {
+  font-family: var(--font-space), system-ui, sans-serif;
+  background: #060d10;
+  color: #FFFFFF;
+  overscroll-behavior: none;
+}
+
+/* ── Keyframes ─────────────────────────────────────── */
+
+@keyframes pulse-glow {
+  0%, 100% { box-shadow: 0 0 0 0 rgba(255, 255, 255, 0.4), 0 0 24px rgba(201,168,76,0.2); }
+  50%       { box-shadow: 0 0 0 12px rgba(255, 216, 87, 0), 0 0 48px rgba(189, 185, 174, 0.4); }
+}
+
+@keyframes fade-up {
+  from { opacity: 0; transform: translateY(16px); }
+  to   { opacity: 1; transform: translateY(0); }
+} 
+
+@keyframes slide-in-right {
+  from { opacity: 0; transform: translateX(24px); }
+  to   { opacity: 1; transform: translateX(0); }
+}
+
+@keyframes slide-in-left {
+  from { opacity: 0; transform: translateX(-24px); }
+  to   { opacity: 1; transform: translateX(0); }
+}
+
+@keyframes counter-up {
+  from { opacity: 0; transform: translateY(8px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes shimmer {
+  0%   { background-position: -100% center; }
+  100% { background-position: 100% center; }
+}
+
+/* ── Utility classes ──────────────────────────────── */
+
+.animate-pulse-glow   { animation: pulse-glow 3s ease-in-out infinite; }
+.animate-fade-up      { animation: fade-up 0.4s ease both; }
+.animate-slide-right  { animation: slide-in-right 0.3s ease both; }
+.animate-slide-left   { animation: slide-in-left 0.3s ease both; }
+.animate-counter-up   { animation: counter-up 0.5s ease both; }
+
+.shimmer-text {
+  background: linear-gradient(90deg, #C9A84C 0%, #cccbca 40%, #C9A84C 60%, #C9A84C 100%);
+  background-size: 300% auto;
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  animation: shimmer 9s linear infinite;
+}
+
+/* ── Scrollbar ────────────────────────────────────── */
+
+::-webkit-scrollbar { width: 4px; }
+::-webkit-scrollbar-track { background: #080C14; }
+::-webkit-scrollbar-thumb { background: #1E2A40; border-radius: 4px; }
+
+/* ── Input reset ──────────────────────────────────── */
+
+input[type='number']::-webkit-inner-spin-button,
+input[type='number']::-webkit-outer-spin-button { -webkit-appearance: none; }

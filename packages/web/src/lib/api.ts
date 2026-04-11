@@ -1,4 +1,5 @@
-const BASE = process.env.BACKEND_URL ?? 'http://localhost:3001';
+const BASE = process.env.NEXT_PUBLIC_BACKEND_URL ?? process.env.BACKEND_URL ?? 'http://localhost:3001';
+if (typeof window !== 'undefined') console.log('[FIDELIO] BACKEND_URL =', BASE);
 
 async function apiFetch<T>(path: string, options?: RequestInit): Promise<T> {
   const res = await fetch(`${BASE}${path}`, options);
@@ -15,6 +16,23 @@ function authHeaders(token: string): HeadersInit {
 
 function jsonHeaders(): HeadersInit {
   return { 'Content-Type': 'application/json' };
+}
+
+// --- Auth ---
+
+export function pilotLogin(body: { full_name: string; pin: string }) {
+  return apiFetch<{
+    data: {
+      user: UserRecord;
+      transactions: Transaction[];
+      milestones: Milestone[];
+      merchants: Merchant[];
+    };
+  }>('/api/auth/pilot-login', {
+    method: 'POST',
+    headers: jsonHeaders(),
+    body: JSON.stringify(body),
+  });
 }
 
 // --- User ---

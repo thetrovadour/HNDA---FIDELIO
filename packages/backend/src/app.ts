@@ -17,6 +17,7 @@ import { walletsRouter } from './routes/wallets';
 import { merchantsRouter } from './routes/merchants';
 import { transactionsRouter } from './routes/transactions';
 import { rewardsRouter } from './routes/rewards';
+import { authRouter } from './routes/auth';
 
 const globalLimiter = rateLimit({
   windowMs: 15 * 60 * 1000,
@@ -47,6 +48,7 @@ export function createApp(): express.Application {
 
   // Routes
   app.use('/health', healthRouter());
+  app.use('/api/auth', sensitiveLimiter, authRouter());
   app.use('/internal/bridge', sensitiveLimiter, bridgeAuth, bridgeEventsRouter(mintService));
   app.use('/api/users', usersRouter(userService, transactionService));
   app.use('/api/wallets', walletsRouter(userService));

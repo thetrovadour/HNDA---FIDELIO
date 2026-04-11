@@ -1,6 +1,6 @@
 {
   "version": "1.0.0",
-  "lastScanned": 1775608392968,
+  "lastScanned": 1775846562898,
   "projectRoot": "/home/cristian-rodriguez/proyectos/HNDA---FIDELIO",
   "techStack": {
     "languages": [
@@ -52,7 +52,7 @@
       "path": "ClaudeProfile",
       "purpose": null,
       "fileCount": 1,
-      "lastAccessed": 1775608392946,
+      "lastAccessed": 1775846562884,
       "keyFiles": [
         "CLAUDE.md"
       ]
@@ -60,28 +60,28 @@
     "Organization and Research": {
       "path": "Organization and Research",
       "purpose": null,
-      "fileCount": 6,
-      "lastAccessed": 1775608392948,
+      "fileCount": 8,
+      "lastAccessed": 1775846562886,
       "keyFiles": [
         "FIDELIO-Learning-Plan.md",
         "Fidelio-Architecture-Planv1.1.md",
-        "deployment-steps.md",
-        "learning-plan.md",
-        "organization-explanation.md"
+        "Whitepaper_CATR_GUACA_v1_APA.pdf",
+        "Whitepaper_CATR_GUACA_v1_APA.pdf:Zone.Identifier",
+        "deployment-steps.md"
       ]
     },
     "packages": {
       "path": "packages",
       "purpose": null,
       "fileCount": 0,
-      "lastAccessed": 1775608392956,
+      "lastAccessed": 1775846562890,
       "keyFiles": []
     },
     "reviews": {
       "path": "reviews",
       "purpose": null,
       "fileCount": 2,
-      "lastAccessed": 1775608392958,
+      "lastAccessed": 1775846562891,
       "keyFiles": [
         "2026-04-06_security_review.md",
         "2026-04-06_security_review_2.0.md"
@@ -91,7 +91,7 @@
       "path": "website",
       "purpose": null,
       "fileCount": 2,
-      "lastAccessed": 1775608392961,
+      "lastAccessed": 1775846562894,
       "keyFiles": [
         "website.html",
         "webspage-plan.md"
@@ -101,20 +101,20 @@
   "hotPaths": [
     {
       "path": "CLAUDE.md",
-      "accessCount": 35,
-      "lastAccessed": 1775696872772,
+      "accessCount": 43,
+      "lastAccessed": 1775698267573,
       "type": "file"
     },
     {
       "path": "packages/backend/src/app.ts",
-      "accessCount": 15,
-      "lastAccessed": 1775530651899,
+      "accessCount": 17,
+      "lastAccessed": 1775921558724,
       "type": "file"
     },
     {
       "path": "packages/backend/src/routes/users.ts",
-      "accessCount": 13,
-      "lastAccessed": 1775614742989,
+      "accessCount": 15,
+      "lastAccessed": 1775921566198,
       "type": "file"
     },
     {
