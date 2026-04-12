@@ -3,6 +3,7 @@ dotenv.config();
 
 import { Minter } from './minter';
 import { SocketServer } from './socket_server';
+import { HttpServer } from './http_server';
 
 const SOCKET_PATH = process.env.SOCKET_PATH ?? '/tmp/merlink.sock';
 
@@ -25,13 +26,17 @@ class NoopContractLike {
 }
 
 const effectiveMinter = minter ?? new Minter(new NoopContractLike());
+const HTTP_PORT = parseInt(process.env.BRIDGE_HTTP_PORT ?? '3002', 10);
+
 const server = new SocketServer(effectiveMinter, SOCKET_PATH);
+const httpServer = new HttpServer(effectiveMinter, HTTP_PORT);
 
 server.listen();
+httpServer.listen();
 
 function shutdown(): void {
   console.log('[bridge] Shutting down...');
-  server.close().then(() => {
+  Promise.all([server.close(), httpServer.close()]).then(() => {
     process.exit(0);
   });
 }

@@ -1,6 +1,6 @@
 {
   "version": "1.0.0",
-  "lastScanned": 1775846562898,
+  "lastScanned": 1775938543800,
   "projectRoot": "/home/cristian-rodriguez/proyectos/HNDA---FIDELIO",
   "techStack": {
     "languages": [
@@ -52,7 +52,7 @@
       "path": "ClaudeProfile",
       "purpose": null,
       "fileCount": 1,
-      "lastAccessed": 1775846562884,
+      "lastAccessed": 1775938543786,
       "keyFiles": [
         "CLAUDE.md"
       ]
@@ -61,7 +61,7 @@
       "path": "Organization and Research",
       "purpose": null,
       "fileCount": 8,
-      "lastAccessed": 1775846562886,
+      "lastAccessed": 1775938543787,
       "keyFiles": [
         "FIDELIO-Learning-Plan.md",
         "Fidelio-Architecture-Planv1.1.md",
@@ -74,14 +74,14 @@
       "path": "packages",
       "purpose": null,
       "fileCount": 0,
-      "lastAccessed": 1775846562890,
+      "lastAccessed": 1775938543793,
       "keyFiles": []
     },
     "reviews": {
       "path": "reviews",
       "purpose": null,
       "fileCount": 2,
-      "lastAccessed": 1775846562891,
+      "lastAccessed": 1775938543794,
       "keyFiles": [
         "2026-04-06_security_review.md",
         "2026-04-06_security_review_2.0.md"
@@ -91,7 +91,7 @@
       "path": "website",
       "purpose": null,
       "fileCount": 2,
-      "lastAccessed": 1775846562894,
+      "lastAccessed": 1775938543796,
       "keyFiles": [
         "website.html",
         "webspage-plan.md"
@@ -107,14 +107,14 @@
     },
     {
       "path": "packages/backend/src/app.ts",
-      "accessCount": 17,
-      "lastAccessed": 1775921558724,
+      "accessCount": 23,
+      "lastAccessed": 1775949848325,
       "type": "file"
     },
     {
       "path": "packages/backend/src/routes/users.ts",
-      "accessCount": 15,
-      "lastAccessed": 1775921566198,
+      "accessCount": 16,
+      "lastAccessed": 1775949773184,
       "type": "file"
     },
     {
@@ -161,20 +161,20 @@
     },
     {
       "path": "package.json",
-      "accessCount": 6,
-      "lastAccessed": 1775510376679,
+      "accessCount": 7,
+      "lastAccessed": 1775949543755,
+      "type": "file"
+    },
+    {
+      "path": "packages/merlink/bridge/package.json",
+      "accessCount": 7,
+      "lastAccessed": 1775949550303,
       "type": "file"
     },
     {
       "path": "packages/merlink/bridge/src/minter.ts",
       "accessCount": 6,
       "lastAccessed": 1775572088265,
-      "type": "file"
-    },
-    {
-      "path": "packages/merlink/bridge/package.json",
-      "accessCount": 6,
-      "lastAccessed": 1775572437688,
       "type": "file"
     },
     {
@@ -202,6 +202,30 @@
       "type": "file"
     },
     {
+      "path": "packages/backend/src",
+      "accessCount": 4,
+      "lastAccessed": 1775941862720,
+      "type": "directory"
+    },
+    {
+      "path": "packages/backend/package.json",
+      "accessCount": 4,
+      "lastAccessed": 1775949550349,
+      "type": "file"
+    },
+    {
+      "path": "turbo.json",
+      "accessCount": 4,
+      "lastAccessed": 1775949553746,
+      "type": "file"
+    },
+    {
+      "path": "packages/backend/src/types.ts",
+      "accessCount": 4,
+      "lastAccessed": 1775949828126,
+      "type": "file"
+    },
+    {
       "path": "packages/merlink/core/tests/nfc_reader_test.cpp",
       "accessCount": 3,
       "lastAccessed": 1774928144710,
@@ -220,28 +244,10 @@
       "type": "file"
     },
     {
-      "path": "turbo.json",
-      "accessCount": 3,
-      "lastAccessed": 1775101987045,
-      "type": "file"
-    },
-    {
-      "path": "packages/backend/package.json",
-      "accessCount": 3,
-      "lastAccessed": 1775510240402,
-      "type": "file"
-    },
-    {
       "path": "packages/contracts/.env.example",
       "accessCount": 3,
       "lastAccessed": 1775518670974,
       "type": "file"
-    },
-    {
-      "path": "packages/backend/src",
-      "accessCount": 3,
-      "lastAccessed": 1775614445097,
-      "type": "directory"
     },
     {
       "path": "ClaudeProfile/CLAUDE.md",
@@ -283,12 +289,6 @@
       "path": "packages/merlink/bridge/tests/minter.test.ts",
       "accessCount": 2,
       "lastAccessed": 1775101986097,
-      "type": "file"
-    },
-    {
-      "path": "packages/backend/src/types.ts",
-      "accessCount": 2,
-      "lastAccessed": 1775510138651,
       "type": "file"
     },
     {

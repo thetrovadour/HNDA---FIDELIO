@@ -684,3 +684,62 @@ HNDA/
 ## MerL1nk Long-Term Vision
 
 When FIDELIO scales, MerL1nk becomes a standalone product — a payments intelligence layer that any Central American fintech could license. The C++ core's architecture (hardware interface + validation + retry queue + monitoring) is generic enough to serve any payment network that needs a bridge between the physical world and a blockchain. That is a separate business line that emerges naturally from what is built for FIDELIO.
+---
+
+## Privacy & Sovereignty Vision
+
+*Added 2026-04-11 — emerged from brainstorming session on network infrastructure independence.*
+
+### Core Principle
+
+**Honduran people's business is Honduran people's business.**
+
+FIDELIO's long-term architectural goal is to minimize the number of foreign entities in the critical path of a Honduran financial transaction. Transparency and auditability are achieved through the blockchain — not through dependence on American infrastructure companies.
+
+### Why CATR Must Be On-Chain
+
+CATR is not a points balance in a database. It is a loyalty token that must be:
+- **Auditable** — any participant can verify any balance at any time
+- **Transparent** — every mint, burn, and transfer is permanently recorded
+- **Honest** — no central party can silently inflate or erase balances
+
+These properties only exist on a public blockchain. A Postgres table controlled by HNDA cannot provide them. The chain is not a technical choice — it is a trust guarantee.
+
+### Wallet Strategy
+
+H-Wallets are the default. External wallets are the opt-in.
+
+When a client registers with FIDELIO:
+- **Default path** → FIDELIO generates an H-Wallet. The client needs no crypto knowledge. They have an account.
+- **Power user path** → Client connects their own EVM-compatible wallet (MetaMask or any other). FIDELIO accepts the address and uses it.
+
+From the contract's perspective, both are just addresses. The chain does not care who generated the keypair.
+
+| | H-Wallet (default) | External wallet (opt-in) |
+|---|---|---|
+| Key generation | HNDA infrastructure | User's device |
+| Key custody | HNDA | User |
+| User experience | Invisible — just an account | Requires external wallet app |
+| Sovereignty | HNDA sovereign | User sovereign |
+| Migration control | HNDA controls it | User must act |
+| Target user | Most Hondurans | Crypto-native users |
+
+**Current state:** Wallet address generation is not yet implemented. The `POST /api/wallets` endpoint accepts an externally-supplied address. Key generation is the next infrastructure decision.
+
+### Infrastructure Sovereignty Roadmap
+
+This is a long-term transformation, not a sprint. Each layer is independent.
+
+| Layer | Current state | Sovereign target |
+|---|---|---|
+| RPC node | Infura (via MetaMask/ethers default) | Self-hosted Base node on Honduran hardware |
+| Key generation | Not yet implemented | Dedicated H-Wallet key management service |
+| Key custody | TBD | HNDA-controlled HSM or encrypted store |
+| Frontend wallet SDK | RainbowKit + WalletConnect cloud | Custom wallet connector, no cloud dependency |
+
+**Obstacles to be aware of:**
+1. Running a Base node requires 1-2TB storage, stable power, and 24/7 uptime — real operational risk in Honduras
+2. Self-custodying private keys makes HNDA the bank — requires HSM-grade security thinking
+3. Base L2 is controlled by Coinbase — true chain sovereignty would require an HNDA L2 (long-term ceiling)
+4. Regulatory surface: CNBS may view sovereign infrastructure as a licensing question
+

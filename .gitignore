@@ -2,3 +2,4 @@ node_modules/
 packages/merlink/core/build/
 .env
 reviews/
+PILOT_KEYS.md

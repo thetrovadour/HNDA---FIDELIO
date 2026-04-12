@@ -228,6 +228,33 @@ Payout authorization: <50 CATR → auto | 50–500 → admin approval | >500 →
 
 ---
 
+## Privacy & Sovereignty Principles
+
+*Established 2026-04-11.*
+
+**Core principle: Honduran people's business is Honduran people's business.**
+
+FIDELIO's long-term goal is to minimize foreign entities in the critical path of a Honduran financial transaction. This is not a threat response — it is a sovereignty stance.
+
+### Why CATR must be on-chain
+CATR is a loyalty token, not a database row. It must be auditable, transparent, and honest. Those guarantees only exist on a public blockchain. The chain is a trust guarantee, not just a technical choice.
+
+### Wallet strategy
+- **H-Wallets are the default** — FIDELIO generates a wallet for every new client. No crypto knowledge required.
+- **External wallets are the opt-in** — clients with MetaMask or any EVM wallet can connect their own address instead.
+- From the contract's perspective, both are just addresses. The chain does not care who generated the keypair.
+- **Current state:** Wallet generation is not yet implemented. `POST /api/wallets` accepts an externally-supplied address. Key generation is the next infrastructure decision.
+
+### Long-term infrastructure sovereignty (roadmap, not sprint)
+1. Swap Infura RPC for a self-hosted Base node on Honduran hardware
+2. Build H-Wallet key management service — HNDA generates and custodies keypairs
+3. Replace RainbowKit/WalletConnect cloud with a custom wallet connector
+4. Long-term ceiling: HNDA L2 — Base is controlled by Coinbase
+
+Full analysis in `Organization and Research/Fidelio-Architecture-Planv1.1.md` → *Privacy & Sovereignty Vision* section.
+
+---
+
 ## Test Reports
 
 Saved in `packages/merlink/core/tests/reports/`:
@@ -245,6 +272,22 @@ Saved in `packages/contracts/tests/reports/`:
 
 Saved in `packages/contracts/Efficiency/`:
 - `2026-03-31_CATRToken_Gas_Analysis.md`
+
+---
+
+## HNDA---WALLETS
+
+Sovereign wallet infrastructure — the Honduran answer to MetaMask. Lives in `HNDA---WALLETS/`.
+
+**Status:** Vision phase. FIDELIO reaches production first.
+
+| Component | Purpose |
+|---|---|
+| `app/` | Self-custody wallet app (HNWallet) |
+| `node/` | HNDA-operated Base node — replaces Infura |
+| `keyvault/` | Key generation service for H-Wallets (FIDELIO custodial wallets) |
+
+See `HNDA---WALLETS/CLAUDE.md` for full context.
 
 ---
 

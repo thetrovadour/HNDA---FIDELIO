@@ -5,8 +5,9 @@ import { getMerchants, type Merchant } from '@/lib/api';
 import MerchantList from '@/components/MerchantList';
 import RedemptionQueue from '@/components/RedemptionQueue';
 import RewardPayoutQueue from '@/components/RewardPayoutQueue';
+import AwardPoints from '@/components/AwardPoints';
 
-type Tab = 'merchants' | 'redemptions' | 'payouts';
+type Tab = 'merchants' | 'redemptions' | 'payouts' | 'award';
 
 export default function AdminPage() {
   const [tokenInput, setTokenInput] = useState('');
@@ -39,6 +40,7 @@ export default function AdminPage() {
     merchants: 'Merchants',
     redemptions: 'Redemptions',
     payouts: 'Reward Payouts',
+    award: 'Award Points',
   };
 
   if (!token) {
@@ -114,6 +116,12 @@ export default function AdminPage() {
       {tab === 'payouts' && (
         <section>
           <RewardPayoutQueue token={token} />
+        </section>
+      )}
+
+      {tab === 'award' && (
+        <section>
+          <AwardPoints token={token} />
         </section>
       )}
     </div>

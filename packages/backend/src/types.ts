@@ -1,6 +1,6 @@
 // ─── Payment source (mirrors bridge types.ts exactly) ────────────────────────
 
-export type PaymentSource = 'EMAIL' | 'NFC' | 'WEBHOOK';
+export type PaymentSource = 'EMAIL' | 'NFC' | 'WEBHOOK' | 'ADMIN';
 
 // ─── DTOs — what the bridge POSTs to the backend ─────────────────────────────
 

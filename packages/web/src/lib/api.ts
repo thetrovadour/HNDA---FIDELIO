@@ -128,6 +128,25 @@ export function rejectRedemption(id: string, token: string) {
   });
 }
 
+// --- Admin ---
+
+export function getAdminUsers(token: string) {
+  return apiFetch<{ data: AdminUser[] }>('/api/admin/users', {
+    headers: authHeaders(token),
+  });
+}
+
+export function adminMint(body: { user_id: string; amount: number }, token: string) {
+  return apiFetch<{ data: { reference_code: string; wallet_address: string; amount: number } }>(
+    '/api/admin/mint',
+    {
+      method: 'POST',
+      headers: authHeaders(token),
+      body: JSON.stringify(body),
+    }
+  );
+}
+
 // --- Reward queue ---
 
 export function getRewardQueue(token: string) {
@@ -192,4 +211,11 @@ export interface RewardPayout {
   amount_catr: string;
   status: string;
   created_at: string;
+}
+
+export interface AdminUser {
+  id: string;
+  full_name: string;
+  email: string;
+  wallet: { address: string; catr_balance: string } | null;
 }

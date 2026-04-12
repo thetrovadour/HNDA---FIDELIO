@@ -5,6 +5,7 @@ const MINT_ABI = ['function mint(address to, uint256 amount)'];
 
 export interface MintResult {
   success: true;
+  tx_hash: string;
 }
 
 export interface MintFailure {
@@ -45,8 +46,9 @@ export class Minter {
     try {
       const amountCATR = ethers.parseUnits(event.amount_lempiras.toString(), 18);
       const tx = await this.contract.mint(event.client_wallet, amountCATR);
-      await tx.wait();
-      return { success: true };
+      const receipt = await tx.wait() as { hash?: string } | null;
+      const tx_hash = (tx as unknown as { hash: string }).hash ?? receipt?.hash ?? '';
+      return { success: true, tx_hash };
     } catch (err) {
       const reason = err instanceof Error ? err.message : String(err);
       return { success: false, reason };

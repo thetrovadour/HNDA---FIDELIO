@@ -733,7 +733,11 @@ function NegocioTab({ merchants }: { merchants: Merchant[] }) {
 
 // ─── Tab 3: Admin ─────────────────────────────────────────────────────────────
 
+const ADMIN_PIN   = process.env.NEXT_PUBLIC_ADMIN_PIN   ?? '';
+const ADMIN_TOKEN = process.env.NEXT_PUBLIC_ADMIN_TOKEN ?? '';
+
 function AdminTab() {
+  const [pin, setPin] = useState('');
   const [token, setToken] = useState('');
   const [loaded, setLoaded] = useState(false);
   const [loading, setLoading] = useState(false);
@@ -747,19 +751,21 @@ function AdminTab() {
   const [mintMsg, setMintMsg] = useState('');
 
   async function loadAdmin() {
-    if (!token.trim()) return;
+    if (pin !== ADMIN_PIN) { setError('PIN incorrecto.'); return; }
+    const jwt = ADMIN_TOKEN;
     setLoading(true);
     setError('');
     try {
       const [rRes, pRes] = await Promise.all([
-        getRedemptions(token, { status: 'PENDING_BURN' }),
-        getRewardQueue(token),
+        getRedemptions(jwt, { status: 'PENDING_BURN' }),
+        getRewardQueue(jwt),
       ]);
+      setToken(jwt);
       setRedemptions(rRes.data);
       setPayouts(pRes.data);
       setLoaded(true);
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Token inválido.');
+      setError(err instanceof Error ? err.message : 'Error al cargar datos de admin.');
     } finally {
       setLoading(false);
     }
@@ -805,11 +811,13 @@ function AdminTab() {
         <Section title="Acceso Admin">
           <div className="flex flex-col gap-4">
             <Input
-              label="Token de administrador"
+              label="PIN de administrador"
               type="password"
-              value={token}
-              onChange={(e) => setToken(e.target.value)}
-              placeholder="••••••••"
+              inputMode="numeric"
+              maxLength={4}
+              value={pin}
+              onChange={(e) => setPin(e.target.value)}
+              placeholder="••••"
             />
             {error && <StatusMsg type="error" msg={error} />}
             <PrimaryBtn onClick={loadAdmin} disabled={loading}>

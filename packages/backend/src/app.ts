@@ -18,6 +18,7 @@ import { merchantsRouter } from './routes/merchants';
 import { transactionsRouter } from './routes/transactions';
 import { rewardsRouter } from './routes/rewards';
 import { authRouter } from './routes/auth';
+import { adminRouter } from './routes/admin';
 
 const globalLimiter = rateLimit({
   windowMs: 15 * 60 * 1000,
@@ -28,14 +29,18 @@ const globalLimiter = rateLimit({
 
 const sensitiveLimiter = rateLimit({
   windowMs: 15 * 60 * 1000,
-  max: 20,
+  max: 300,
   standardHeaders: true,
   legacyHeaders: false,
 });
 
 export function createApp(): express.Application {
   const app = express();
-  app.use(cors({ origin: process.env.ALLOWED_ORIGIN || 'http://localhost:3000' }));
+  const allowedOrigins = (process.env.ALLOWED_ORIGIN || 'http://localhost:3000').split(',').map(o => o.trim());
+  app.use(cors({ origin: (origin, cb) => {
+    if (!origin || allowedOrigins.some(o => origin.startsWith(o))) return cb(null, true);
+    cb(new Error('Not allowed by CORS'));
+  }}));
   app.use(express.json({ limit: '100kb' }));
   app.use(globalLimiter);
 
@@ -56,6 +61,7 @@ export function createApp(): express.Application {
   app.use('/api/transactions', transactionsRouter(transactionService));
   app.use('/api/redemptions', sensitiveLimiter, redemptionsRouter(redemptionService));
   app.use('/api/rewards', sensitiveLimiter, rewardsRouter());
+  app.use('/api/admin', sensitiveLimiter, adminRouter(mintService));
 
   // Error handler (last middleware)
   app.use(errorHandler);
