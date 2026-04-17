@@ -292,7 +292,7 @@ C++ gives you a strong intuition for types, compilation, and structured thinking
 ~3 weeks (concepts + Solidity + tooling)
 :::
 
-> **FIDELIO context:** This phase covers **Component 1** (CATRToken.sol --- ERC-20 with 0.63% commission, tier limits, Dead Man's Switch), **Component 7** (Gnosis Safe 2/2 multi-sig), and the on-chain layer that the backend interacts with via ethers.js.
+> **FIDELIO context:** This phase covers **Component 1** (CATRToken.sol --- ERC-20 with 1.8% commission, tier limits, Dead Man's Switch), **Component 7** (Gnosis Safe 2/2 multi-sig), and the on-chain layer that the backend interacts with via ethers.js.
 
 Your C++ background is a genuine advantage here --- Solidity's syntax is C-like, it has explicit types, and you already understand concepts like memory vs. storage.
 
@@ -319,7 +319,7 @@ Your C++ background is a genuine advantage here --- Solidity's syntax is C-like,
   | Contract structure | State variables, constructor, functions, events, modifiers | Like a class: members, constructor, methods, logging, decorators |
   | Inheritance + OpenZeppelin | `is ERC20, Pausable, AccessControl` | Like C++ multiple inheritance via `is` keyword |
   | Access control | Roles (`ADMIN`, `MINTER`), `onlyRole` modifier | Why roles instead of a single owner --- separation of power |
-  | Custom transfer logic | The 0.63% commission inside overridden `_transfer` | Like intercepting a virtual function in a base class |
+  | Custom transfer logic | The 1.8% commission inside overridden `_transfer` | Like intercepting a virtual function in a base class |
   | Security patterns | Reentrancy guards, overflow (handled natively in 0.8+), pause | Maps to C++ defensive programming instincts |
 
   :::tip C++ Bridge
@@ -520,9 +520,9 @@ The backend is the bridge between the real world and the blockchain. It's a Node
       D --> E["CATRToken.sol mint() on-chain"]
 
       F[Client pays merchant] --> G["contract.transfer()"]
-      G --> H["_transfer() slices 0.63% commission"]
-      H --> I[75% to HNDA treasury]
-      H --> J[25% to reward pool]
+      G --> H["_transfer() slices 1.8% commission"]
+      H --> I[65% to HNDA treasury]
+      H --> J[35% to reward pool]
       J --> K[Backend detects event]
       K --> L[Updates reward_milestones in PostgreSQL]
       L --> M{Milestone reached?}

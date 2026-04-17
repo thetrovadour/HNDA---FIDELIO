@@ -61,7 +61,7 @@ packages/contracts/
 ```
 
 - **Technology:** Solidity 0.8.x, Hardhat, OpenZeppelin, ethers.js v6
-- **Purpose:** Immutable on-chain rules — token transfers, commission split (0.63%), tier limits, pause/blacklist
+- **Purpose:** Immutable on-chain rules — token transfers, commission split (1.8%), tier limits, pause/blacklist
 - Currently empty — awaiting Phase A implementation
 
 ---

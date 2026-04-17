@@ -55,7 +55,7 @@ Deploy a simplified `GCAToken.sol` now — not for Etapa 2 business logic, but f
 | Initial gift | 1,200 GCA per merchant-sibling | 1,200 GCA per merchant |
 | Vesting | None | 10-year schedule (Year 4, 6, 8, 10) |
 | Dividend frequency | Daily | Monthly |
-| Dividend source | Simulated from commission cut | Real 0.63% revenue |
+| Dividend source | Simulated from commission cut | Real 1.8% revenue |
 | Exit | Return GCA to Cristian | Legal agreement + return |
 
 Both contracts (CATR + GCA) will be redeployed when the home pilot is complete.
@@ -68,7 +68,7 @@ GCA doesn't need a forced decay mechanism. The whitepaper already has the entrop
 
 - GCA is **locked during vesting** — illiquid for years
 - Merchants who **exit the network must return GCA to HNDA** — that's the burn
-- **Dividends are paid from HNDA's 0.63% commission revenue** — if the network shrinks, dividends shrink. Natural pressure.
+- **Dividends are paid from HNDA's 1.8% commission revenue** — if the network shrinks, dividends shrink. Natural pressure.
 - **Supply is capped at 3,000,000 GCA** — no inflation beyond the cap
 
 The "meter a la guaca" analogy is exact. You save it, it grows with the network, and you get paid out over time.
@@ -87,7 +87,7 @@ Making GCA tradeable on secondary markets would make it a security under Hondura
 
 GCA is not backed by the vault (that's CATR). GCA is backed by **HNDA's revenue and growth**. It is equity-like in nature — a participation token, not a stablecoin.
 
-The 0.63% commission is the *source* of dividend payments, but GCA's value is ultimately a function of how many merchants are active and how much volume flows through the network.
+The 1.8% commission is the *source* of dividend payments, but GCA's value is ultimately a function of how many merchants are active and how much volume flows through the network.
 
 At 1,000 active merchants, the whitepaper estimates **~$12 USD per GCA**. A merchant holding 1,200 GCA would receive approximately **$876 USD annually in dividends**.
 
@@ -119,7 +119,7 @@ A brief record of the most important numbers and decisions from the whitepaper, 
 | Dividend at Etapa 2 (100–500 merchants) | 40% |
 | Dividend at Etapa 3 (500–1,000 merchants) | 60% |
 | Vault structure | 67% USDT on Base / 33% HNL fiat |
-| Commission | 0.63% — hardcoded, immutable |
+| Commission | 1.8% — hardcoded, immutable |
 | Gnosis Safe expansion | 2-of-2 (Etapa 1) → 2-of-3 (Etapa 2) |
 | Dead Man's Switch | 30 days no signal → full pause |
 | Zero Knowledge Proof reserves | Published monthly |

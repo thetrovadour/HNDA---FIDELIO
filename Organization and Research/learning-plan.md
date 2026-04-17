@@ -62,7 +62,7 @@ Basic syntax — uint256, address, mapping, struct, require(), function visibili
 Contract structure — state variables (like class members), constructor, functions, events (like logging), modifiers (decorators that wrap functions with preconditions).
 Inheritance and OpenZeppelin — FIDELIO's CATRToken.sol inherits from ERC20, Pausable, and AccessControl. Learn how Solidity's "is" keyword works (like C++ multiple inheritance) and browse the OpenZeppelin contracts.
 Access control — roles (ADMIN, MINTER), onlyRole modifier. Understand why the contract uses roles instead of a single owner.
-Custom transfer logic — the 0.63% commission is calculated inside an overridden _transfer function. Understand how OpenZeppelin's _transfer hook works and how FIDELIO intercepts every transfer to split the commission.
+Custom transfer logic — the 1.8% commission is calculated inside an overridden _transfer function. Understand how OpenZeppelin's _transfer hook works and how FIDELIO intercepts every transfer to split the commission.
 Security patterns — reentrancy guards, integer overflow (Solidity 0.8+ handles this natively), pause mechanisms.
 
 Time estimate: 2–3 weeks.

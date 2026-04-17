@@ -72,8 +72,8 @@ Every CATRToken transfer triggers three `_update` calls inside the overridden fu
 
 ```
 1. sender → recipient    (net amount after commission)
-2. sender → treasury     (75% of 0.63% commission)
-3. sender → rewardPool   (25% of 0.63% commission)
+2. sender → treasury     (65% of 1.8% commission)
+3. sender → rewardPool   (35% of 1.8% commission)
 ```
 
 Each `_update` writes two storage slots (sender balance down, receiver balance up). Storage writes (`SSTORE`) cost 5,000 gas (warm) to 20,000 gas (cold) each. Three updates = six storage writes = the bulk of the overhead.

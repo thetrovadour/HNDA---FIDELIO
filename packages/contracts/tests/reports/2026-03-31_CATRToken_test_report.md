@@ -20,7 +20,7 @@
 | 6 | Supply cap | minting beyond 50M reverts (ERC20ExceededCap) | ✅ Pass |
 | 7 | Burn | MINTER_ROLE can burn from an address | ✅ Pass |
 | 8 | Burn | non-minter cannot burn | ✅ Pass |
-| 9 | Commission | 0.63% split correct on 10,000 CATR transfer | ✅ Pass |
+| 9 | Commission | 1.8% split correct on 10,000 CATR transfer | ✅ Pass |
 | 10 | No commission on mint | treasury + rewardPool unchanged after mint | ✅ Pass |
 | 11 | No commission on burn | treasury + rewardPool unchanged after burn | ✅ Pass |
 | 12 | Admin role | DEFAULT_ADMIN_ROLE can grant MINTER_ROLE | ✅ Pass |
@@ -34,11 +34,11 @@ Transfer of 10,000 CATR:
 
 | Destination | Calculation | Amount |
 |---|---|---|
-| Commission total | 10,000 × 63 / 10,000 | **63 CATR** |
-| → Treasury (75%) | 63 × 75 / 100 | **47.25 CATR** (47,250,000,000,000,000,000 wei) |
-| → RewardPool (25%) | 63 − 47.25 | **15.75 CATR** (15,750,000,000,000,000,000 wei) |
-| → Recipient (net) | 10,000 − 63 | **9,937 CATR** |
-| Total | 47.25 + 15.75 + 9,937 | **10,000 CATR** ✓ (no wei lost) |
+| Commission total | 10,000 × 180 / 10,000 | **180 CATR** |
+| → Treasury (65%) | 180 × 65 / 100 | **117 CATR** |
+| → RewardPool (35%) | 180 − 117 | **63 CATR** |
+| → Recipient (net) | 10,000 − 180 | **9,820 CATR** |
+| Total | 117 + 63 + 9,820 | **10,000 CATR** ✓ (no wei lost) |
 
 ---
 
@@ -47,9 +47,9 @@ Transfer of 10,000 CATR:
 | Invariant | Enforced In | Tested |
 |---|---|---|
 | Supply cap: 50,000,000 CATR | `ERC20Capped` | ✅ Test #6 |
-| 0.63% commission on every transfer | `_update()` override | ✅ Test #9 |
-| 75% commission → treasury | `_update()` override | ✅ Test #9 |
-| 25% commission → rewardPool | `_update()` override | ✅ Test #9 |
+| 1.8% commission on every transfer | `_update()` override | ✅ Test #9 |
+| 65% commission → treasury | `_update()` override | ✅ Test #9 |
+| 35% commission → rewardPool | `_update()` override | ✅ Test #9 |
 | No commission on mint | `from == address(0)` guard | ✅ Test #10 |
 | No commission on burn | `to == address(0)` guard | ✅ Test #11 |
 | MINTER_ROLE required to mint/burn | `onlyRole(MINTER_ROLE)` | ✅ Tests #5, #8 |

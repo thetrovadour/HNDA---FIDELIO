@@ -16,7 +16,7 @@ HNDA (Honduras Nativa Digital Answers) is building **FIDELIO**: a digital loyalt
 
 ## The System in Plain Language
 
-Think of FIDELIO like an arcade. A customer walks in, exchanges real money (Lempiras) for tokens (CATR) at the front desk (payment gateway). They use tokens to pay at game stations (merchants). Merchants collect tokens and trade them back for real money at the front desk (HNDA). A tiny 0.63% slice of every token exchange goes to keeping the arcade running — and part of that slice fuels three reward engines that keep clients coming back. The blockchain is the transparent glass box where everyone can see the rules being followed — but no one needs to understand how the glass box works to play.
+Think of FIDELIO like an arcade. A customer walks in, exchanges real money (Lempiras) for tokens (CATR) at the front desk (payment gateway). They use tokens to pay at game stations (merchants). Merchants collect tokens and trade them back for real money at the front desk (HNDA). A tiny 1.8% slice of every token exchange goes to keeping the arcade running — and part of that slice fuels three reward engines that keep clients coming back. The blockchain is the transparent glass box where everyone can see the rules being followed — but no one needs to understand how the glass box works to play.
 
 ---
 
@@ -277,14 +277,14 @@ backend/src/services/
 |-----------|-------|-----|
 | Standard | ERC-20 + Pausable + AccessControl (OpenZeppelin) | Battle-tested, audited base contracts |
 | Max Supply | 50,000,000 CATR | Whitepaper spec |
-| Commission | 0.63% per transfer, hardcoded | Immutable promise to merchants |
-| Split | 75% → HNDA treasury, 25% → reward pool wallet | Hardcoded in contract |
+| Commission | 1.8% per transfer, hardcoded | Immutable promise to merchants |
+| Split | 65% → HNDA treasury, 35% → reward pool wallet | Hardcoded in contract |
 | Roles | ADMIN (Gnosis Safe), MINTER (MerL1nk Bridge) | Separation of power |
 | Safety | Pause, blacklist, tier limits, Dead Man's Switch (30 days) | Multiple protection layers |
 
-**Key design decision:** The commission is calculated INSIDE the `transfer` function. Every time CATR moves from one wallet to another, the contract automatically slices 0.63% — 75% goes to HNDA, 25% to a reward pool wallet. This cannot be bypassed because it IS the transfer. Think of it like a toll bridge — you cannot cross without paying the toll, because the toll mechanism is the bridge itself.
+**Key design decision:** The commission is calculated INSIDE the `transfer` function. Every time CATR moves from one wallet to another, the contract automatically slices 1.8% — 65% goes to HNDA, 35% to a reward pool wallet. This cannot be bypassed because it IS the transfer. Think of it like a toll bridge — you cannot cross without paying the toll, because the toll mechanism is the bridge itself.
 
-**The 25% goes to a single on-chain reward pool wallet.** The contract does NOT decide how rewards are distributed — it only collects them. The backend manages the three reward engines and triggers payouts from the pool. This keeps the contract simple and the reward rules adjustable without redeployment.
+**The 35% goes to a single on-chain reward pool wallet.** The contract does NOT decide how rewards are distributed — it only collects them. The backend manages the three reward engines and triggers payouts from the pool. This keeps the contract simple and the reward rules adjustable without redeployment.
 
 ### Hybrid Reward System (3-Pool, Off-Chain Logic)
 
@@ -298,9 +298,9 @@ The 25% reward pool is split into three engines managed by the backend:
 
 **How it flows:**
 ```
-Contract: transfer() → 0.63% commission
-  ├── 75% → HNDA treasury wallet (on-chain, automatic)
-  └── 25% → Reward pool wallet (on-chain, automatic)
+Contract: transfer() → 1.8% commission
+  ├── 65% → HNDA treasury wallet (on-chain, automatic)
+  └── 35% → Reward pool wallet (on-chain, automatic)
               │
               └── Backend reads pool balance, tracks per-client:
                   ├── Milestone progress (tx count)           → 10% budget
@@ -525,9 +525,9 @@ Payout size          Authorization required
    Client scans merchant QR → enters "200 CATR" → confirms
    → contract.transfer() executes:
        200 CATR sent
-       0.63% commission = 1.26 CATR deducted
-       0.945 CATR (75%) → HNDA treasury
-       0.315 CATR (25%) → reward pool wallet
+       1.8% commission = 3.6 CATR deducted
+       2.34 CATR (65%) → HNDA treasury
+       1.26 CATR (35%) → reward pool wallet
        Merchant receives 198.74 CATR
    → Backend records tx, updates milestone count + merchant visit log
    → If milestone reached → backend pays reward from pool (tiered auth)

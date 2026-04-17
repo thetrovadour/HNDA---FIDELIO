@@ -99,7 +99,7 @@ describe("CATRToken", function () {
   });
 
   describe("Commission on transfer", function () {
-    it("applies 0.63% commission split correctly on transfer of 10,000 CATR", async function () {
+    it("applies 1.8% commission split correctly on transfer of 10,000 CATR", async function () {
       const { token, minter, treasury, rewardPool, user1, user2 } =
         await loadFixture(deployFixture);
 
@@ -111,13 +111,13 @@ describe("CATRToken", function () {
 
       await token.connect(user1).transfer(user2.address, amount);
 
-      // commission = 10000 * 63 / 10000 = 63 CATR
-      // toTreasury = 63 * 75 / 100 = 47.25 CATR (63e18 * 75 / 100 = 47250000000000000000 wei)
-      // toRewardPool = 63 - 47.25 = 15.75 CATR
-      // recipient receives 10000 - 63 = 9937 CATR
-      const toTreasury = 47250000000000000000n;   // 47.25 CATR in wei
-      const toRewardPool = 15750000000000000000n; // 15.75 CATR in wei
-      const toRecipient = ethers.parseEther("9937");
+      // commission = 10000 * 180 / 10000 = 180 CATR
+      // toTreasury = 180 * 65 / 100 = 117 CATR
+      // toRewardPool = 180 - 117 = 63 CATR
+      // recipient receives 10000 - 180 = 9820 CATR
+      const toTreasury = ethers.parseEther("117");
+      const toRewardPool = ethers.parseEther("63");
+      const toRecipient = ethers.parseEther("9820");
 
       expect(await token.balanceOf(user2.address)).to.equal(toRecipient);
       expect(await token.balanceOf(treasury.address)).to.equal(treasuryBefore + toTreasury);

@@ -1,8 +1,29 @@
 import { Router, Request, Response } from 'express';
+import { Decimal } from '@prisma/client/runtime/library';
+import { PrismaClient } from '@prisma/client';
 import { adminAuth } from '../middleware/auth';
-import db from '../db';
 
-export function rewardsRouter(): Router {
+const RESERVE_FLOOR = new Decimal('0.15'); // 15% minimum pool reserve
+const POOL_SHARE    = new Decimal('0.35'); // 35% of commission goes to reward pool
+
+async function estimatedPoolBalance(db: PrismaClient): Promise<Decimal> {
+  const [inflowAgg, paidAgg] = await Promise.all([
+    db.transaction.aggregate({
+      where: { type: 'SPEND', status: 'CONFIRMED' },
+      _sum: { commission_catr: true },
+    }),
+    db.rewardPayoutQueue.aggregate({
+      where: { status: 'PAID' },
+      _sum: { amount_catr: true },
+    }),
+  ]);
+
+  const totalInflow = new Decimal(inflowAgg._sum.commission_catr ?? 0).mul(POOL_SHARE);
+  const totalPaid   = new Decimal(paidAgg._sum.amount_catr ?? 0);
+  return totalInflow.minus(totalPaid);
+}
+
+export function rewardsRouter(db: PrismaClient): Router {
   const router = Router();
 
   router.get('/queue', adminAuth, async (_req: Request, res: Response) => {
@@ -24,6 +45,27 @@ export function rewardsRouter(): Router {
         res.status(404).json({ error: 'Not found', code: 'NOT_FOUND' });
         return;
       }
+
+      // Pool solvency gate: ensure payout does not breach the 15% reserve floor
+      const poolBalance  = await estimatedPoolBalance(db);
+      const payoutAmount = new Decimal(entry.amount_catr);
+      const balanceAfter = poolBalance.minus(payoutAmount);
+
+      if (balanceAfter.lt(poolBalance.mul(RESERVE_FLOOR))) {
+        const deferred = await db.rewardPayoutQueue.update({
+          where: { id: req.params.id },
+          data: { status: 'DEFERRED' },
+        });
+        res.status(402).json({
+          error: 'Pool solvency check failed — payout deferred until pool is replenished',
+          code: 'POOL_INSUFFICIENT',
+          pool_balance: poolBalance.toFixed(4),
+          payout_amount: payoutAmount.toFixed(4),
+          data: deferred,
+        });
+        return;
+      }
+
       const updated = await db.rewardPayoutQueue.update({
         where: { id: req.params.id },
         data: { status: 'PAID', approved_by: (req as any).admin?.sub ?? 'admin' },

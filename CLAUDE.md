@@ -31,7 +31,7 @@ For additional project context, see `Organization and Research/Fidelio-Architect
 
 | Phase | Deliverable | Status |
 |---|---|---|
-| A | CATRToken.sol on Base Sepolia + VaultOp (Gnosis Safe 2-of-2) | ✅ Complete — redeployed with BURNER_ROLE `0xee6d5E14dc3EB458990fB1C3fe591A2081bcb215` |
+| A | CATRToken.sol on Base Sepolia + VaultOp (Gnosis Safe 2-of-2) | ✅ Complete — redeployed at `0x3c13ffFAa6959370CF63553B211D386395826FCE` (1.8% / 65-35, 2026-04-16) |
 | B | MerL1nk Etapa 1 (C++ Core + Node.js Bridge) | ✅ Complete — 74/74 tests passing |
 | C | Backend Core (Express API + PostgreSQL/Prisma) | ✅ Complete — 44/44 tests passing |
 | D | Web MVP (client + merchant + admin views) | ✅ Complete — build passing |
@@ -140,7 +140,7 @@ Hardcoded in the smart contract — must never be violated at any layer:
 
 - **MINT-BEFORE-PAY**: payment confirmed → mint CATR → client receives → client pays merchant
 - **BURN-BEFORE-REDEEM**: merchant requests redemption → burn CATR on-chain → HNDA transfers Lempiras
-- **0.63% commission** on every CATR transfer: 75% → HNDA treasury, 25% → reward pool
+- **1.8% commission** on every CATR transfer: 65% → HNDA treasury, 35% → reward pool
 - **Only merchants** redeem CATR → Lempiras. Clients spend CATR only within the network.
 - **CATR supply cap: 50,000,000** — revolving closed-loop system (burn is justified)
 

@@ -16,10 +16,12 @@ const mockDb = {
     create: jest.fn(),
     update: jest.fn(),
     count: jest.fn(),
+    aggregate: jest.fn(),
   },
   wallet: {
     findUnique: jest.fn(),
     create: jest.fn(),
+    update: jest.fn(),
   },
   user: {
     findUnique: jest.fn(),

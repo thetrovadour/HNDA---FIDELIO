@@ -20,7 +20,7 @@ export class TransactionService {
     const merchant = await this.db.merchant.findUnique({ where: { id: params.merchant_id } });
     if (!merchant) throw new Error('Merchant not found');
 
-    const commission = new Decimal(params.amount_catr).mul('0.0063');
+    const commission = new Decimal(params.amount_catr).mul('0.018');
 
     const transaction = await this.db.$transaction(async (tx: TxClient) => {
       const txRecord = await tx.transaction.create({

@@ -11,9 +11,9 @@
   │ PRIVATE_KEY         │ The deployer wallet that pays gas and signs the         │ MetaMask → Account 1 → Export private key    │
   │                     │ deployment                                              │                                              │
   ├─────────────────────┼─────────────────────────────────────────────────────────┼──────────────────────────────────────────────┤
-  │ TREASURY_ADDRESS    │ Where 75% of every commission goes                      │ MetaMask → Account 2 → copy address          │
+  │ TREASURY_ADDRESS    │ Where 65% of every commission goes                      │ MetaMask → Account 2 → copy address          │
   ├─────────────────────┼─────────────────────────────────────────────────────────┼──────────────────────────────────────────────┤
-  │ REWARD_POOL_ADDRESS │ Where 25% of every commission goes                      │ MetaMask → Account 3 → copy address          │
+  │ REWARD_POOL_ADDRESS │ Where 35% of every commission goes                      │ MetaMask → Account 3 → copy address          │
   ├─────────────────────┼─────────────────────────────────────────────────────────┼──────────────────────────────────────────────┤
   │ ADMIN_ADDRESS       │ The VaultOp Gnosis Safe — controls pausing,             │ safe.global → create Safe → copy the Safe    │
   │                     │ blacklisting, role management                           │ contract address                             │

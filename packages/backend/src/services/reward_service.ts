@@ -19,10 +19,20 @@ export class RewardService {
       where: { user_id, type: 'MINT', status: 'CONFIRMED' },
     });
 
-    const milestones: Array<{ type: 'TX_5' | 'TX_10' | 'TX_25'; threshold: number; amount: string }> = [
-      { type: 'TX_5', threshold: 5, amount: '5' },
-      { type: 'TX_10', threshold: 10, amount: '10' },
-      { type: 'TX_25', threshold: 25, amount: '25' },
+    // Pool contribution = total spent × 1.8% commission × 35% pool share = total spent × 0.0063
+    const spendAgg = await this.db.transaction.aggregate({
+      where: { user_id, type: 'SPEND', status: 'CONFIRMED' },
+      _sum: { amount_catr: true },
+    });
+    const totalSpent = new Decimal(spendAgg._sum.amount_catr ?? 0);
+    const poolContribution = totalSpent.mul('0.0063');
+
+    // Reward = poolContribution × rate. Rates are chosen so total milestone payout
+    // (10+15+20 = 45%) never exceeds the user's pool contribution.
+    const milestones: Array<{ type: 'TX_5' | 'TX_10' | 'TX_25'; threshold: number; rate: string }> = [
+      { type: 'TX_5',  threshold: 5,  rate: '0.10' },
+      { type: 'TX_10', threshold: 10, rate: '0.15' },
+      { type: 'TX_25', threshold: 25, rate: '0.20' },
     ];
 
     for (const m of milestones) {
@@ -33,16 +43,17 @@ export class RewardService {
         if (!existing) {
           const wallet = await this.db.wallet.findUnique({ where: { user_id } });
           if (wallet) {
+            const rewardAmount = poolContribution.mul(m.rate).toDecimalPlaces(18);
             const milestone = await this.db.rewardMilestone.create({
               data: {
                 user_id,
                 type: m.type,
-                amount_catr: new Decimal(m.amount),
+                amount_catr: rewardAmount,
               },
             });
             await this.queuePayout({
               recipient_wallet: wallet.address,
-              amount_catr: m.amount,
+              amount_catr: rewardAmount.toString(),
               source_type: 'MILESTONE',
               source_id: milestone.id,
             });

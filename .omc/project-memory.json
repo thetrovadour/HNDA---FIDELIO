@@ -1,6 +1,6 @@
 {
   "version": "1.0.0",
-  "lastScanned": 1775938543800,
+  "lastScanned": 1776388175255,
   "projectRoot": "/home/cristian-rodriguez/proyectos/HNDA---FIDELIO",
   "techStack": {
     "languages": [
@@ -52,7 +52,16 @@
       "path": "ClaudeProfile",
       "purpose": null,
       "fileCount": 1,
-      "lastAccessed": 1775938543786,
+      "lastAccessed": 1776388175240,
+      "keyFiles": [
+        "CLAUDE.md"
+      ]
+    },
+    "HNDA---WALLETS": {
+      "path": "HNDA---WALLETS",
+      "purpose": null,
+      "fileCount": 1,
+      "lastAccessed": 1776388175240,
       "keyFiles": [
         "CLAUDE.md"
       ]
@@ -61,7 +70,7 @@
       "path": "Organization and Research",
       "purpose": null,
       "fileCount": 8,
-      "lastAccessed": 1775938543787,
+      "lastAccessed": 1776388175242,
       "keyFiles": [
         "FIDELIO-Learning-Plan.md",
         "Fidelio-Architecture-Planv1.1.md",
@@ -70,18 +79,31 @@
         "deployment-steps.md"
       ]
     },
+    "ideas_and_extras": {
+      "path": "ideas_and_extras",
+      "purpose": null,
+      "fileCount": 6,
+      "lastAccessed": 1776388175246,
+      "keyFiles": [
+        "contact.html",
+        "contact.html:Zone.Identifier",
+        "index.html",
+        "index.html:Zone.Identifier",
+        "studio.html"
+      ]
+    },
     "packages": {
       "path": "packages",
       "purpose": null,
       "fileCount": 0,
-      "lastAccessed": 1775938543793,
+      "lastAccessed": 1776388175248,
       "keyFiles": []
     },
     "reviews": {
       "path": "reviews",
       "purpose": null,
       "fileCount": 2,
-      "lastAccessed": 1775938543794,
+      "lastAccessed": 1776388175249,
       "keyFiles": [
         "2026-04-06_security_review.md",
         "2026-04-06_security_review_2.0.md"
@@ -91,11 +113,25 @@
       "path": "website",
       "purpose": null,
       "fileCount": 2,
-      "lastAccessed": 1775938543796,
+      "lastAccessed": 1776388175249,
       "keyFiles": [
         "website.html",
         "webspage-plan.md"
       ]
+    },
+    "HNDA---WALLETS/app": {
+      "path": "HNDA---WALLETS/app",
+      "purpose": "Application code",
+      "fileCount": 0,
+      "lastAccessed": 1776388175250,
+      "keyFiles": []
+    },
+    "HNDA---WALLETS/docs": {
+      "path": "HNDA---WALLETS/docs",
+      "purpose": "Documentation",
+      "fileCount": 0,
+      "lastAccessed": 1776388175250,
+      "keyFiles": []
     }
   },
   "hotPaths": [
@@ -119,14 +155,14 @@
     },
     {
       "path": "packages/contracts/contracts/CATRToken.sol",
-      "accessCount": 12,
-      "lastAccessed": 1775530085276,
+      "accessCount": 16,
+      "lastAccessed": 1776389594455,
       "type": "file"
     },
     {
       "path": "packages/contracts/test/CATRToken.test.ts",
-      "accessCount": 10,
-      "lastAccessed": 1775529751918,
+      "accessCount": 12,
+      "lastAccessed": 1776389609463,
       "type": "file"
     },
     {
@@ -178,6 +214,12 @@
       "type": "file"
     },
     {
+      "path": "Organization and Research/Fidelio-Architecture-Planv1.1.md",
+      "accessCount": 6,
+      "lastAccessed": 1776388708345,
+      "type": "file"
+    },
+    {
       "path": "packages/backend/.env.example",
       "accessCount": 5,
       "lastAccessed": 1775530666164,
@@ -187,12 +229,6 @@
       "path": "packages/merlink/bridge/src/index.ts",
       "accessCount": 5,
       "lastAccessed": 1775572426516,
-      "type": "file"
-    },
-    {
-      "path": "Organization and Research/Fidelio-Architecture-Planv1.1.md",
-      "accessCount": 5,
-      "lastAccessed": 1775696385493,
       "type": "file"
     },
     {

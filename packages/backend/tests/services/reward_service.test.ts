@@ -8,6 +8,7 @@ beforeEach(() => resetMocks());
 describe('RewardService.checkMilestones', () => {
   it('does not award TX_5 when tx count is 4', async () => {
     mockDb.transaction.count.mockResolvedValue(4);
+    mockDb.transaction.aggregate.mockResolvedValue({ _sum: { amount_catr: '1000' } });
 
     await service.checkMilestones('u1');
 
@@ -16,6 +17,7 @@ describe('RewardService.checkMilestones', () => {
 
   it('awards TX_5 when tx count reaches 5', async () => {
     mockDb.transaction.count.mockResolvedValue(5);
+    mockDb.transaction.aggregate.mockResolvedValue({ _sum: { amount_catr: '1000' } });
     mockDb.rewardMilestone.findUnique.mockResolvedValue(null);
     mockDb.wallet.findUnique.mockResolvedValue({ user_id: 'u1', address: '0xWALLET' });
     mockDb.rewardMilestone.create.mockResolvedValue({ id: 'rm1', type: 'TX_5' });
@@ -30,6 +32,7 @@ describe('RewardService.checkMilestones', () => {
 
   it('does not award TX_5 again if already exists', async () => {
     mockDb.transaction.count.mockResolvedValue(5);
+    mockDb.transaction.aggregate.mockResolvedValue({ _sum: { amount_catr: '1000' } });
     mockDb.rewardMilestone.findUnique.mockResolvedValue({ id: 'existing', type: 'TX_5' });
 
     await service.checkMilestones('u1');
@@ -90,8 +93,9 @@ describe('RewardService.checkReferralTrigger', () => {
 
 describe('RewardService.queuePayout (via checkMilestones)', () => {
   it('assigns correct tier based on amount', async () => {
-    // TX_5 awards 5 CATR → should be AUTO tier
+    // 1000 CATR spent → pool contribution = 6.3 CATR → TX_5 reward = 0.63 CATR → AUTO tier
     mockDb.transaction.count.mockResolvedValue(5);
+    mockDb.transaction.aggregate.mockResolvedValue({ _sum: { amount_catr: '1000' } });
     mockDb.rewardMilestone.findUnique.mockResolvedValue(null);
     mockDb.wallet.findUnique.mockResolvedValue({ user_id: 'u1', address: '0xWALLET' });
     mockDb.rewardMilestone.create.mockResolvedValue({ id: 'rm1', type: 'TX_5' });

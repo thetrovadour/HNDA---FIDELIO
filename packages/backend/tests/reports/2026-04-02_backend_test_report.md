@@ -87,7 +87,7 @@
 
 - **MINT-BEFORE-PAY**: MintService is the sole creator of MINT transactions. No client-facing endpoint creates mints.
 - **BURN-BEFORE-REDEEM**: RedemptionService enforces strict state machine (PENDING_BURN -> BURN_SUBMITTED -> BURNED -> LEMPIRAS_SENT). Skipping steps throws.
-- **0.63% commission**: TransactionService calculates `commission_catr` on every SPEND transaction.
+- **1.8% commission**: TransactionService calculates `commission_catr` on every SPEND transaction.
 - **Duplicate protection**: Both ProcessedReference and PendingMint status checked before accepting payment events.
 - **Tier assignment**: Redemption and payout tiers correctly assigned based on configurable thresholds.
 
