@@ -2,14 +2,5 @@
 > @hnda/contracts@1.0.0 build
 > npx hardhat compile
 
-Error HH801: Plugin @nomicfoundation/hardhat-toolbox requires the following dependencies to be installed: @nomicfoundation/hardhat-chai-matchers, @nomicfoundation/hardhat-ethers, @nomicfoundation/hardhat-ignition-ethers, @nomicfoundation/hardhat-network-helpers, @nomicfoundation/hardhat-verify, @typechain/ethers-v6, @typechain/hardhat, @types/chai, @types/mocha, chai, hardhat-gas-reporter, solidity-coverage, typechain.
-Please run: npm install --save-dev "@nomicfoundation/hardhat-chai-matchers@^2.0.0" "@nomicfoundation/hardhat-ethers@^3.0.0" "@nomicfoundation/hardhat-ignition-ethers@^0.15.0" "@nomicfoundation/hardhat-network-helpers@^1.0.0" "@nomicfoundation/hardhat-verify@^2.0.0" "@typechain/ethers-v6@^0.5.0" "@typechain/hardhat@^9.0.0" "@types/chai@^4.2.0" "@types/mocha@>=9.1.0" "chai@^4.2.0" "hardhat-gas-reporter@^1.0.8" "solidity-coverage@^0.8.1" "typechain@^8.3.0"
-
-For more info go to https://v2.hardhat.org/HH801 or run Hardhat with --show-stack-traces
-npm error Lifecycle script `build` failed with error:
-npm error code 1
-npm error path /home/cristian-rodriguez/proyectos/HNDA---FIDELIO/packages/contracts
-npm error workspace @hnda/contracts@1.0.0
-npm error location /home/cristian-rodriguez/proyectos/HNDA---FIDELIO/packages/contracts
-npm error command failed
-npm error command sh -c npx hardhat compile
+Nothing to compile
+No need to generate any newer typings.

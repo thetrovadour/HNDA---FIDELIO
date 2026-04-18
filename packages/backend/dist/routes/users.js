@@ -21,7 +21,7 @@ function usersRouter(userService, transactionService) {
             res.status(400).json({ error: err.message, code: 'BAD_REQUEST' });
         }
     });
-    router.get('/:id', auth_1.adminAuth, async (req, res) => {
+    router.get('/:id', auth_1.selfOrAdmin, async (req, res) => {
         const user = await userService.getUser(req.params.id);
         if (!user) {
             res.status(404).json({ error: 'User not found', code: 'NOT_FOUND' });
@@ -29,7 +29,7 @@ function usersRouter(userService, transactionService) {
         }
         res.status(200).json({ data: user });
     });
-    router.get('/:id/transactions', auth_1.adminAuth, async (req, res) => {
+    router.get('/:id/transactions', auth_1.selfOrAdmin, async (req, res) => {
         const page = parseInt(req.query.page) || 1;
         const limit = parseInt(req.query.limit) || 20;
         const result = await transactionService.getUserTransactions(req.params.id, page, limit);

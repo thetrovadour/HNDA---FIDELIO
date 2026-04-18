@@ -1,47 +1,31 @@
 import request from 'supertest';
 import express from 'express';
 import jwt from 'jsonwebtoken';
+import { Decimal } from '@prisma/client/runtime/library';
 import { rewardsRouter } from '../../src/routes/rewards';
 
 const JWT_SECRET = 'test-jwt-secret';
 
-// Mock the db module used directly by rewards.ts
-jest.mock('../../src/db', () => ({
-  __esModule: true,
-  default: {
-    rewardPayoutQueue: {
-      findMany: jest.fn(),
-      findUnique: jest.fn(),
-      update: jest.fn(),
-      aggregate: jest.fn(),
-    },
-    rewardMilestone: {
-      findMany: jest.fn(),
-    },
-    transaction: {
-      aggregate: jest.fn(),
-    },
-  },
-}));
-
-import db from '../../src/db';
-
-const mockDb = db as jest.Mocked<typeof db> & {
+const mockDb = {
   rewardPayoutQueue: {
-    findMany: jest.Mock;
-    findUnique: jest.Mock;
-    update: jest.Mock;
-    aggregate: jest.Mock;
-  };
-  rewardMilestone: { findMany: jest.Mock };
-  transaction: { aggregate: jest.Mock };
+    findMany: jest.fn(),
+    findUnique: jest.fn(),
+    update: jest.fn(),
+    aggregate: jest.fn(),
+  },
+  rewardMilestone: {
+    findMany: jest.fn(),
+  },
+  transaction: {
+    aggregate: jest.fn(),
+  },
 };
 
 function createTestApp() {
   const app = express();
   app.use(express.json());
   process.env.JWT_SECRET = JWT_SECRET;
-  app.use('/api/rewards', rewardsRouter());
+  app.use('/api/rewards', rewardsRouter(mockDb as any));
   return app;
 }
 
@@ -52,9 +36,22 @@ beforeEach(() => {
   jest.clearAllMocks();
 });
 
+describe('GET /api/rewards/queue', () => {
+  it('returns 200 with queue list', async () => {
+    mockDb.rewardPayoutQueue.findMany.mockResolvedValue([{ id: 'pq1', status: 'QUEUED' }]);
+
+    const res = await request(app)
+      .get('/api/rewards/queue')
+      .set('Authorization', `Bearer ${adminToken}`);
+
+    expect(res.status).toBe(200);
+    expect(res.body.data).toHaveLength(1);
+  });
+});
+
 describe('PATCH /api/rewards/queue/:id/approve', () => {
   it('returns 404 when payout entry does not exist', async () => {
-    (mockDb.rewardPayoutQueue.findUnique as jest.Mock).mockResolvedValue(null);
+    mockDb.rewardPayoutQueue.findUnique.mockResolvedValue(null);
 
     const res = await request(app)
       .patch('/api/rewards/queue/nonexistent/approve')
@@ -64,18 +61,18 @@ describe('PATCH /api/rewards/queue/:id/approve', () => {
   });
 
   it('returns 200 and marks PAID when pool is solvent', async () => {
-    (mockDb.rewardPayoutQueue.findUnique as jest.Mock).mockResolvedValue({
+    mockDb.rewardPayoutQueue.findUnique.mockResolvedValue({
       id: 'pq1', amount_catr: '1', status: 'QUEUED',
     });
     // Pool inflow: 10,000 CATR commission × 35% = 3,500 CATR
-    (mockDb.transaction.aggregate as jest.Mock).mockResolvedValue({
+    mockDb.transaction.aggregate.mockResolvedValue({
       _sum: { commission_catr: '10000' },
     });
-    // Paid out so far: 0
-    (mockDb.rewardPayoutQueue.aggregate as jest.Mock).mockResolvedValue({
+    // Paid out so far: 0 → pool balance = 3,500 CATR
+    mockDb.rewardPayoutQueue.aggregate.mockResolvedValue({
       _sum: { amount_catr: '0' },
     });
-    (mockDb.rewardPayoutQueue.update as jest.Mock).mockResolvedValue({
+    mockDb.rewardPayoutQueue.update.mockResolvedValue({
       id: 'pq1', status: 'PAID',
     });
 
@@ -88,19 +85,18 @@ describe('PATCH /api/rewards/queue/:id/approve', () => {
   });
 
   it('returns 402 and marks DEFERRED when payout would breach reserve floor', async () => {
-    (mockDb.rewardPayoutQueue.findUnique as jest.Mock).mockResolvedValue({
+    mockDb.rewardPayoutQueue.findUnique.mockResolvedValue({
       id: 'pq2', amount_catr: '1000', status: 'QUEUED',
     });
     // Pool inflow: 100 CATR commission × 35% = 35 CATR in pool
-    (mockDb.transaction.aggregate as jest.Mock).mockResolvedValue({
+    mockDb.transaction.aggregate.mockResolvedValue({
       _sum: { commission_catr: '100' },
     });
-    // Paid out: 30 CATR → pool balance = 35 - 30 = 5 CATR
-    // Payout of 1000 would bring balance to -995, well below 15% floor (0.75 CATR)
-    (mockDb.rewardPayoutQueue.aggregate as jest.Mock).mockResolvedValue({
+    // Paid out: 30 CATR → pool balance = 5 CATR; payout of 1000 → well below 15% floor
+    mockDb.rewardPayoutQueue.aggregate.mockResolvedValue({
       _sum: { amount_catr: '30' },
     });
-    (mockDb.rewardPayoutQueue.update as jest.Mock).mockResolvedValue({
+    mockDb.rewardPayoutQueue.update.mockResolvedValue({
       id: 'pq2', status: 'DEFERRED',
     });
 

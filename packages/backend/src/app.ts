@@ -9,6 +9,8 @@ import { RedemptionService } from './services/redemption_service';
 import { TransactionService } from './services/transaction_service';
 import { UserService } from './services/user_service';
 import { RewardService } from './services/reward_service';
+import { CashbackJob } from './jobs/cashback';
+import { GoldCashbackJob } from './jobs/cashback_gold';
 import { bridgeEventsRouter } from './routes/bridge_events';
 import { healthRouter } from './routes/health';
 import { redemptionsRouter } from './routes/redemptions';
@@ -19,6 +21,8 @@ import { transactionsRouter } from './routes/transactions';
 import { rewardsRouter } from './routes/rewards';
 import { authRouter } from './routes/auth';
 import { adminRouter } from './routes/admin';
+import { gcaRouter } from './routes/gca';
+import { evaluateGcaVesting } from './services/gca_service';
 
 const globalLimiter = rateLimit({
   windowMs: 15 * 60 * 1000,
@@ -47,9 +51,13 @@ export function createApp(): express.Application {
   // Services
   const rewardService = new RewardService(db);
   const mintService = new MintService(db, rewardService);
-  const transactionService = new TransactionService(db, rewardService);
+  const transactionService = new TransactionService(db, rewardService, evaluateGcaVesting);
   const redemptionService = new RedemptionService(db);
   const userService = new UserService(db);
+
+  // Jobs
+  new CashbackJob(rewardService).schedule();
+  new GoldCashbackJob(rewardService).schedule();
 
   // Routes
   app.use('/health', healthRouter());
@@ -60,8 +68,9 @@ export function createApp(): express.Application {
   app.use('/api/merchants', merchantsRouter());
   app.use('/api/transactions', transactionsRouter(transactionService));
   app.use('/api/redemptions', sensitiveLimiter, redemptionsRouter(redemptionService));
-  app.use('/api/rewards', sensitiveLimiter, rewardsRouter());
+  app.use('/api/rewards', sensitiveLimiter, rewardsRouter(db));
   app.use('/api/admin', sensitiveLimiter, adminRouter(mintService));
+  app.use('/api/gca', gcaRouter(db));
 
   // Error handler (last middleware)
   app.use(errorHandler);

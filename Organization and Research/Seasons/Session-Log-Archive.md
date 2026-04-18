@@ -442,3 +442,72 @@ Pilot paused — Diego not home. Will resume when full group is available.
 2. **Create a dedicated `/merchant` page** — merchant redemption flow, CATR → HNL claim.
 3. **Clean up `/admin`** — organize and remove leftover test forms.
 
+
+---
+
+### Session 17 — 2026-04-17 (tokenomics overhaul + GOLD tier)
+
+**Location:** San Pedro Sula, Honduras (CST, UTC-6)
+
+#### What happened
+
+**Pool Solvency Gate completed (Point #3).**
+- Fixed DI pattern: `rewardsRouter` refactored to accept `db: PrismaClient` as argument instead of importing it directly.
+- `estimatedPoolBalance(db)` computes available pool from DB: Σ(commission_catr × 0.35) − Σ(PAID payouts).
+- On PATCH `/queue/:id/approve`: if `(balance − payout) < 15% × balance`, payment is deferred with status `DEFERRED` and HTTP 402 returned.
+- Rewards route tests rewritten to use plain object injection (no `jest.mock`). Tests: 49 → 56 passing.
+
+**100 CATR minimum + velocity cap (Point #4).**
+- Floor: transactions below 100 CATR (= L.100) do not count toward any tier or milestone.
+- Velocity cap: max 3 qualifying transactions per merchant per calendar day.
+- Tier active window: 90-day rolling lookback — tier decays if activity drops.
+- Fixed: `countQualifyingSpends` now queries `type: 'SPEND'` correctly.
+
+**Commission raised from 1.8% to 3.6%.**
+- Reasoning: 1.8% left pool headroom of only 0.63% for cashback — not enough. At 3.6%, pool gets 1.26% (35% share), which comfortably covers all cashback tiers.
+- Merchant value proposition: 3.6% replaces POS hardware + rental + third-party payment fees. Merchants gain a loyalty customer base, which justifies the rate.
+- CATRToken.sol redeployed on Base Sepolia at `0x4104abf8F8B691E88300A6Af9360589367990eBc`.
+- `transaction_service.ts`: commission multiplier `0.018` → `0.036`.
+- Contract test expected values updated: treasury=234, pool=126, recipient=9640 (from 10,000 CATR transfer).
+
+**Cashback rates locked (Point #6).**
+- TX_5: 0.5% | TX_10: 0.8% | TX_25: 1.1%
+- Batch runs every 12 hours via `CashbackJob` (new file: `packages/backend/src/jobs/cashback.ts`).
+- `cashback_processed Boolean @default(false)` added to Transaction — deduplication guard across batch runs.
+- Prisma migrations applied: `add_cashback_processed_to_transaction`.
+
+**GOLD tier designed and implemented (Points #7 + #8).**
+- Qualification: ≥100 txns AND ≥8,000 CATR spend in the 5-month lookback period.
+- Evaluation months: June (looks back Jan–May) and December (looks back Jul–Nov). Tied to Honduras's aguinaldo/14avo labor calendar — workers receive bonuses in December and June; it is the right time for them to spend and to be evaluated.
+- GOLD lasts exactly 6 months: June evaluation → active Jul 1–Dec 31. December evaluation → active Jan 1–Jun 30 next year. Resets at next cycle — no grandfathering.
+- GOLD cashback: 1.1% (same rate as TX_25, but processed hourly via `GoldCashbackJob`).
+- Self-dealing protection: `owner_user_id` added to `Merchant`. `evaluateGoldQualification` queries owned merchants and excludes those transactions from the count.
+- Farming scenario (Robert): proved irrational — to reach GOLD, Robert would spend 241 CATR and gain 0 extra cashback rate over TX_25. The pool profits +7.18 CATR from the farming activity itself.
+- New model: `UserGoldStatus` — `user_id`, `active_from`, `active_until`, `granted_at`.
+- Prisma migration applied: `add_gold_status_and_merchant_owner`.
+- New job: `packages/backend/src/jobs/cashback_gold.ts` — `GoldCashbackJob`, runs hourly.
+- Both jobs registered in `app.ts`.
+
+**Tests: 44 → 62+ passing** across all backend suites.
+
+#### Key insights from this session
+
+**1. 1 CATR = 1 HNL is the simplest possible monetary model.**
+No oracle. No price feed. No volatility risk. The rate is an administrative decision, hardcoded at the system level. This is correct for a closed-loop loyalty network — the simplicity is a feature.
+
+**2. Pool sustainability is a math problem, not a policy problem.**
+Once you know the commission rate (3.6%), the pool share (35%), and the cashback rates (0.5%–1.1%), you can verify on paper that the pool runs in surplus under any realistic traffic model. The solvency gate is a runtime guard, not a substitute for doing the math first.
+
+**3. The Honduran labor calendar is a free design constraint.**
+June and December are already meaningful financial moments for Honduran workers. Tying GOLD evaluation to those months makes the system feel native — not foreign fintech logic imposed on top of local behavior.
+
+**4. Self-dealing protection follows from the data model, not from policy.**
+Adding `owner_user_id` to `Merchant` meant the exclusion logic was a one-line filter. The protection is structural, not procedural.
+
+**5. Two cashback jobs are cleaner than one job with a branch.**
+Non-GOLD cashback runs every 12 hours. GOLD cashback runs every hour. Splitting them into `CashbackJob` and `GoldCashbackJob` keeps each file focused and makes the scheduling intent explicit.
+
+#### Next
+- Point #10: Runway capital awareness — how many merchants until the system is self-sustaining (breakeven ~83 merchants)?
+- Point #11: Merchant-side loyalty mechanics design
+- Point #12: On-chain merchant gate for redemption

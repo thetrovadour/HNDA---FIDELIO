@@ -6,8 +6,10 @@ import MerchantList from '@/components/MerchantList';
 import RedemptionQueue from '@/components/RedemptionQueue';
 import RewardPayoutQueue from '@/components/RewardPayoutQueue';
 import AwardPoints from '@/components/AwardPoints';
+import RunwayWidget from '@/components/RunwayWidget';
+import GcaAdminPanel from '@/components/GcaAdminPanel';
 
-type Tab = 'merchants' | 'redemptions' | 'payouts' | 'award';
+type Tab = 'merchants' | 'redemptions' | 'payouts' | 'award' | 'runway' | 'gca';
 
 export default function AdminPage() {
   const [tokenInput, setTokenInput] = useState('');
@@ -41,6 +43,8 @@ export default function AdminPage() {
     redemptions: 'Redemptions',
     payouts: 'Reward Payouts',
     award: 'Award Points',
+    runway: 'System Health',
+    gca: 'GCA',
   };
 
   if (!token) {
@@ -122,6 +126,18 @@ export default function AdminPage() {
       {tab === 'award' && (
         <section>
           <AwardPoints token={token} />
+        </section>
+      )}
+
+      {tab === 'runway' && (
+        <section>
+          <RunwayWidget token={token} />
+        </section>
+      )}
+
+      {tab === 'gca' && (
+        <section>
+          <GcaAdminPanel token={token} />
         </section>
       )}
     </div>

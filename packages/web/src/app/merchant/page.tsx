@@ -3,6 +3,7 @@
 import { useState } from 'react';
 import { getMerchant, type Merchant } from '@/lib/api';
 import RedemptionForm from '@/components/RedemptionForm';
+import GcaWidget from '@/components/GcaWidget';
 
 export default function MerchantPage() {
   const [merchantId, setMerchantId] = useState('');
@@ -73,6 +74,11 @@ export default function MerchantPage() {
               merchantId={merchant.id}
               onSuccess={() => setRedeemKey((k) => k + 1)}
             />
+          </section>
+
+          <section>
+            <h2 className="text-lg font-semibold mb-3">Guacacoin (GCA)</h2>
+            <GcaWidget merchantId={merchant.id} />
           </section>
         </>
       )}

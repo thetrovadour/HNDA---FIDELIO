@@ -135,7 +135,7 @@ These rules are **hardcoded in the smart contract** and must never be violated i
 
 - **MINT-BEFORE-PAY**: payment confirmed → mint CATR → client receives → client pays merchant
 - **BURN-BEFORE-REDEEM**: merchant requests redemption → burn CATR on-chain → HNDA transfers Lempiras
-- **1.8% commission** on every CATR transfer: 65% → HNDA treasury, 35% → reward pool
+- **3.6% commission** on every CATR transfer: 65% → HNDA treasury, 35% → reward pool
 - **Only merchants** redeem CATR → Lempiras. Clients spend CATR only within the network.
 - **CATR supply cap: 50,000,000** — a circulation ceiling, not a countdown (burn.ts is justified because this is a closed-loop revolving system)
 

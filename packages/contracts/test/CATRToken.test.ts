@@ -111,13 +111,13 @@ describe("CATRToken", function () {
 
       await token.connect(user1).transfer(user2.address, amount);
 
-      // commission = 10000 * 180 / 10000 = 180 CATR
-      // toTreasury = 180 * 65 / 100 = 117 CATR
-      // toRewardPool = 180 - 117 = 63 CATR
-      // recipient receives 10000 - 180 = 9820 CATR
-      const toTreasury = ethers.parseEther("117");
-      const toRewardPool = ethers.parseEther("63");
-      const toRecipient = ethers.parseEther("9820");
+      // commission = 10000 * 360 / 10000 = 360 CATR
+      // toTreasury = 360 * 65 / 100 = 234 CATR
+      // toRewardPool = 360 - 234 = 126 CATR
+      // recipient receives 10000 - 360 = 9640 CATR
+      const toTreasury = ethers.parseEther("234");
+      const toRewardPool = ethers.parseEther("126");
+      const toRecipient = ethers.parseEther("9640");
 
       expect(await token.balanceOf(user2.address)).to.equal(toRecipient);
       expect(await token.balanceOf(treasury.address)).to.equal(treasuryBefore + toTreasury);

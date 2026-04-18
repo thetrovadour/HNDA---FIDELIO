@@ -79,6 +79,11 @@ class MintService {
                     data: { status: 'CONFIRMED', tx_hash, confirmed_at: new Date() },
                 });
             }
+            // Update wallet balance
+            await tx.wallet.update({
+                where: { address: pending.client_wallet },
+                data: { catr_balance: { increment: pending.amount_lempiras } },
+            });
         });
         // Reward evaluation after successful mint
         if (this.rewardService && pending.transaction_id) {

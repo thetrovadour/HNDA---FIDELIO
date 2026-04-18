@@ -9,6 +9,7 @@ const zod_1 = require("zod");
 const validate_1 = require("../middleware/validate");
 const auth_1 = require("../middleware/auth");
 const db_1 = __importDefault(require("../db"));
+const gca_service_1 = require("../services/gca_service");
 const CreateMerchantSchema = zod_1.z.object({
     name: zod_1.z.string().min(1),
     category: zod_1.z.string().min(1),
@@ -38,6 +39,7 @@ function merchantsRouter() {
     router.post('/', auth_1.adminAuth, (0, validate_1.validate)(CreateMerchantSchema), async (req, res) => {
         try {
             const merchant = await db_1.default.merchant.create({ data: req.body });
+            await (0, gca_service_1.initGcaAllocation)(db_1.default, merchant.id);
             res.status(201).json({ data: merchant });
         }
         catch (err) {

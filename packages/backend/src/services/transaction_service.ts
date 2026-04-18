@@ -7,6 +7,7 @@ export class TransactionService {
   constructor(
     private db: PrismaClient,
     private rewardService?: { evaluateAfterSpend(user_id: string): Promise<void> },
+    private gcaEvaluate?: (db: PrismaClient, merchantId: string) => Promise<void>,
   ) {}
 
   async recordSpend(params: {
@@ -20,7 +21,7 @@ export class TransactionService {
     const merchant = await this.db.merchant.findUnique({ where: { id: params.merchant_id } });
     if (!merchant) throw new Error('Merchant not found');
 
-    const commission = new Decimal(params.amount_catr).mul('0.018');
+    const commission = new Decimal(params.amount_catr).mul('0.036');
 
     const transaction = await this.db.$transaction(async (tx: TxClient) => {
       const txRecord = await tx.transaction.create({
@@ -44,9 +45,10 @@ export class TransactionService {
       return txRecord;
     });
 
-    if (this.rewardService) {
-      await this.rewardService.evaluateAfterSpend(params.user_id);
-    }
+    await Promise.all([
+      this.rewardService?.evaluateAfterSpend(params.user_id),
+      this.gcaEvaluate?.(this.db, params.merchant_id),
+    ]);
 
     return transaction;
   }

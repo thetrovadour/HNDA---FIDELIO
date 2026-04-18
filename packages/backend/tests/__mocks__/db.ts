@@ -15,6 +15,7 @@ const mockDb = {
     findMany: jest.fn(),
     create: jest.fn(),
     update: jest.fn(),
+    updateMany: jest.fn(),
     count: jest.fn(),
     aggregate: jest.fn(),
   },
@@ -56,6 +57,10 @@ const mockDb = {
     findUnique: jest.fn(),
     findFirst: jest.fn(),
     update: jest.fn(),
+  },
+  userGoldStatus: {
+    findFirst: jest.fn(),
+    create: jest.fn(),
   },
   rewardPayoutQueue: {
     findUnique: jest.fn(),

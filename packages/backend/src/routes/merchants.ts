@@ -3,6 +3,7 @@ import { z } from 'zod';
 import { validate } from '../middleware/validate';
 import { adminAuth } from '../middleware/auth';
 import db from '../db';
+import { initGcaAllocation } from '../services/gca_service';
 
 const CreateMerchantSchema = z.object({
   name: z.string().min(1),
@@ -38,6 +39,7 @@ export function merchantsRouter(): Router {
   router.post('/', adminAuth, validate(CreateMerchantSchema), async (req: Request, res: Response) => {
     try {
       const merchant = await db.merchant.create({ data: req.body });
+      await initGcaAllocation(db, merchant.id);
       res.status(201).json({ data: merchant });
     } catch (err: any) {
       res.status(400).json({ error: err.message, code: 'BAD_REQUEST' });

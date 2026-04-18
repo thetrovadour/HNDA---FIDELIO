@@ -136,6 +136,23 @@ export function getAdminUsers(token: string) {
   });
 }
 
+export interface RunwayData {
+  pool_balance: string;
+  active_merchants: number;
+  monthly_pool_inflow: string;
+  monthly_cashback_outflow: string;
+  monthly_net: string;
+  projected_runway_months: string;
+  breakeven_merchants: string;
+  total_transactions: number;
+}
+
+export function getRunway(token: string) {
+  return apiFetch<{ data: RunwayData }>('/api/admin/runway', {
+    headers: authHeaders(token),
+  });
+}
+
 export function adminMint(body: { user_id: string; amount: number }, token: string) {
   return apiFetch<{ data: { reference_code: string; wallet_address: string; amount: number } }>(
     '/api/admin/mint',
@@ -218,4 +235,78 @@ export interface AdminUser {
   full_name: string;
   email: string;
   wallet: { address: string; catr_balance: string } | null;
+}
+
+// --- GCA ---
+
+export interface GcaBalance {
+  gca_balance: string;
+  milestones_claimed: number;
+  milestones_remaining: number;
+  lifetime_effective_catr: string;
+  next_milestone_at: string;
+  price_floor_hnl: string;
+  estimated_hnl_value: string;
+}
+
+export interface GcaRedemptionRequest {
+  id: string;
+  merchant_id: string;
+  amount_gca: string;
+  price_floor_hnl: string;
+  amount_hnl_estimated: string;
+  status: string;
+  created_at: string;
+  merchant?: { id: string; name: string; wallet_address: string };
+}
+
+export function getGcaBalance(merchantId: string) {
+  return apiFetch<{ data: GcaBalance }>(`/api/gca/${merchantId}`);
+}
+
+export function redeemGca(body: { merchant_id: string; amount_gca: number }) {
+  return apiFetch<{ data: GcaRedemptionRequest }>('/api/gca/redeem', {
+    method: 'POST',
+    body: JSON.stringify(body),
+  });
+}
+
+export function getGcaRedemptions(token: string) {
+  return apiFetch<{ data: GcaRedemptionRequest[] }>('/api/gca/admin/redemptions', {
+    headers: authHeaders(token),
+  });
+}
+
+export function approveGcaRedemption(id: string, token: string) {
+  return apiFetch<{ data: { id: string; status: string } }>(`/api/gca/admin/redemptions/${id}/approve`, {
+    method: 'PATCH',
+    headers: authHeaders(token),
+  });
+}
+
+export function rejectGcaRedemption(id: string, token: string) {
+  return apiFetch<{ data: GcaRedemptionRequest }>(`/api/gca/admin/redemptions/${id}/reject`, {
+    method: 'PATCH',
+    headers: authHeaders(token),
+  });
+}
+
+export interface GcaPriceFloor {
+  price_hnl: string;
+  active: boolean;
+  set_at?: string;
+}
+
+export function getGcaPriceFloor(token: string) {
+  return apiFetch<{ data: GcaPriceFloor }>('/api/gca/admin/price-floor', {
+    headers: authHeaders(token),
+  });
+}
+
+export function setGcaPriceFloor(body: { price_hnl: number }, token: string) {
+  return apiFetch<{ data: { price_hnl: number } }>('/api/gca/admin/price-floor', {
+    method: 'POST',
+    headers: authHeaders(token),
+    body: JSON.stringify(body),
+  });
 }

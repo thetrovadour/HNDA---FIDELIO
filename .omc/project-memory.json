@@ -1,6 +1,6 @@
 {
   "version": "1.0.0",
-  "lastScanned": 1776388175255,
+  "lastScanned": 1776475293140,
   "projectRoot": "/home/cristian-rodriguez/proyectos/HNDA---FIDELIO",
   "techStack": {
     "languages": [
@@ -52,7 +52,7 @@
       "path": "ClaudeProfile",
       "purpose": null,
       "fileCount": 1,
-      "lastAccessed": 1776388175240,
+      "lastAccessed": 1776475293129,
       "keyFiles": [
         "CLAUDE.md"
       ]
@@ -61,7 +61,7 @@
       "path": "HNDA---WALLETS",
       "purpose": null,
       "fileCount": 1,
-      "lastAccessed": 1776388175240,
+      "lastAccessed": 1776475293131,
       "keyFiles": [
         "CLAUDE.md"
       ]
@@ -70,7 +70,7 @@
       "path": "Organization and Research",
       "purpose": null,
       "fileCount": 8,
-      "lastAccessed": 1776388175242,
+      "lastAccessed": 1776475293134,
       "keyFiles": [
         "FIDELIO-Learning-Plan.md",
         "Fidelio-Architecture-Planv1.1.md",
@@ -83,7 +83,7 @@
       "path": "ideas_and_extras",
       "purpose": null,
       "fileCount": 6,
-      "lastAccessed": 1776388175246,
+      "lastAccessed": 1776475293135,
       "keyFiles": [
         "contact.html",
         "contact.html:Zone.Identifier",
@@ -96,14 +96,14 @@
       "path": "packages",
       "purpose": null,
       "fileCount": 0,
-      "lastAccessed": 1776388175248,
+      "lastAccessed": 1776475293135,
       "keyFiles": []
     },
     "reviews": {
       "path": "reviews",
       "purpose": null,
       "fileCount": 2,
-      "lastAccessed": 1776388175249,
+      "lastAccessed": 1776475293137,
       "keyFiles": [
         "2026-04-06_security_review.md",
         "2026-04-06_security_review_2.0.md"
@@ -113,7 +113,7 @@
       "path": "website",
       "purpose": null,
       "fileCount": 2,
-      "lastAccessed": 1776388175249,
+      "lastAccessed": 1776475293137,
       "keyFiles": [
         "website.html",
         "webspage-plan.md"
@@ -123,14 +123,14 @@
       "path": "HNDA---WALLETS/app",
       "purpose": "Application code",
       "fileCount": 0,
-      "lastAccessed": 1776388175250,
+      "lastAccessed": 1776475293137,
       "keyFiles": []
     },
     "HNDA---WALLETS/docs": {
       "path": "HNDA---WALLETS/docs",
       "purpose": "Documentation",
       "fileCount": 0,
-      "lastAccessed": 1776388175250,
+      "lastAccessed": 1776475293138,
       "keyFiles": []
     }
   },
@@ -143,8 +143,8 @@
     },
     {
       "path": "packages/backend/src/app.ts",
-      "accessCount": 23,
-      "lastAccessed": 1775949848325,
+      "accessCount": 26,
+      "lastAccessed": 1776441301467,
       "type": "file"
     },
     {
