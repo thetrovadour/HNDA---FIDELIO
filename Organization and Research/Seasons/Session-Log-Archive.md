@@ -535,6 +535,33 @@ June and December are already meaningful financial moments for Honduran workers.
 **4. Self-dealing protection follows from the data model, not from policy.**
 Adding `owner_user_id` to `Merchant` meant the exclusion logic was a one-line filter. The protection is structural, not procedural.
 
+---
+
+### Session 18 — 2026-04-18 (UI design system + FidelioIntro)
+
+**Location:** San Pedro Sula, Honduras (CST, UTC-6)
+
+#### What happened
+
+- **`DESIGN.md` created** — `packages/web/DESIGN.md` — full design system document extracted from the existing codebase. Covers color tokens, typography scale, layout rules, every component pattern (cards, buttons, badges, nav, inputs), animation utilities, background layering, FIDELIO sub-brand rules, and agent guidelines. Single source of truth for all future UI work.
+- **Component library decision settled** — MUI/Vuetify rejected to protect HNDA's visual identity. Framer Motion confirmed already installed (`framer-motion` + `motion` v12.38.0). MagicUI is the component library. Aceternity UI and Motion Primitives identified as additional sources for future components (copy-paste, no new npm deps).
+- **`FidelioIntro` component built** — `packages/web/src/components/FidelioIntro.tsx` — full-screen post-login interstitial. Dark background + `InteractiveGridPattern` + "FIDELIO" encrypted text scramble reveal. Auto-advances after ~1.5s, fades out, calls `onComplete`. Fixed hydration mismatch (Math.random on SSR) by mounting client-side only.
+- **Tested on `/fidelio` route** — intro plays on every page load. Will be moved to post-login flow (client + merchant) when auth pages are built.
+
+#### Key decisions
+
+**1. No component libraries (MUI, Chakra, Vuetify).**
+They impose a foreign design language. HNDA's identity is specific — fighting a library's defaults costs more than building from primitives.
+
+**2. DESIGN.md is the UI contract for all future pages.**
+Login, register, admin, client, merchant, redeem — all built against this document. Consistent colors, typography, spacing, components, and motion from day one.
+
+**3. FidelioIntro is the post-login airlock.**
+After successful authentication (client or merchant), the intro plays before the dashboard appears. It runs while the dashboard renders behind it — no real delay added. Reusable for any entry point that needs it.
+
+**4. Encrypted text hydration fix: client-only mount.**
+`EncryptedText` uses `Math.random()` for scrambled characters — SSR and client diverge. Solution: `useState(false)` + `useEffect(() => setMounted(true), [])` + `if (!mounted) return null`. Standard Next.js SSR guard.
+
 **5. Two cashback jobs are cleaner than one job with a branch.**
 Non-GOLD cashback runs every 12 hours. GOLD cashback runs every hour. Splitting them into `CashbackJob` and `GoldCashbackJob` keeps each file focused and makes the scheduling intent explicit.
 
@@ -647,3 +674,29 @@ Both pages use the light theme isolated from the dark dashboard.
 - Purchase `hnda.io` in June 2026, deploy to Cloudflare Pages
 - Add mobile nav (hamburger) to landing pages
 - Post-pilot: evaluate on-chain merchant gate (Upgrades.md)
+
+---
+
+### Session — 2026-04-18
+**Focus:** UI polish — animations, hero restructure, Android phone mock, favicon
+
+#### What happened
+- Added `fadeIn` CSS animations to nav bars on `page.tsx`, `Navbar.tsx`, and `fidelio/page.tsx`
+- Made mission and HNDA Stack body text whiter (`#e2e8f0`) for readability on dark background
+- Restructured the hero section on both `page.tsx` and `fidelio/page.tsx`: left-aligned text + Android phone mock on the right using CSS grid (`1fr auto`)
+- Built a merchant mock app inside the Android phone: dark UI, HNDA name, 464,129.92 CATR balance card (gold), sky blue Redeem button, 3 transaction rows
+- Added `drop-shadow` CSS filter to the Android phone SVG
+- Replaced all hero CTA buttons with `InteractiveHoverButton`
+- Combined FIDELIO mark SVG + "Live on Base" badge into a single flex row aligned with the h1
+- Added the HNDA logo as a browser favicon (`packages/web/src/app/icon.svg`) — Next.js auto-discovers it; final state: white circle background, black logo elements, white stars, scaled to fill the circle
+
+#### Key decisions
+1. **Android `viewBox` must be hardcoded to `0 0 433 882`** — dynamic viewBox compresses the coordinate space and clips all paths drawn beyond that range.
+2. **CSS grid over flex for the hero** — flex with `overflow: hidden` clipped the phone; grid with `1fr auto` gives the phone room without clipping.
+3. **Favicon white circle background** — the HNDA logo is dark; without a background it disappears on dark browser tabs. White circle makes it universally visible.
+4. **Scale 0.28 for the favicon logo** — fills the circle tightly without overflow.
+
+#### Next
+- Pilot test retake: 5 end-to-end transactions with real wallets on Base Sepolia
+- Purchase `hnda.io` in June 2026, deploy to Cloudflare Pages
+- Add mobile nav (hamburger) to landing pages

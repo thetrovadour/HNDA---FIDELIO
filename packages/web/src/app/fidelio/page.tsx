@@ -1,13 +1,15 @@
 "use client"
 
 import Link from "next/link"
-import { useEffect, useRef } from "react"
+import { useEffect, useRef, useState } from "react"
 import { HexCanvasBackground } from "@/components/HexCanvasBackground"
 import { useScrollReveal } from "@/hooks/useScrollReveal"
 import { Android } from "@/components/ui/android"
 import { InteractiveHoverButton } from "@/components/ui/interactive-hover-button"
+import { FidelioIntro } from "@/components/FidelioIntro"
 
 export default function FidelioPage() {
+  const [showIntro, setShowIntro] = useState(true)
   useScrollReveal()
   const clipRef = useRef<SVGRectElement>(null)
 
@@ -42,6 +44,7 @@ export default function FidelioPage() {
 
   return (
     <div style={{ background: "var(--bg)", color: "var(--text)", minHeight: "100vh", fontFamily: "var(--font-body)", position: "relative" }}>
+      {showIntro && <FidelioIntro onComplete={() => setShowIntro(false)} />}
       <HexCanvasBackground />
 
       {/* ── Nav ── */}
@@ -76,7 +79,7 @@ export default function FidelioPage() {
                   <linearGradient id="mark-grad" x1="0" y1="-55" x2="0" y2="55" gradientUnits="userSpaceOnUse">
                     <stop offset="0%" stopColor="#c8a84b"/>
                     <stop offset="52%" stopColor="#d9bc6e"/>
-                    <stop offset="100%" stopColor="#0ea5e9"/>
+                    <stop offset="100%" stopColor="#ffffff"/>
                   </linearGradient>
                   <clipPath id="hero-mark-clip">
                     <rect ref={clipRef} x="-58" y="-65" width="116" height="0" />

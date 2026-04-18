@@ -55,14 +55,14 @@ export default function HndaHome() {
       </div>
 
 
-      {/* ── Nav ── */}
+      {/* ── Nav ── */} 
       <nav style={{
         position: "fixed", top: 0, left: 0, right: 0, zIndex: 100,
         display: "flex", alignItems: "center", justifyContent: "space-between",
         padding: "0 2rem", height: "64px",
         background: "rgba(10,15,20,0.55)", backdropFilter: "blur(12px)",
         borderBottom: "1px solid var(--border)",
-        animation: "fadeIn 2.6s ease-out both",
+        animation: "fadeIn 0.8Nahs ease-out both",
       }}>
         <a href="#hero" style={{ display: "flex", alignItems: "center", textDecoration: "none" }}>
           <svg xmlns="http://www.w3.org/2000/svg" width="125" height="125" viewBox="0 0 300 300" style={{ transition: "transform 0.6s cubic-bezier(0.4,0,0.2,1)", transform: logoRotated ? "rotate(180deg)" : "rotate(0deg)" }}>
