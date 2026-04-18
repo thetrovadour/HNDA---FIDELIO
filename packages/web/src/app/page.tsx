@@ -5,6 +5,7 @@ import { useEffect } from "react"
 import { CanvasBackground } from "@/components/CanvasBackground"
 import { useScrollReveal } from "@/hooks/useScrollReveal"
 import { TypingAnimation } from "@/components/magicui/typing-animation"
+import { HyperText } from "@/components/ui/hyper-text"
 
 export default function HndaHome() {
   useScrollReveal()
@@ -28,14 +29,14 @@ export default function HndaHome() {
         background: "rgba(10,15,20,0.88)", backdropFilter: "blur(12px)",
         borderBottom: "1px solid var(--border)",
       }}>
-        <a href="#hero" style={{ fontWeight: 800, fontSize: "1.25rem", letterSpacing: "-0.03em", color: "var(--text)", textDecoration: "none", fontFamily: "var(--font-body)" }}>
+        <a href="#hero" style={{ fontWeight: 40, fontSize: "1.25rem", letterSpacing: "-0.07em", color: "var(--text)", textDecoration: "none", fontFamily: "var(--font-stencil)" }}>
           HNDA
         </a>
         <div style={{ display: "flex", gap: "2rem", alignItems: "center" }}>
           <a href="#mission" style={navLink}>Mission</a>
           <a href="#products" style={navLink}>Products</a>
           <a href="#contact" style={navLink}>Contact</a>
-          <Link href="/fidelio" style={ctaLink}>FIDELIO →</Link>
+         <Link href="/fidelio" style={ctaLink}>FIDELIO →</Link>
         </div>
       </nav>
 
@@ -45,11 +46,13 @@ export default function HndaHome() {
 
           <div className="hero-seq-item" style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: "8px", marginBottom: "2rem" }}>
             <span style={{ width: 8, height: 8, borderRadius: "50%", background: "var(--accent)", display: "inline-block" }} />
-            <span style={{ fontSize: "0.85rem", color: "var(--muted)", letterSpacing: "0.08em", textTransform: "uppercase" }}>Honduras Digital Assets · San Pedro Sula</span>
+            <span style={{ fontSize: "0.85rem", color: "var(--muted)", letterSpacing: "0.08em", textTransform: "uppercase" }}>Honduras Nativa Digital Answers · San Pedro Sula</span>
           </div>
 
-          <h1 className="hero-seq-item" style={{ fontSize: "clamp(3.5rem, 10vw, 7rem)", fontWeight: 900, letterSpacing: "-0.04em", lineHeight: 1, marginBottom: "1.5rem", color: "var(--text)" }}>
+          <h1 className="hero-seq-item" style={{ fontSize: "clamp(5.5rem, 10vw, 7rem)", fontWeight: 300, letterSpacing: "-0.04em", lineHeight: 1, marginBottom: "1.5rem", color: "var(--text)", fontFamily: "var(--font-stencil)" }}>
+        
             HNDA
+      
           </h1>
 
           <div className="hero-seq-item" style={{ fontSize: "clamp(1rem, 2.5vw, 1.35rem)", color: "var(--muted)", lineHeight: 1.6, marginBottom: "2.5rem", minHeight: "2.5em" }}>

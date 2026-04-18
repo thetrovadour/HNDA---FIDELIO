@@ -267,6 +267,37 @@ CATR: backed by HNL 1:1. GCA: backed by HNDA commission revenue distributed as d
 
 ---
 
+### Session 12 — 2026-04-18
+
+#### What happened
+- **Public-facing site unified** — merged two parallel codebases (HTML + Next.js) into one definitive site in `packages/web/`
+- **Dark theme ported** from `ideas_and_extras/` HTML versions into Next.js pages
+- **New shared infrastructure created:**
+  - `CanvasBackground.tsx` — floating particle + connection lines animation (HNDA home)
+  - `HexCanvasBackground.tsx` — rotating hexagon + connection lines animation (FIDELIO page)
+  - `useScrollReveal.ts` — IntersectionObserver hook for scroll-reveal
+  - `globals.css` updated — dark theme CSS variables, scroll-reveal transitions, hero sequence, `.stencil` class
+  - `layout.tsx` updated — Oxanium + Saira Stencil One fonts, Space Grotesk removed
+- **`page.tsx` rewritten** — HNDA home dark theme, canvas background, animated hero sequence, scroll-reveal
+- **`fidelio/page.tsx` rewritten** — FIDELIO page dark theme, hex canvas, animated SVG mark draw-on, scroll-reveal
+- **`components.json` created** — enables shadcn CLI for MagicUI component installs
+- **`HyperText` component installed** via `npx shadcn add` — now in `src/components/ui/`
+- Build passes clean — all 9 routes compiling
+
+#### Key decisions
+
+**1. `packages/web/` is the one official public-facing site.**
+`ideas_and_extras/` HTML files remain as archived reference. Nothing was deleted.
+
+**2. Dark theme from HTML versions is the canonical design.**
+Light-theme Next.js pages were discarded. Oxanium is the body font, Saira Stencil One for FIDELIO stencil text.
+
+**3. CSS variables in `globals.css` are the single source of truth for colors.**
+`--bg`, `--text`, `--accent`, `--gold`, `--border`, `--card-bg` — change here to retheme the entire site.
+
+**4. CLI way for MagicUI components going forward.**
+`npx shadcn@latest add "https://magicui.design/r/<name>" -c packages/web` — requires `components.json`. Components land in `src/components/ui/`.
+
 ### Session 12 — 2026-04-08
 
 #### What happened
