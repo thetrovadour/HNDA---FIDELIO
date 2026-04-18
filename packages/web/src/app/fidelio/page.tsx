@@ -4,6 +4,8 @@ import Link from "next/link"
 import { useEffect, useRef } from "react"
 import { HexCanvasBackground } from "@/components/HexCanvasBackground"
 import { useScrollReveal } from "@/hooks/useScrollReveal"
+import { Android } from "@/components/ui/android"
+import { InteractiveHoverButton } from "@/components/ui/interactive-hover-button"
 
 export default function FidelioPage() {
   useScrollReveal()
@@ -49,7 +51,9 @@ export default function FidelioPage() {
         padding: "0 2rem", height: "64px",
         background: "rgba(10,15,20,0.88)", backdropFilter: "blur(12px)",
         borderBottom: "1px solid var(--border)",
+        animation: "fadeIn 0.6s ease-out both",
       }}>
+        <style>{`@keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }`}</style>
         <Link href="/" style={{ color: "var(--muted)", textDecoration: "none", fontSize: "0.9rem", fontWeight: 500 }}>← HNDA</Link>
         <div style={{ display: "flex", gap: "1.75rem", alignItems: "center" }}>
           <a href="#actors" style={navLink}>Network</a>
@@ -60,51 +64,107 @@ export default function FidelioPage() {
       </nav>
 
       {/* ── Hero ── */}
-      <section id="hero" style={{ minHeight: "100vh", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", padding: "100px 2rem 4rem", textAlign: "center", position: "relative", zIndex: 1 }}>
+      <section id="hero" style={{ minHeight: "100vh", display: "flex", alignItems: "center", padding: "100px 2rem 4rem", position: "relative", zIndex: 1 }}>
+        <div style={{ maxWidth: "1100px", margin: "0 auto", width: "100%", display: "grid", gridTemplateColumns: "1fr auto", alignItems: "center", gap: "4rem" }}>
 
-        {/* Animated FIDELIO mark */}
-        <div className="hero-seq-item" style={{ marginBottom: "2rem" }}>
-          <svg viewBox="-58 -65 116 130" width="90" height="90" xmlns="http://www.w3.org/2000/svg" aria-label="FIDELIO mark">
-            <defs>
-              <linearGradient id="mark-grad" x1="0" y1="-55" x2="0" y2="55" gradientUnits="userSpaceOnUse">
-                <stop offset="0%" stopColor="#c8a84b"/>
-                <stop offset="52%" stopColor="#d9bc6e"/>
-                <stop offset="100%" stopColor="#0ea5e9"/>
-              </linearGradient>
-              <clipPath id="hero-mark-clip">
-                <rect ref={clipRef} x="-58" y="-65" width="116" height="0" />
-              </clipPath>
-            </defs>
-            <g clipPath="url(#hero-mark-clip)">
-              <path d="M -13,-42.5 L 0,-50 L 13,-42.5 M 30.3,-32.5 L 43.3,-25 L 43.3,-10 M 43.3,10 L 43.3,25 L 30.3,32.5 M 13,42.5 L 0,50 L -13,42.5 M -30.3,32.5 L -43.3,25 L -43.3,10 M -43.3,-10 L -43.3,-25 L -30.3,-32.5"
-                    fill="none" stroke="url(#mark-grad)" strokeWidth="3.5" strokeLinecap="round" strokeLinejoin="round"/>
-            </g>
-          </svg>
-        </div>
+          {/* Left — text */}
+          <div style={{ textAlign: "left" }}>
+            {/* Animated FIDELIO mark + badge row */}
+            <div className="hero-seq-item" style={{ display: "flex", alignItems: "center", gap: "16px", marginBottom: "2rem" }}>
+              <svg viewBox="-58 -65 116 130" width="80" height="80" xmlns="http://www.w3.org/2000/svg" aria-label="FIDELIO mark">
+                <defs>
+                  <linearGradient id="mark-grad" x1="0" y1="-55" x2="0" y2="55" gradientUnits="userSpaceOnUse">
+                    <stop offset="0%" stopColor="#c8a84b"/>
+                    <stop offset="52%" stopColor="#d9bc6e"/>
+                    <stop offset="100%" stopColor="#0ea5e9"/>
+                  </linearGradient>
+                  <clipPath id="hero-mark-clip">
+                    <rect ref={clipRef} x="-58" y="-65" width="116" height="0" />
+                  </clipPath>
+                </defs>
+                <g clipPath="url(#hero-mark-clip)">
+                  <path d="M -13,-42.5 L 0,-50 L 13,-42.5 M 30.3,-32.5 L 43.3,-25 L 43.3,-10 M 43.3,10 L 43.3,25 L 30.3,32.5 M 13,42.5 L 0,50 L -13,42.5 M -30.3,32.5 L -43.3,25 L -43.3,10 M -43.3,-10 L -43.3,-25 L -30.3,-32.5"
+                        fill="none" stroke="url(#mark-grad)" strokeWidth="3.5" strokeLinecap="round" strokeLinejoin="round"/>
+                </g>
+              </svg>
+              <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+              <span style={{ width: 8, height: 8, borderRadius: "50%", background: "#22c55e", display: "inline-block" }} />
+              <span style={{ fontSize: "0.85rem", color: "var(--muted)", letterSpacing: "0.08em", textTransform: "uppercase" }}>Live on Base · Testnet Active</span>
+              </div>
+            </div>
 
-        <div className="hero-seq-item" style={{ display: "flex", alignItems: "center", gap: "8px", marginBottom: "1.5rem" }}>
-          <span style={{ width: 8, height: 8, borderRadius: "50%", background: "#22c55e", display: "inline-block" }} />
-          <span style={{ fontSize: "0.85rem", color: "var(--muted)", letterSpacing: "0.08em", textTransform: "uppercase" }}>Live on Base · Testnet Active</span>
-        </div>
+            <h1 className="hero-seq-item" style={{ fontSize: "clamp(2.5rem, 6vw, 4.5rem)", fontWeight: 900, letterSpacing: "-0.04em", lineHeight: 1.1, marginBottom: "1.5rem" }}>
+              Honduras pays<br /><span style={{ color: "var(--accent)" }}>on its own terms.</span>
+            </h1>
 
-        <h1 className="hero-seq-item" style={{ fontSize: "clamp(2.5rem, 8vw, 5.5rem)", fontWeight: 900, letterSpacing: "-0.04em", lineHeight: 1.1, marginBottom: "1.5rem" }}>
-          Honduras pays<br /><span style={{ color: "var(--accent)" }}>on its own terms.</span>
-        </h1>
+            <p className="hero-seq-item" style={{ fontSize: "1.05rem", color: "var(--muted)", maxWidth: "480px", lineHeight: 1.7, marginBottom: "2.5rem" }}>
+              <span className="stencil">FIDELIO</span> is a{" "}
+              <span style={{ color: "var(--accent)", fontWeight: 600 }}>closed-loop loyalty network</span>{" "}
+              built for Honduran merchants and clients — backed by CATR, a token on Base that moves with every transaction.
+            </p>
 
-        <p className="hero-seq-item" style={{ fontSize: "1.1rem", color: "var(--muted)", maxWidth: "560px", lineHeight: 1.7, marginBottom: "2.5rem" }}>
-          <span className="stencil">FIDELIO</span> is a{" "}
-          <span style={{ color: "var(--accent)", fontWeight: 600 }}>closed-loop loyalty network</span>{" "}
-          built for Honduran merchants and clients — backed by CATR, a token on Base that moves with every transaction.
-        </p>
+            <div className="hero-seq-item" style={{ display: "flex", gap: "1rem", flexWrap: "wrap" }}>
+              <a href="#actors" style={{ textDecoration: "none" }}>
+                <InteractiveHoverButton className="border-[var(--accent)] text-[var(--text)] bg-[var(--bg)]">Explore the Network</InteractiveHoverButton>
+              </a>
+              <a href="#how" style={{ textDecoration: "none" }}>
+                <InteractiveHoverButton className="border-[var(--border)] text-[var(--text)] bg-[var(--bg)]">How it Works</InteractiveHoverButton>
+              </a>
+            </div>
+          </div>
 
-        <div className="hero-seq-item" style={{ display: "flex", gap: "1rem", justifyContent: "center", flexWrap: "wrap" }}>
-          <a href="#actors" style={btnPrimary}>Explore the Network</a>
-          <a href="#how" style={btnOutline}>How it Works</a>
-        </div>
+          {/* Right — Android phone mock */}
+          <div className="hero-seq-item" style={{ display: "flex", justifyContent: "center", alignItems: "center" }}>
+            <Android width={380} height={712} style={{ filter: "drop-shadow(0 32px 64px rgba(0,0,0,0.7)) drop-shadow(0 8px 24px rgba(14,165,233,0.15))" }}>
+              <div style={{ width: "100%", height: "100%", background: "#0a0f14", fontFamily: "system-ui, sans-serif", display: "flex", flexDirection: "column", fontSize: "13px", color: "#f1f5f9" }}>
+                {/* Status bar */}
+                <div style={{ display: "flex", justifyContent: "space-between", padding: "10px 16px 4px", fontSize: "11px", color: "#94a3b8" }}>
+                  <span>9:41</span>
+                  <span>▲ ◼ 100%</span>
+                </div>
+                {/* App top bar */}
+                <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "8px 16px 12px", borderBottom: "1px solid #1e293b" }}>
+                  <span style={{ fontWeight: 800, letterSpacing: "0.06em", fontSize: "15px", color: "#f1f5f9" }}>FIDELIO</span>
+                  <span style={{ fontSize: "11px", color: "#94a3b8", background: "#1e293b", padding: "3px 8px", borderRadius: "999px" }}>HNDA</span>
+                </div>
+                {/* Tab bar */}
+                <div style={{ display: "flex", borderBottom: "1px solid #1e293b" }}>
+                  <div style={{ flex: 1, textAlign: "center", padding: "8px 0", fontSize: "12px", color: "#64748b" }}>Client</div>
+                  <div style={{ flex: 1, textAlign: "center", padding: "8px 0", fontSize: "12px", color: "#0ea5e9", borderBottom: "2px solid #0ea5e9", fontWeight: 700 }}>Merchant</div>
+                </div>
+                {/* CATR balance card */}
+                <div style={{ margin: "16px 12px 0", background: "linear-gradient(135deg, #0f172a, #1e293b)", border: "1px solid #1e3a5f", borderRadius: "14px", padding: "16px" }}>
+                  <div style={{ fontSize: "10px", color: "#64748b", letterSpacing: "0.08em", textTransform: "uppercase", marginBottom: "6px" }}>CATR Balance</div>
+                  <div style={{ fontSize: "22px", fontWeight: 900, color: "#c8a84b", letterSpacing: "-0.02em" }}>464,129.92</div>
+                  <div style={{ fontSize: "10px", color: "#64748b", marginTop: "4px" }}>≈ L. 464,129.92 HNL</div>
+                </div>
+                {/* Redeem button */}
+                <div style={{ margin: "12px 12px 0" }}>
+                  <div style={{ background: "#0ea5e9", borderRadius: "10px", padding: "10px", textAlign: "center", fontWeight: 700, fontSize: "13px", color: "#fff" }}>
+                    Redeem CATR → HNL
+                  </div>
+                </div>
+                {/* Recent transactions */}
+                <div style={{ margin: "16px 12px 0" }}>
+                  <div style={{ fontSize: "10px", color: "#64748b", letterSpacing: "0.08em", textTransform: "uppercase", marginBottom: "10px" }}>Recent Transactions</div>
+                  {[
+                    { wallet: "0xA3f1...9cB2", amount: "+120.00", time: "Today 14:32" },
+                    { wallet: "0xB8d4...2eA7", amount: "+85.50",  time: "Today 11:15" },
+                    { wallet: "0xC2e9...7fD1", amount: "+340.00", time: "Yesterday" },
+                  ].map((tx, i) => (
+                    <div key={i} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "8px 0", borderBottom: "1px solid #1e293b" }}>
+                      <div>
+                        <div style={{ fontSize: "11px", color: "#e2e8f0" }}>{tx.wallet}</div>
+                        <div style={{ fontSize: "10px", color: "#64748b", marginTop: "2px" }}>{tx.time}</div>
+                      </div>
+                      <div style={{ fontSize: "12px", fontWeight: 700, color: "#22c55e" }}>{tx.amount} CATR</div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </Android>
+          </div>
 
-        <div className="hero-seq-item" style={{ marginTop: "4rem", display: "flex", flexDirection: "column", alignItems: "center", gap: "8px", color: "var(--muted)", fontSize: "0.78rem", letterSpacing: "0.12em", textTransform: "uppercase" }}>
-          <div style={{ width: 1, height: 40, background: "linear-gradient(to bottom, transparent, var(--accent))" }} />
-          <span>Scroll</span>
         </div>
       </section>
 
@@ -250,8 +310,12 @@ export default function FidelioPage() {
             <h2 style={{ ...h2, textAlign: "center", marginBottom: "1rem" }}>Ready to join the network?</h2>
             <p style={{ color: "var(--muted)", marginBottom: "1.5rem" }}>Merchants, investors, developers — reach out.</p>
             <div style={{ display: "flex", gap: "1rem", justifyContent: "center", flexWrap: "wrap" }}>
-              <a href="mailto:rodriguez.cjrp@outlook.com" style={btnPrimary}>Contact HNDA</a>
-              <Link href="/" style={btnOutline}>← Back to HNDA</Link>
+              <a href="mailto:rodriguez.cjrp@outlook.com" style={{ textDecoration: "none" }}>
+                <InteractiveHoverButton className="border-[var(--accent)] text-[var(--text)] bg-[var(--bg)]">Contact HNDA</InteractiveHoverButton>
+              </a>
+              <Link href="/" style={{ textDecoration: "none" }}>
+                <InteractiveHoverButton className="border-[var(--border)] text-[var(--text)] bg-[var(--bg)]">← Back to HNDA</InteractiveHoverButton>
+              </Link>
             </div>
           </div>
           <div style={{ borderTop: "1px solid var(--border)", paddingTop: "1.5rem", display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: "1rem" }}>

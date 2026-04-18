@@ -598,6 +598,46 @@ Both pages use the light theme isolated from the dark dashboard.
 
 3. **Point #12 deferred to post-pilot.** The on-chain merchant gate is a security upgrade, not a blocker. Secure backend + wallet is sufficient for Etapa 1 testing.
 
+---
+
+### Session — 2026-04-18 (Part 3 — UI polish)
+
+#### What happened
+
+**HNDA logo fixed and published.**
+- `ideas_and_extras/resources/hnda_logo_v1.0.svg` cleaned up:
+  - Dead off-canvas group (translated to 636, 596 — invisible) removed
+  - 4 corner stars symmetrized: `±22.5x, ±17.5y` from center `(150, 150)`
+  - Center star at exactly `(150, 150)`
+  - All 3 logo layers (`outer ring`, `cross`, `orbital rings`) normalized to `(150, 150)`
+  - Star color changed from gold `rgb(200,168,75)` to white `rgb(255,255,255)`
+- Logo inlined as SVG into the nav bar in `page.tsx` (replaces "Insert Logo Here" placeholder), sized at 125×125px
+
+**Nav bar logo animation.**
+- On first scroll from top: logo rotates 180° (smooth `0.6s cubic-bezier`)
+- On scroll back to top: resets to 0°
+- Logic: `wasAtTop` ref tracks starting position; animation only fires once per "leave top" event
+
+**InteractiveGridPattern added as background layer.**
+- Sits in a `fixed, zIndex: 0` wrapper above `CanvasBackground`
+- `40×40` grid, `opacity-40`
+- Wrapper mask: `radial-gradient(ellipse 110% 110% at 50% 30%, black 60%, transparent 95%)` — center shifted upward so the nav area (top edge) stays opaque
+- Edge blur overlay: inverse radial mask on a `backdropFilter: blur(16px)` div — creates depth/bend illusion at outer edges
+- Nav background reduced from `rgba(10,15,20,0.88)` → `0.55` so grid and canvas bleed through
+
+**Scroll indicator animated.**
+- `scrollFade` keyframe added inline: pulses `opacity: 0.2 → 1 → 0.2` on a 2s loop
+
+**InteractiveHoverButton applied to hero CTAs.**
+- "See FIDELIO" and "Our Mission" replaced with `InteractiveHoverButton` wrapped in `<Link>` / `<a>`
+- "See FIDELIO" uses accent border, "Our Mission" uses muted border
+
+#### Key decisions
+
+1. **Logo is now the canonical nav identity.** No text fallback — the SVG is the brand mark.
+2. **Grid opacity at 40% with upward-shifted mask** is the correct balance: visible at the nav, fades at corners and bottom, doesn't compete with content.
+3. **`InteractiveHoverButton` is the CTA standard going forward** for primary and secondary hero actions.
+
 4. **Landing pages live in packages/web.** Static HTML (`ideas_and_extras/`) served as a design prototype. The real site is Next.js so Magic UI animated components work natively.
 
 5. **TypingAnimation adapted to `framer-motion`.** Magic UI source imports from `motion/react` (standalone package), but the project already has `framer-motion` v12 installed — same API, different import path.

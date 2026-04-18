@@ -70,8 +70,8 @@ const getRandomInt = (max: number): number => Math.floor(Math.random() * max)
 export function HyperText({
   children,
   className,
-  duration = 800,
-  delay = 0,
+  duration = 500,
+  delay = 9000,
   as: Component = "div",
   startOnView = false,
   animateOnHover = true,
@@ -112,7 +112,7 @@ export function HyperText({
           observer.disconnect()
         }
       },
-      { threshold: 0.1, rootMargin: "-30% 0px -30% 0px" }
+      { threshold: 10, rootMargin: "-30% 0px -30% 0px" }
     )
 
     if (elementRef.current) {
@@ -132,7 +132,7 @@ export function HyperText({
 
       const animate = (currentTime: number) => {
         const elapsed = currentTime - startTime
-        const progress = Math.min(elapsed / duration, 1)
+        const progress = Math.min(elapsed / duration, 100)
 
         iterationCount.current = progress * maxIterations
 
@@ -166,7 +166,7 @@ export function HyperText({
   return (
     <MotionComponent
       ref={elementRef}
-      className={cn("overflow-hidden py-2 text-4xl font-bold", className)}
+      className={cn("overflow-hidden py-2 text-4xl font-Oxanium", className)}
       onMouseEnter={handleAnimationTrigger}
       {...props}
     >
@@ -174,7 +174,7 @@ export function HyperText({
         {displayText.map((letter, index) => (
           <motion.span
             key={index}
-            className={cn("font-mono", letter === " " ? "w-3" : "")}
+            className="hero-seq-item" style={{ fontSize: "clamp(5.5rem, 15vw, 7rem)", fontWeight: 100, letterSpacing: "-0.04em", lineHeight: 1, marginBottom: "1.5rem", color: "var(--text)", fontFamily: "var(--font-stencil)" }}
           >
             {letter.toUpperCase()}
           </motion.span>
