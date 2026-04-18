@@ -511,3 +511,68 @@ Non-GOLD cashback runs every 12 hours. GOLD cashback runs every hour. Splitting 
 - Point #10: Runway capital awareness — how many merchants until the system is self-sustaining (breakeven ~83 merchants)?
 - Point #11: Merchant-side loyalty mechanics design
 - Point #12: On-chain merchant gate for redemption
+
+---
+
+## Session — 2026-04-18 (Part 2)
+
+### What happened
+
+Continued from the previous session mid-stream. Completed the final three tokenomics/system points, then pivoted to a full front-end rebuild.
+
+**Point #10 — Runway Capital Awareness**
+- Added `GET /api/admin/runway` endpoint to `packages/backend/src/routes/admin.ts`
+- Returns: pool balance, monthly inflow/outflow, net, projected runway months, breakeven merchants, active merchants, total transactions
+- Built `RunwayWidget.tsx` in the admin dashboard — card grid showing all runway metrics
+- Added `runway` and `gca` tabs to `packages/web/src/app/admin/page.tsx`
+
+**Point #11 — GCA (Guacacoin) Merchant Loyalty System**
+- Full design + off-chain implementation for Etapa 1
+- Schema: `MerchantGcaAllocation`, `GcaTransaction`, `GcaRedemptionRequest`, `GcaPriceFloor` — migration `20260418011011_add_gca_system` applied
+- `packages/backend/src/services/gca_service.ts`: `initGcaAllocation()`, `evaluateGcaVesting()`, `currentPriceFloor()`
+- Vesting: 200 GCA gifted on join + up to 1,000 GCA via milestones (100 GCA per 25,000 effective CATR processed)
+- Unique client multiplier: <20%→1.0x, 20–40%→1.25x, 40–60%→1.5x, >60%→2.0x
+- `packages/backend/src/routes/gca.ts`: full CRUD + admin approval queue
+- `GcaWidget.tsx` (merchant view) and `GcaAdminPanel.tsx` (admin view) built
+- `transaction_service.ts` wired to call `evaluateGcaVesting` after every SPEND
+
+**Point #12 — On-Chain Merchant Gate (Deferred)**
+- Analyzed cost: ~$0.001/merchant on Base L2
+- Decision: defer to post-pilot; secure backend + wallet is sufficient for Etapa 1
+- Created `Organization and Research/Upgrades.md` documenting the deferred upgrade with rationale, gas estimate, and implementation steps
+
+**Front-End Rebuild — HNDA + FIDELIO Landing Pages**
+- Decided to build in `packages/web` (Next.js) instead of static HTML, to use Magic UI animated components
+- Installed: `framer-motion`, `clsx`, `tailwind-merge`, `lucide-react`
+- Domain: `hnda.io` — available at $41.88/year, plan to purchase June 2026, host on Cloudflare Pages (free)
+- Theme: `#f8fafc` off-white background, `#0ea5e9` cerulean blue primary, `#c8a84b` gold for CATR
+
+**Magic UI components implemented:**
+- `src/components/magicui/typing-animation.tsx` — adapted from Magic UI source (uses `framer-motion` instead of `motion/react`)
+- `src/components/magicui/interactive-hover-button.tsx` — hover animation: text slides out, comes back with arrow
+- `src/lib/utils.ts` — `cn()` utility (clsx + tailwind-merge)
+- `animate-blink-cursor` keyframe added to `globals.css`
+
+**Pages built:**
+- `src/app/page.tsx` — HNDA homepage (`/`): Nav, Hero with `TypingAnimation` cycling 4 phrases, Mission (3 cards), Products grid (FIDELIO live + H-Wallet/HNDA Node coming soon), Contact, Footer
+- `src/app/fidelio/page.tsx` — FIDELIO product page (`/fidelio`): Hero with `InteractiveHoverButton` CTA, Actors (Client/Merchant/Treasury), Payment loop steps, Token stats, Sovereignty quote, Contact/Footer
+
+Both pages use the light theme isolated from the dark dashboard.
+
+### Key decisions
+
+1. **GCA is volume-based (Option B), not time-based.** Merchant growth is measured by CATR processed and unique clients served — both are verifiable on-chain and align incentives with real network activity.
+
+2. **Unique client multiplier accelerates vesting** without inflating the base reward. Merchants who attract new clients earn faster — the math is a simple ratio applied to the milestone schedule.
+
+3. **Point #12 deferred to post-pilot.** The on-chain merchant gate is a security upgrade, not a blocker. Secure backend + wallet is sufficient for Etapa 1 testing.
+
+4. **Landing pages live in packages/web.** Static HTML (`ideas_and_extras/`) served as a design prototype. The real site is Next.js so Magic UI animated components work natively.
+
+5. **TypingAnimation adapted to `framer-motion`.** Magic UI source imports from `motion/react` (standalone package), but the project already has `framer-motion` v12 installed — same API, different import path.
+
+### Next
+- Pilot test retake: 5 end-to-end transactions with real wallets on Base Sepolia
+- Purchase `hnda.io` in June 2026, deploy to Cloudflare Pages
+- Add mobile nav (hamburger) to landing pages
+- Post-pilot: evaluate on-chain merchant gate (Upgrades.md)

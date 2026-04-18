@@ -50,9 +50,15 @@ body {
   100% { background-position: 100% center; }
 }
 
+@keyframes blink-cursor {
+  0%, 49%  { opacity: 1; }
+  50%, 100% { opacity: 0; }
+}
+
 /* ── Utility classes ──────────────────────────────── */
 
-.animate-pulse-glow   { animation: pulse-glow 3s ease-in-out infinite; }
+.animate-pulse-glow      { animation: pulse-glow 3s ease-in-out infinite; }
+.animate-blink-cursor    { animation: blink-cursor 1.2s step-end infinite; }
 .animate-fade-up      { animation: fade-up 0.4s ease both; }
 .animate-slide-right  { animation: slide-in-right 0.3s ease both; }
 .animate-slide-left   { animation: slide-in-left 0.3s ease both; }
