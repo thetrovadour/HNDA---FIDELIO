@@ -23,6 +23,7 @@ function jsonHeaders(): HeadersInit {
 export function pilotLogin(body: { full_name: string; pin: string }) {
   return apiFetch<{
     data: {
+      token: string;
       user: UserRecord;
       transactions: Transaction[];
       milestones: Milestone[];
@@ -37,13 +38,14 @@ export function pilotLogin(body: { full_name: string; pin: string }) {
 
 // --- User ---
 
-export function getUser(id: string) {
-  return apiFetch<{ data: UserRecord }>(`/api/users/${id}`);
+export function getUser(id: string, token: string) {
+  return apiFetch<{ data: UserRecord }>(`/api/users/${id}`, { headers: authHeaders(token) });
 }
 
-export function getUserTransactions(id: string, page = 1, limit = 20) {
+export function getUserTransactions(id: string, token: string, page = 1, limit = 20) {
   return apiFetch<{ data: Transaction[]; total: number; page: number; limit: number }>(
-    `/api/users/${id}/transactions?page=${page}&limit=${limit}`
+    `/api/users/${id}/transactions?page=${page}&limit=${limit}`,
+    { headers: authHeaders(token) }
   );
 }
 
@@ -53,10 +55,10 @@ export function getUserRewards(id: string) {
 
 // --- Spend ---
 
-export function spendCATR(body: { user_id: string; merchant_id: string; amount_catr: string }) {
+export function spendCATR(body: { user_id: string; merchant_id: string; amount_catr: string }, token: string) {
   return apiFetch<{ data: Transaction }>('/api/transactions/spend', {
     method: 'POST',
-    headers: jsonHeaders(),
+    headers: authHeaders(token),
     body: JSON.stringify(body),
   });
 }

@@ -700,3 +700,38 @@ Both pages use the light theme isolated from the dark dashboard.
 - Pilot test retake: 5 end-to-end transactions with real wallets on Base Sepolia
 - Purchase `hnda.io` in June 2026, deploy to Cloudflare Pages
 - Add mobile nav (hamburger) to landing pages
+
+---
+
+### Session — 2026-04-18
+**Focus:** Admin console, client spend flow, balance sync
+
+#### What happened
+
+**Admin page full rewrite (`/admin/page.tsx`)**
+- Dark theme matching client: `#06080D` bg, Oxanium font, gold accents, shimmer border on auth screen
+- JWT paste auth screen with localStorage persistence (`fidelio_admin_session`)
+- 7-tab bottom nav: Merchants | Redemptions | Payouts | Mint | Health | Clients | GCA
+- New inline `ClientsTab` using `getAdminUsers` — shows name, email, wallet address, CATR balance
+- Admin JWT generated manually: `node -e "const jwt = require('jsonwebtoken'); console.log(jwt.sign({ role: 'admin' }, 'change_me_in_production', { algorithm: 'HS256', expiresIn: '30d' }));"`
+
+**Sub-components dark theme (`MerchantList`, `RedemptionQueue`, `RewardPayoutQueue`)**
+- All three had `bg-gray-100` / `border-gray-200` tables — white on dark background, unreadable
+- Fully rewritten to inline dark styles matching the admin design system
+
+**Client spend flow fixed (3 bugs)**
+1. `recordSpend` never debited `catr_balance` — added wallet balance check + atomic decrement inside `$transaction`
+2. `getUser` returned `User` without wallet join — fixed to `include: { wallet: true }`, route now serializes `catr_balance` from wallet
+3. `getUser` / `getUserTransactions` in `api.ts` had no auth headers — `selfOrAdmin` middleware was returning 401 silently; added `token` param and `authHeaders`
+
+**Session confirmed working:** Henry minted 300 CATR, sent 100 to Elias, balance updated to 200 in real time.
+
+#### Key decisions
+- Admin auth stays as manual JWT paste — internal tool, no login route needed
+- Merchant CATR balance is not stored on merchant record; it accumulates via SPEND transactions. Will be surfaced on merchant page as a sum.
+- On-chain burn happens at merchant redemption, not at client spend — client spend is purely off-chain DB bookkeeping. This is correct for the pilot.
+
+#### Next
+- Merchant page (`/merchant/page.tsx`) — dashboard showing accumulated CATR from SPEND transactions, redemption flow
+- Route protection — redirect to login if no session
+- Login page extraction (`/login/page.tsx`)

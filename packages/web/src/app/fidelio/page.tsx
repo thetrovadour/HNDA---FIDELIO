@@ -6,7 +6,7 @@ import { HexCanvasBackground } from "@/components/HexCanvasBackground"
 import { useScrollReveal } from "@/hooks/useScrollReveal"
 import { Android } from "@/components/ui/android"
 import { InteractiveHoverButton } from "@/components/ui/interactive-hover-button"
-import { FidelioIntro } from "@/components/FidelioIntro"
+
 
 export default function FidelioPage() {
   const [showIntro, setShowIntro] = useState(true)
@@ -44,7 +44,7 @@ export default function FidelioPage() {
 
   return (
     <div style={{ background: "var(--bg)", color: "var(--text)", minHeight: "100vh", fontFamily: "var(--font-body)", position: "relative" }}>
-      {showIntro && <FidelioIntro onComplete={() => setShowIntro(false)} />}
+     
       <HexCanvasBackground />
 
       {/* ── Nav ── */}
@@ -103,7 +103,7 @@ export default function FidelioPage() {
             <p className="hero-seq-item" style={{ fontSize: "1.05rem", color: "var(--muted)", maxWidth: "480px", lineHeight: 1.7, marginBottom: "2.5rem" }}>
               <span className="stencil">FIDELIO</span> is a{" "}
               <span style={{ color: "var(--accent)", fontWeight: 600 }}>closed-loop loyalty network</span>{" "}
-              built for Honduran merchants and clients — backed by CATR, a token on Base that moves with every transaction.
+              built for Honduran merchants and clients — powered by CATR, a token on Base that moves with every transaction. FIDELIO offers the power to create transaction requests through any device that supports it in a secure network. 
             </p>
 
             <div className="hero-seq-item" style={{ display: "flex", gap: "1rem", flexWrap: "wrap" }}>
@@ -184,9 +184,9 @@ export default function FidelioPage() {
           <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(280px, 1fr))", gap: "1.5rem" }}>
             {[
               {
-                icon: "🧑", role: "For Clients", title: "Earn as you pay.", accent: "var(--accent)",
-                desc: "Every purchase with FIDELIO earns CATR — a token that lives in your wallet and grows with your loyalty to the network.",
-                perks: ["Instant CATR rewards on every transaction", "Milestone bonuses at 5, 10, and 25 purchases", "Cross-merchant bonus when you explore the network", "No crypto knowledge required — H-Wallet included"],
+                icon: "🆔", role: "For Clients", title: "Earn as you pay.", accent: "var(--accent)",
+                desc: "Every purchase with FIDELIO earns CATR — a token that lives in your wallet and accumulates with your loyalty to the network.",
+                perks: ["Instant CATR rewards on every transaction", "Milestone bonuses at 5, 10, and 25 purchases", "Cross-merchant bonus when you explore the network", "No requirements. FIDELIO provides you the resources you need."],
               },
               {
                 icon: "🏪", role: "For Merchants", title: "Redeem on your terms.", accent: "var(--gold)",
@@ -230,7 +230,7 @@ export default function FidelioPage() {
 
           <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))", gap: "1.5rem", marginBottom: "2.5rem" }}>
             {[
-              { num: "01", tag: "Client",   title: "Generate reference", desc: "Client enters an amount in the app. FIDELIO generates a unique reference code tied to their wallet." },
+              { num: "01", tag: "Client",   title: "Generate reference", desc: "A transaction request is generated at NFC level. FIDELIO generates a unique reference code tied to their wallet." },
               { num: "02", tag: "Bank",     title: "Transfer Lempiras",  desc: "Client transfers Lempiras to HNDA's Atlántida account with the reference code in the memo." },
               { num: "03", tag: "MerL1nk", title: "Detect & mint CATR", desc: "MerL1nk reads the bank notification, validates the reference, and mints CATR to the client's wallet on Base." },
               { num: "04", tag: "Merchant", title: "Spend & redeem",     desc: "Client spends CATR at a merchant. Merchant burns CATR and receives Lempiras from HNDA treasury." },
@@ -317,7 +317,7 @@ export default function FidelioPage() {
                 <InteractiveHoverButton className="border-[var(--accent)] text-[var(--text)] bg-[var(--bg)]">Contact HNDA</InteractiveHoverButton>
               </a>
               <Link href="/" style={{ textDecoration: "none" }}>
-                <InteractiveHoverButton className="border-[var(--border)] text-[var(--text)] bg-[var(--bg)]">← Back to HNDA</InteractiveHoverButton>
+                <InteractiveHoverButton className="border-[var(--border)] text-[var(--text)] bg-[var(--bg)]">Back to HNDA</InteractiveHoverButton>
               </Link>
             </div>
           </div>
@@ -327,7 +327,7 @@ export default function FidelioPage() {
               <a href="#actors" style={footerLink}>Network</a>
               <a href="#how" style={footerLink}>How it Works</a>
               <a href="#token" style={footerLink}>CATR</a>
-              <Link href="/" style={footerLink}>← HNDA</Link>
+              <Link href="/" style={footerLink}>HNDA</Link>
             </div>
             <p style={{ color: "var(--muted)", fontSize: "0.85rem" }}>© 2026 HNDA · Built on Base</p>
           </div>

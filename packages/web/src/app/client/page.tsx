@@ -1,81 +1,113 @@
 'use client';
-
+import { FidelioIntro } from '@/components/FidelioIntro';
 import { useState, useEffect, useRef } from 'react';
-import { ConnectButton } from '@rainbow-me/rainbowkit';
 import {
   pilotLogin,
+  spendCATR,
   getUser,
   getUserTransactions,
-  getMerchants,
-  getUserRewards,
-  createRedemption,
-  getRedemptions,
-  approveRedemption,
-  rejectRedemption,
-  getRewardQueue,
-  approveRewardPayout,
-  spendCATR,
 } from '@/lib/api';
-import type { UserRecord, Transaction, Milestone, Merchant, RedemptionRequest, RewardPayout } from '@/lib/api';
+import type { UserRecord, Transaction, Milestone, Merchant } from '@/lib/api';
 
 // ─── Design tokens ────────────────────────────────────────────────────────────
+
 const C = {
-  bg:         '#080C14',
-  surface:    '#0F1623',
-  surfaceHi:  '#162030',
-  border:     '#1E2A40',
-  borderHi:   '#2A3D5C',
-  blue:       '#3B82F6',
-  blueDim:    '#1D4ED8',
-  gold:       '#C9A84C',
-  goldLight:  '#FFE08A',
-  white:      '#FFFFFF',
-  slate:      '#94A3B8',
-  success:    '#10B981',
-  successBg:  'rgba(16,185,129,0.1)',
-  error:      '#EF4444',
-  errorBg:    'rgba(239,68,68,0.1)',
+  bg:        '#06080D',
+  surface:   '#0C1018',
+  surfaceHi: '#111820',
+  border:    'rgba(255,255,255,0.07)',
+  borderHi:  'rgba(255,255,255,0.13)',
+  gold:      '#C9A84C',
+  goldDim:   'rgba(201,168,76,0.12)',
+  white:     '#F1F5F9',
+  slate:     '#64748B',
+  slateHi:   '#94A3B8',
+  success:   '#10B981',
+  successBg: 'rgba(16,185,129,0.08)',
+  error:     '#EF4444',
+  errorBg:   'rgba(239,68,68,0.08)',
 };
 
-// ─── Icons ────────────────────────────────────────────────────────────────────
+// ─── Primitive UI ─────────────────────────────────────────────────────────────
 
-function IconUser() {
+function Section({ title, children }: { title?: string; children: React.ReactNode }) {
   return (
-    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.5} className="w-5 h-5">
-      <circle cx="12" cy="8" r="4" />
-      <path d="M4 20c0-4 3.6-7 8-7s8 3 8 7" strokeLinecap="round" />
-    </svg>
+    <div className="rounded-2xl p-5" style={{ background: C.surface, border: `1px solid ${C.border}` }}>
+      {title && (
+        <p className="text-xs font-bold uppercase tracking-widest mb-4" style={{ color: C.slate }}>
+          {title}
+        </p>
+      )}
+      {children}
+    </div>
   );
 }
 
-function IconStore() {
+function PrimaryBtn({
+  children, onClick, disabled, type = 'button',
+}: { children: React.ReactNode; onClick?: () => void; disabled?: boolean; type?: 'button' | 'submit' }) {
   return (
-    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.5} className="w-5 h-5">
-      <path d="M3 9l1-4h16l1 4" strokeLinecap="round" strokeLinejoin="round" />
-      <path d="M3 9v11a1 1 0 001 1h16a1 1 0 001-1V9" />
-      <path d="M9 21V9m6 0v12" />
-    </svg>
+    <button
+      type={type}
+      onClick={onClick}
+      disabled={disabled}
+      className="w-full py-3 rounded-xl font-semibold disabled:opacity-30 transition-all active:scale-95"
+      style={{
+        background: 'rgba(255,255,255,0.06)',
+        border: `1px solid ${C.borderHi}`,
+        color: C.white,
+        fontFamily: 'var(--font-body)',
+        letterSpacing: '0.08em',
+        fontSize: '0.85rem',
+      }}
+    >
+      {children}
+    </button>
   );
 }
 
-function IconShield() {
+function Input({ label, ...props }: React.InputHTMLAttributes<HTMLInputElement> & { label: string }) {
   return (
-    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.5} className="w-5 h-5">
-      <path d="M12 3l8 4v5c0 5-3.5 9.7-8 11-4.5-1.3-8-6-8-11V7l8-4z" strokeLinejoin="round" />
-    </svg>
+    <div className="flex flex-col gap-1.5">
+      <label
+        className="uppercase tracking-widest"
+        style={{ color: C.slate, fontFamily: 'var(--font-body)', fontSize: '0.65rem', fontWeight: 300 }}
+      >
+        {label}
+      </label>
+      <div className="shimmer-border rounded-xl p-px">
+        <input
+          {...props}
+          className="w-full rounded-xl px-4 py-3 focus:outline-none transition-all"
+          style={{
+            background: C.surfaceHi,
+            color: C.white,
+            fontFamily: 'var(--font-body)',
+            fontSize: '0.95rem',
+            fontWeight: 300,
+          }}
+        />
+      </div>
+    </div>
   );
 }
 
-function IconCopy() {
+function StatusMsg({ type, msg }: { type: 'success' | 'error'; msg: string }) {
   return (
-    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.5} className="w-4 h-4">
-      <rect x="9" y="9" width="13" height="13" rx="2" />
-      <path d="M5 15H4a2 2 0 01-2-2V4a2 2 0 012-2h9a2 2 0 012 2v1" />
-    </svg>
+    <p
+      className="text-sm text-center rounded-xl py-2.5 px-3 font-medium"
+      style={{
+        background: type === 'success' ? C.successBg : C.errorBg,
+        color: type === 'success' ? C.success : C.error,
+        border: `1px solid ${type === 'success' ? 'rgba(16,185,129,0.3)' : 'rgba(239,68,68,0.3)'}`,
+      }}
+    >
+      {msg}
+    </p>
   );
 }
 
-// ─── Animated counter ─────────────────────────────────────────────────────────
+// ─── Animated balance counter ─────────────────────────────────────────────────
 
 function AnimatedBalance({ value }: { value: string }) {
   const [display, setDisplay] = useState(value);
@@ -92,8 +124,7 @@ function AnimatedBalance({ value }: { value: string }) {
       const elapsed = now - startTime;
       const progress = Math.min(elapsed / duration, 1);
       const eased = 1 - Math.pow(1 - progress, 3);
-      const current = start + (end - start) * eased;
-      setDisplay(current.toFixed(2));
+      setDisplay((start + (end - start) * eased).toFixed(2));
       if (progress < 1) requestAnimationFrame(tick);
       else prev.current = value;
     }
@@ -104,136 +135,50 @@ function AnimatedBalance({ value }: { value: string }) {
   return <>{display}</>;
 }
 
-// ─── Section wrapper ──────────────────────────────────────────────────────────
+// ─── Icons ────────────────────────────────────────────────────────────────────
 
-function Section({ title, children, className = '' }: { title?: string; children: React.ReactNode; className?: string }) {
+function IconUser() {
   return (
-    <div
-      className={`rounded-2xl p-5 animate-fade-up ${className}`}
-      style={{ background: C.surface, border: `1px solid ${C.border}` }}
-    >
-      {title && (
-        <p className="text-xs font-bold uppercase tracking-widest mb-4" style={{ color: C.slate }}>
-          {title}
-        </p>
-      )}
-      {children}
-    </div>
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.5} className="w-5 h-5">
+      <circle cx="12" cy="8" r="4" />
+      <path d="M4 20c0-4 3.6-7 8-7s8 3 8 7" strokeLinecap="round" />
+    </svg>
   );
 }
 
-// ─── Primary button ───────────────────────────────────────────────────────────
-
-function PrimaryBtn({ children, onClick, disabled, type = 'button' }: {
-  children: React.ReactNode;
-  onClick?: () => void;
-  disabled?: boolean;
-  type?: 'button' | 'submit';
-}) {
+function IconActivity() {
   return (
-    <button
-      type={type}
-      onClick={onClick}
-      disabled={disabled}
-      className="w-full py-3 rounded-xl font-bold text-white disabled:opacity-40 transition-all active:scale-95"
-      style={{ background: `linear-gradient(135deg, ${C.blue} 0%, ${C.blueDim} 100%)` }}
-    >
-      {children}
-    </button>
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.5} className="w-5 h-5">
+      <polyline points="22 12 18 12 15 21 9 3 6 12 2 12" strokeLinecap="round" strokeLinejoin="round" />
+    </svg>
   );
 }
 
-// ─── Ghost button ─────────────────────────────────────────────────────────────
-
-function GhostBtn({ children, onClick }: { children: React.ReactNode; onClick?: () => void }) {
+function IconNetwork() {
   return (
-    <button
-      onClick={onClick}
-      className="w-full py-3 rounded-xl font-semibold transition-all active:scale-95 text-sm"
-      style={{ border: `1px solid ${C.border}`, color: C.slate, background: 'transparent' }}
-    >
-      {children}
-    </button>
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.5} className="w-5 h-5">
+      <circle cx="12" cy="5" r="2" />
+      <circle cx="5" cy="19" r="2" />
+      <circle cx="19" cy="19" r="2" />
+      <line x1="12" y1="7" x2="5" y2="17" strokeLinecap="round" />
+      <line x1="12" y1="7" x2="19" y2="17" strokeLinecap="round" />
+    </svg>
   );
 }
 
-// ─── Input ────────────────────────────────────────────────────────────────────
-
-function Input({ label, ...props }: React.InputHTMLAttributes<HTMLInputElement> & { label: string }) {
+function IconCopy() {
   return (
-    <div className="flex flex-col gap-1.5">
-      <label className="text-xs font-bold uppercase tracking-widest" style={{ color: C.slate }}>
-        {label}
-      </label>
-      <input
-        {...props}
-        className="rounded-xl px-4 py-3 text-base focus:outline-none transition-all"
-        style={{
-          background: C.surfaceHi,
-          border: `1px solid ${C.border}`,
-          color: C.white,
-        }}
-      />
-    </div>
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.5} className="w-4 h-4">
+      <rect x="9" y="9" width="13" height="13" rx="2" />
+      <path d="M5 15H4a2 2 0 01-2-2V4a2 2 0 012-2h9a2 2 0 012 2v1" />
+    </svg>
   );
 }
 
-// ─── Merchant selector ────────────────────────────────────────────────────────
-
-function MerchantSelector({ merchants, value, onChange }: {
-  merchants: Merchant[];
-  value: string;
-  onChange: (id: string) => void;
-}) {
-  return (
-    <div className="flex flex-col gap-1.5">
-      <p className="text-xs font-bold uppercase tracking-widest" style={{ color: C.slate }}>Establecimiento</p>
-      <div className="flex flex-col gap-2">
-        {merchants.map((m) => {
-          const active = value === m.id;
-          return (
-            <button
-              type="button"
-              key={m.id}
-              onClick={() => onChange(m.id)}
-              className="flex items-center justify-between rounded-xl px-4 py-3 text-sm font-medium transition-all active:scale-95"
-              style={{
-                background: active ? 'rgba(59,130,246,0.12)' : C.surfaceHi,
-                border: `1px solid ${active ? C.blue : C.border}`,
-                color: active ? C.white : C.slate,
-              }}
-            >
-              <span>{m.name}</span>
-              <span className="text-xs" style={{ color: C.slate }}>{m.category}</span>
-            </button>
-          );
-        })}
-      </div>
-    </div>
-  );
-}
-
-// ─── Status message ───────────────────────────────────────────────────────────
-
-function StatusMsg({ type, msg }: { type: 'success' | 'error'; msg: string }) {
-  return (
-    <p
-      className="text-sm text-center rounded-xl py-2.5 px-3 animate-fade-up font-medium"
-      style={{
-        background: type === 'success' ? C.successBg : C.errorBg,
-        color: type === 'success' ? C.success : C.error,
-        border: `1px solid ${type === 'success' ? 'rgba(16,185,129,0.3)' : 'rgba(239,68,68,0.3)'}`,
-      }}
-    >
-      {msg}
-    </p>
-  );
-}
-
-// ─── Login Screen ─────────────────────────────────────────────────────────────
+// ─── Login screen ─────────────────────────────────────────────────────────────
 
 interface LoginProps {
-  onLogin: (res: { user: UserRecord; transactions: Transaction[]; milestones: Milestone[]; merchants: Merchant[] }) => void;
+  onLogin: (data: { token: string; user: UserRecord; transactions: Transaction[]; milestones: Milestone[]; merchants: Merchant[] }) => void;
 }
 
 function LoginScreen({ onLogin }: LoginProps) {
@@ -252,9 +197,11 @@ function LoginScreen({ onLogin }: LoginProps) {
       onLogin(res.data);
     } catch (err) {
       const msg = err instanceof Error ? err.message : String(err);
-      setError(msg.includes('fetch') || msg.includes('network') || msg.includes('Failed')
-        ? `Error de red: ${msg}`
-        : `No encontramos tu cuenta. (${msg})`);
+      setError(
+        msg.includes('fetch') || msg.includes('network') || msg.includes('Failed')
+          ? `Error de red: ${msg}`
+          : 'No encontramos tu cuenta. Verifica tu nombre y PIN.'
+      );
     } finally {
       setLoading(false);
     }
@@ -262,70 +209,82 @@ function LoginScreen({ onLogin }: LoginProps) {
 
   return (
     <div
-      className="min-h-screen flex flex-col items-center justify-center px-6"
-      style={{ background: C.bg }}
+      className="min-h-screen flex flex-col items-center justify-center px-6 relative"
+      style={{ background: C.bg, fontFamily: 'var(--font-body)' }}
     >
-      {/* Ambient glow */}
-      <div
-        className="absolute top-1/4 left-1/2 -translate-x-1/2 -translate-y-1/2 w-64 h-64 rounded-full pointer-events-none"
-        style={{ background: 'radial-gradient(circle, rgba(59,130,246,0.08) 0%, transparent 70%)' }}
-      />
-
       {/* Brand */}
-      <div className="mb-10 text-center animate-fade-up relative">
-        <div
-          className="w-20 h-20 rounded-3xl flex items-center justify-center mx-auto mb-5 animate-pulse-glow"
-          style={{ background: `linear-gradient(135deg, ${C.gold} 0%, ${C.goldLight} 100%)` }}
+      <div className="mb-12 text-center">
+        <p
+          className="uppercase tracking-widest mb-1"
+          style={{ color: C.slate, fontSize: '0.65rem', fontWeight: 300, letterSpacing: '0.22em' }}
         >
-          <span className="text-3xl font-black text-black">⬡</span>
-        </div>
-        <h1 className="text-4xl font-black tracking-widest shimmer-text">FIDELIO</h1>
-        <p className="text-sm mt-2 font-medium" style={{ color: C.slate }}>Tu red de lealtad</p>
+          Honduras Nativa Digital Answers
+        </p>
+        <h1
+          style={{
+            fontSize: 'clamp(2.5rem, 8vw, 3.5rem)',
+            fontWeight: 200,
+            letterSpacing: '0.18em',
+            color: C.white,
+            lineHeight: 1,
+          }}
+        >
+          FIDELIO
+        </h1>
+        <div
+          className="mx-auto mt-3"
+          style={{ width: 32, height: 1, background: `rgba(201,168,76,0.4)` }}
+        />
       </div>
 
       {/* Card */}
-      <form
-        onSubmit={handleSubmit}
-        className="w-full max-w-sm rounded-2xl px-6 py-7 flex flex-col gap-4 animate-fade-up"
-        style={{ background: C.surface, border: `1px solid ${C.border}` }}
-      >
-        <Input
-          label="Tu nombre completo"
-          value={name}
-          onChange={(e) => setName(e.target.value)}
-          placeholder="Ej. María García"
-          autoComplete="name"
-        />
-        <Input
-          label="PIN (4 dígitos)"
-          type="password"
-          inputMode="numeric"
-          maxLength={4}
-          value={pin}
-          onChange={(e) => setPin(e.target.value.replace(/\D/g, '').slice(0, 4))}
-          placeholder="••••"
-        />
+      <div className="shimmer-border rounded-2xl p-px w-full max-w-sm">
+        <form
+          onSubmit={handleSubmit}
+          className="rounded-2xl px-6 py-7 flex flex-col gap-5"
+          style={{ background: C.surface }}
+        >
+          <Input
+            label="Nombre completo"
+            value={name}
+            onChange={(e) => setName(e.target.value)}
+            placeholder="María García"
+            autoComplete="name"
+          />
+          <Input
+            label="PIN"
+            type="password"
+            inputMode="numeric"
+            maxLength={4}
+            value={pin}
+            onChange={(e) => setPin(e.target.value.replace(/\D/g, '').slice(0, 4))}
+            placeholder="••••"
+          />
 
-        {error && <StatusMsg type="error" msg={error} />}
+          {error && <StatusMsg type="error" msg={error} />}
 
-        <div className="mt-1">
           <PrimaryBtn type="submit" disabled={loading || pin.length !== 4 || !name.trim()}>
-            {loading ? 'Verificando…' : 'Entrar'}
+            {loading ? 'Verificando' : 'Acceder'}
           </PrimaryBtn>
-        </div>
-      </form>
+
+          <p
+            className="text-center"
+            style={{ color: C.slate, fontSize: '0.7rem', fontWeight: 300, letterSpacing: '0.06em' }}
+          >
+            Comerciante —{' '}
+            <a href="/merchant" style={{ color: C.slateHi, textDecoration: 'underline', textUnderlineOffset: '3px' }}>
+              accede aquí
+            </a>
+          </p>
+        </form>
+      </div>
     </div>
   );
 }
 
-// ─── Top Bar ──────────────────────────────────────────────────────────────────
+// ─── Top bar ──────────────────────────────────────────────────────────────────
 
-interface TopBarProps {
-  user: UserRecord;
-  onLogout: () => void;
-}
-
-function TopBar({ user, onLogout }: TopBarProps) {
+function TopBar({ user, onLogout }: { user: UserRecord; onLogout: () => void }) {
   const firstName = user.full_name.split(' ')[0];
 
   return (
@@ -333,68 +292,57 @@ function TopBar({ user, onLogout }: TopBarProps) {
       className="px-5 pt-12 pb-6 relative overflow-hidden"
       style={{ background: C.surface, borderBottom: `1px solid ${C.border}` }}
     >
-      {/* Ambient glow behind balance */}
       <div
         className="absolute -top-8 left-1/2 -translate-x-1/2 w-72 h-32 pointer-events-none"
-        style={{ background: 'radial-gradient(ellipse, rgba(59,130,246,0.06) 0%, transparent 70%)' }}
+        style={{ background: 'radial-gradient(ellipse, rgba(201,168,76,0.04) 0%, transparent 70%)' }}
       />
 
-      {/* Top row */}
       <div className="flex items-center justify-between mb-5">
-        <span className="text-base font-black tracking-widest shimmer-text">FIDELIO</span>
-        <div className="flex items-center gap-2">
-          <ConnectButton showBalance={false} chainStatus="none" />
-          <button
-            onClick={onLogout}
-            className="text-xs font-semibold px-3 py-1.5 rounded-lg transition-all active:scale-95"
-            style={{ background: C.surfaceHi, color: C.slate, border: `1px solid ${C.border}` }}
-          >
-            Salir
-          </button>
-        </div>
+        <span className="text-base font-black tracking-widest" style={{ color: C.gold }}>FIDELIO</span>
+        <button
+          onClick={onLogout}
+          className="text-xs font-semibold px-3 py-1.5 rounded-lg transition-all active:scale-95"
+          style={{ background: C.surfaceHi, color: C.slate, border: `1px solid ${C.border}` }}
+        >
+          Salir
+        </button>
       </div>
 
-      {/* Greeting */}
-      <p className="text-sm font-medium mb-1" style={{ color: C.slate }}>
-        Hola, {firstName} 👋
+      <p
+        className="mb-1"
+        style={{ color: C.slate, fontFamily: 'var(--font-body)', fontSize: '0.75rem', fontWeight: 300, letterSpacing: '0.06em' }}
+      >
+        {firstName}
       </p>
 
-      {/* Balance */}
       <div className="flex items-baseline gap-2">
-        <span className="font-black text-white animate-counter-up" style={{ fontSize: '3.5rem', lineHeight: 1 }}>
+        <span style={{ fontSize: '3.5rem', lineHeight: 1, color: C.white, fontFamily: 'var(--font-body)', fontWeight: 200 }}>
           <AnimatedBalance value={user.catr_balance} />
         </span>
-        <span className="text-lg font-bold" style={{ color: C.blue }}>pts</span>
+        <span style={{ fontSize: '1rem', fontFamily: 'var(--font-body)', fontWeight: 300, color: C.slateHi }}>pts</span>
       </div>
-      <p className="text-xs mt-1.5 font-medium" style={{ color: C.slate }}>Saldo disponible</p>
+      <p style={{ color: C.slate, fontFamily: 'var(--font-body)', fontSize: '0.65rem', fontWeight: 300, marginTop: '0.4rem', letterSpacing: '0.08em' }}>
+        Saldo disponible · 1 pt = 1 HNL
+      </p>
     </div>
   );
 }
 
-// ─── Bottom Tab Bar ───────────────────────────────────────────────────────────
+// ─── Bottom tab bar ───────────────────────────────────────────────────────────
 
-type Tab = 'cuenta' | 'negocio' | 'admin';
+type Tab = 'cuenta' | 'actividad' | 'red';
 
-interface TabBarProps {
-  active: Tab;
-  onChange: (t: Tab) => void;
-}
-
-function TabBar({ active, onChange }: TabBarProps) {
+function TabBar({ active, onChange }: { active: Tab; onChange: (t: Tab) => void }) {
   const tabs: { id: Tab; label: string; icon: React.ReactNode }[] = [
-    { id: 'cuenta',  label: 'Mi Cuenta',  icon: <IconUser /> },
-    { id: 'negocio', label: 'Mi Negocio', icon: <IconStore /> },
-    { id: 'admin',   label: 'Admin',      icon: <IconShield /> },
+    { id: 'cuenta',    label: 'Mi Cuenta',  icon: <IconUser /> },
+    { id: 'actividad', label: 'Actividad',  icon: <IconActivity /> },
+    { id: 'red',       label: 'Red',        icon: <IconNetwork /> },
   ];
 
   return (
     <div
       className="fixed bottom-0 left-0 right-0 flex"
-      style={{
-        background: C.surface,
-        borderTop: `1px solid ${C.border}`,
-        paddingBottom: 'env(safe-area-inset-bottom)',
-      }}
+      style={{ background: C.surface, borderTop: `1px solid ${C.border}`, paddingBottom: 'env(safe-area-inset-bottom)' }}
     >
       {tabs.map((t) => {
         const isActive = active === t.id;
@@ -403,12 +351,12 @@ function TabBar({ active, onChange }: TabBarProps) {
             key={t.id}
             onClick={() => onChange(t.id)}
             className="flex-1 flex flex-col items-center justify-center py-3 gap-1 transition-all relative"
-            style={{ color: isActive ? C.blue : C.slate }}
+            style={{ color: isActive ? C.gold : C.slate }}
           >
             {isActive && (
               <span
                 className="absolute top-0 left-1/2 -translate-x-1/2 w-8 h-0.5 rounded-full"
-                style={{ background: C.blue }}
+                style={{ background: C.gold }}
               />
             )}
             {t.icon}
@@ -420,19 +368,10 @@ function TabBar({ active, onChange }: TabBarProps) {
   );
 }
 
-// ─── Tab 1: Mi Cuenta ────────────────────────────────────────────────────────
+// ─── Tab: Mi Cuenta ───────────────────────────────────────────────────────────
 
-interface CuentaTabProps {
-  user: UserRecord;
-  transactions: Transaction[];
-  milestones: Milestone[];
-  merchants: Merchant[];
-}
-
-function CuentaTab({ user, transactions, milestones, merchants }: CuentaTabProps) {
+function CuentaTab({ user }: { user: UserRecord }) {
   const [copied, setCopied] = useState(false);
-  const visitedMerchantIds = new Set(transactions.filter(tx => tx.merchant_id).map(tx => tx.merchant_id!));
-  const visitedMerchants = merchants.filter(m => visitedMerchantIds.has(m.id));
 
   function copyAddress() {
     if (!user.wallet_address) return;
@@ -440,6 +379,10 @@ function CuentaTab({ user, transactions, milestones, merchants }: CuentaTabProps
     setCopied(true);
     setTimeout(() => setCopied(false), 2000);
   }
+
+  const memberSince = new Date(user.created_at).toLocaleDateString('es-HN', {
+    day: 'numeric', month: 'long', year: 'numeric',
+  });
 
   return (
     <div className="flex flex-col gap-4">
@@ -452,7 +395,9 @@ function CuentaTab({ user, transactions, milestones, merchants }: CuentaTabProps
             style={{ background: C.surfaceHi, border: `1px solid ${C.border}` }}
           >
             <div>
-              <p className="text-xs font-bold uppercase tracking-widest mb-0.5" style={{ color: C.slate }}>Dirección</p>
+              <p className="text-xs font-bold uppercase tracking-widest mb-0.5" style={{ color: C.slate }}>
+                Dirección
+              </p>
               <p className="text-sm font-mono font-semibold" style={{ color: C.white }}>
                 {user.wallet_address
                   ? `${user.wallet_address.slice(0, 8)}…${user.wallet_address.slice(-6)}`
@@ -464,6 +409,7 @@ function CuentaTab({ user, transactions, milestones, merchants }: CuentaTabProps
                 onClick={copyAddress}
                 className="p-2 rounded-lg transition-all active:scale-95"
                 style={{ background: C.surface, color: copied ? C.success : C.slate }}
+                title="Copiar dirección"
               >
                 <IconCopy />
               </button>
@@ -471,57 +417,57 @@ function CuentaTab({ user, transactions, milestones, merchants }: CuentaTabProps
           </div>
 
           <div className="grid grid-cols-2 gap-2">
-            <div
-              className="rounded-xl px-4 py-3"
-              style={{ background: C.surfaceHi, border: `1px solid ${C.border}` }}
-            >
+            <div className="rounded-xl px-4 py-3" style={{ background: C.surfaceHi, border: `1px solid ${C.border}` }}>
               <p className="text-xs font-bold uppercase tracking-widest mb-0.5" style={{ color: C.slate }}>Red</p>
-              <p className="text-sm font-semibold" style={{ color: C.blue }}>Base (L2)</p>
+              <p className="text-sm font-semibold" style={{ color: C.slateHi }}>Base (L2)</p>
             </div>
-            <div
-              className="rounded-xl px-4 py-3"
-              style={{ background: C.surfaceHi, border: `1px solid ${C.border}` }}
-            >
-              <p className="text-xs font-bold uppercase tracking-widest mb-0.5" style={{ color: C.slate }}>Cuenta</p>
-              <p className="text-sm font-semibold truncate" style={{ color: C.white }}>{user.email}</p>
+            <div className="rounded-xl px-4 py-3" style={{ background: C.surfaceHi, border: `1px solid ${C.border}` }}>
+              <p className="text-xs font-bold uppercase tracking-widest mb-0.5" style={{ color: C.slate }}>Token</p>
+              <p className="text-sm font-semibold" style={{ color: C.gold }}>CATR</p>
             </div>
           </div>
         </div>
       </Section>
 
-      {/* Donde acumulas */}
-      <Section title="Dónde acumulas puntos">
-        {visitedMerchants.length === 0 ? (
-          <p className="text-sm py-2 text-center" style={{ color: C.slate }}>
-            Aún no has acumulado puntos en ningún establecimiento.
-          </p>
-        ) : (
-          <div className="flex flex-col gap-2">
-            {visitedMerchants.map((m) => (
-              <div
-                key={m.id}
-                className="flex items-center justify-between rounded-xl px-4 py-3"
-                style={{ background: C.surfaceHi, border: `1px solid ${C.border}` }}
-              >
-                <div className="flex items-center gap-3">
-                  <div
-                    className="w-8 h-8 rounded-lg flex items-center justify-center text-xs font-black"
-                    style={{ background: 'rgba(59,130,246,0.15)', color: C.blue }}
-                  >
-                    {m.name.charAt(0)}
-                  </div>
-                  <span className="text-sm font-semibold" style={{ color: C.white }}>{m.name}</span>
-                </div>
-                <span className="text-xs font-medium px-2 py-1 rounded-lg" style={{ background: C.surface, color: C.slate }}>
-                  {m.category}
-                </span>
-              </div>
-            ))}
-          </div>
-        )}
+      {/* Profile */}
+      <Section title="Mi Perfil">
+        <div className="flex flex-col gap-2">
+          {[
+            { label: 'Nombre', value: user.full_name },
+            { label: 'Correo', value: user.email },
+            { label: 'Miembro desde', value: memberSince },
+          ].map(({ label, value }) => (
+            <div
+              key={label}
+              className="flex items-center justify-between rounded-xl px-4 py-3"
+              style={{ background: C.surfaceHi, border: `1px solid ${C.border}` }}
+            >
+              <p className="text-xs font-bold uppercase tracking-widest" style={{ color: C.slate }}>{label}</p>
+              <p className="text-sm font-semibold truncate max-w-[60%] text-right" style={{ color: C.white }}>{value}</p>
+            </div>
+          ))}
+        </div>
       </Section>
 
-      {/* Recompensas */}
+    </div>
+  );
+}
+
+// ─── Tab: Actividad ───────────────────────────────────────────────────────────
+
+const MILESTONE_LABELS: Record<string, string> = {
+  TX_5:          '5 transacciones',
+  TX_10:         '10 transacciones',
+  TX_25:         '25 transacciones',
+  CROSS_MERCHANT: 'Bonus multi-comercio',
+  REFERRAL:      'Bono de referido',
+};
+
+function ActividadTab({ transactions, milestones }: { transactions: Transaction[]; milestones: Milestone[] }) {
+  return (
+    <div className="flex flex-col gap-4">
+
+      {/* Milestones */}
       {milestones.length > 0 && (
         <Section title="Recompensas desbloqueadas">
           <div className="flex flex-col gap-2">
@@ -529,11 +475,18 @@ function CuentaTab({ user, transactions, milestones, merchants }: CuentaTabProps
               <div
                 key={m.id}
                 className="flex items-center gap-3 rounded-xl px-4 py-3"
-                style={{ background: 'rgba(201,168,76,0.08)', border: `1px solid rgba(201,168,76,0.2)` }}
+                style={{ background: 'rgba(201,168,76,0.08)', border: '1px solid rgba(201,168,76,0.2)' }}
               >
-                <span className="text-xl">🏆</span>
+                <span
+                  style={{
+                    width: 6, height: 6, borderRadius: '50%',
+                    background: C.gold, display: 'inline-block', flexShrink: 0,
+                  }}
+                />
                 <div>
-                  <p className="text-sm font-bold" style={{ color: C.gold }}>{m.type.replace('_', ' ')}</p>
+                  <p className="text-sm font-bold" style={{ color: C.gold, fontFamily: 'var(--font-body)' }}>
+                    {MILESTONE_LABELS[m.type] ?? m.type}
+                  </p>
                   <p className="text-xs" style={{ color: C.slate }}>
                     {new Date(m.unlocked_at).toLocaleDateString('es-HN', { day: 'numeric', month: 'short', year: 'numeric' })}
                   </p>
@@ -544,416 +497,251 @@ function CuentaTab({ user, transactions, milestones, merchants }: CuentaTabProps
         </Section>
       )}
 
-      {/* Historial */}
+      {/* Transactions */}
       <Section title="Historial de transacciones">
         {transactions.length === 0 ? (
-          <p className="text-sm py-2 text-center" style={{ color: C.slate }}>Sin transacciones aún.</p>
+          <p className="text-sm py-4 text-center" style={{ color: C.slate }}>
+            Sin transacciones aún.
+          </p>
         ) : (
           <div className="flex flex-col gap-2">
-            {transactions.map((tx) => (
-              <div
-                key={tx.id}
-                className="flex items-center justify-between rounded-xl px-4 py-3"
-                style={{ background: C.surfaceHi, border: `1px solid ${C.border}` }}
-              >
-                <div className="flex items-center gap-3">
-                  <div
-                    className="w-8 h-8 rounded-lg flex items-center justify-center text-sm"
-                    style={{
-                      background: tx.type === 'MINT' ? 'rgba(16,185,129,0.12)' : 'rgba(59,130,246,0.12)',
-                      color: tx.type === 'MINT' ? C.success : C.blue,
-                    }}
-                  >
-                    {tx.type === 'MINT' ? '↓' : '↑'}
-                  </div>
-                  <div>
-                    <p className="text-sm font-semibold" style={{ color: C.white }}>
-                      {tx.type === 'MINT' ? 'Puntos acumulados' : 'Puntos enviados'}
-                    </p>
-                    <p className="text-xs" style={{ color: C.slate }}>
-                      {new Date(tx.created_at).toLocaleDateString('es-HN', { day: 'numeric', month: 'short' })}
-                    </p>
-                  </div>
-                </div>
-                <span
-                  className="text-sm font-bold"
-                  style={{ color: tx.type === 'MINT' ? C.success : C.blue }}
+            {transactions.map((tx) => {
+              const isMint = tx.type === 'MINT';
+              return (
+                <div
+                  key={tx.id}
+                  className="flex items-center justify-between rounded-xl px-4 py-3"
+                  style={{ background: C.surfaceHi, border: `1px solid ${C.border}` }}
                 >
-                  {tx.type === 'MINT' ? '+' : '-'}{parseFloat(tx.amount_catr).toFixed(2)}
-                </span>
-              </div>
-            ))}
+                  <div className="flex items-center gap-3">
+                    <div
+                      className="w-8 h-8 rounded-lg flex items-center justify-center text-sm font-bold"
+                      style={{
+                        background: isMint ? 'rgba(16,185,129,0.12)' : 'rgba(255,255,255,0.06)',
+                        color: isMint ? C.success : C.slateHi,
+                      }}
+                    >
+                      {isMint ? '↓' : '↑'}
+                    </div>
+                    <div>
+                      <p className="text-sm font-semibold" style={{ color: C.white }}>
+                        {isMint ? 'Puntos acumulados' : 'Puntos enviados'}
+                      </p>
+                      <p className="text-xs" style={{ color: C.slate }}>
+                        {new Date(tx.created_at).toLocaleDateString('es-HN', { day: 'numeric', month: 'short' })}
+                      </p>
+                    </div>
+                  </div>
+                  <span className="text-sm font-bold" style={{ color: isMint ? C.success : C.slateHi }}>
+                    {isMint ? '+' : '-'}{parseFloat(tx.amount_catr).toFixed(2)}
+                  </span>
+                </div>
+              );
+            })}
           </div>
         )}
       </Section>
+
     </div>
   );
 }
 
-// ─── Tab 2: Mi Negocio ────────────────────────────────────────────────────────
+// ─── Tab: Red ─────────────────────────────────────────────────────────────────
 
-function NegocioTab({ merchants }: { merchants: Merchant[] }) {
-  const [selectedSale, setSelectedSale] = useState(merchants[0]?.id ?? '');
-  const [saleAmount, setSaleAmount] = useState('');
-  const [saleState, setSaleState] = useState<'idle' | 'loading' | 'success' | 'error'>('idle');
-  const [saleMsg, setSaleMsg] = useState('');
-  const [earnedPoints, setEarnedPoints] = useState('');
+function RedTab({ merchants, user, token, onSpend }: { merchants: Merchant[]; user: UserRecord; token: string; onSpend: () => void }) {
+  const active = merchants.filter((m) => m.active);
+  const [selected, setSelected] = useState<Merchant | null>(null);
+  const [amount, setAmount] = useState('');
+  const [state, setState] = useState<'idle' | 'loading' | 'success' | 'error'>('idle');
+  const [msg, setMsg] = useState('');
 
-  const [selectedRedeem, setSelectedRedeem] = useState(merchants[0]?.id ?? '');
-  const [redeemAmount, setRedeemAmount] = useState('');
-  const [redeemState, setRedeemState] = useState<'idle' | 'loading' | 'success' | 'error'>('idle');
-  const [redeemMsg, setRedeemMsg] = useState('');
-  const [redemptions, setRedemptions] = useState<RedemptionRequest[]>([]);
-
-  async function handleSale(e: React.FormEvent) {
+  async function handleSpend(e: React.FormEvent) {
     e.preventDefault();
-    if (!selectedSale || !saleAmount) return;
-    setSaleState('loading');
+    if (!selected || !amount) return;
+    setState('loading');
+    setMsg('');
     try {
-      const points = parseFloat(saleAmount).toFixed(2);
-      setEarnedPoints(points);
-      setSaleState('success');
-      setSaleMsg(`¡Venta registrada! El cliente acumuló ${points} puntos.`);
-      setSaleAmount('');
+      await spendCATR({ user_id: user.id, merchant_id: selected.id, amount_catr: amount }, token);
+      setState('success');
+      setMsg(`${parseFloat(amount).toFixed(2)} pts enviados a ${selected.name}.`);
+      setAmount('');
+      onSpend();
     } catch (err) {
-      setSaleState('error');
-      setSaleMsg(err instanceof Error ? err.message : 'Error al registrar venta.');
+      setState('error');
+      setMsg(err instanceof Error ? err.message : 'Error al procesar la transacción.');
     }
   }
 
-  async function handleRedeem(e: React.FormEvent) {
-    e.preventDefault();
-    if (!selectedRedeem || !redeemAmount) return;
-    setRedeemState('loading');
-    try {
-      await createRedemption({ merchant_id: selectedRedeem, amount_catr: redeemAmount });
-      setRedeemState('success');
-      setRedeemMsg('Solicitud de canje enviada correctamente.');
-      setRedeemAmount('');
-      const res = await getRedemptions('');
-      setRedemptions(res.data);
-    } catch (err) {
-      setRedeemState('error');
-      setRedeemMsg(err instanceof Error ? err.message : 'Error al enviar solicitud.');
-    }
-  }
+  if (selected) {
+    return (
+      <div className="flex flex-col gap-4">
+        <button
+          onClick={() => { setSelected(null); setState('idle'); setMsg(''); setAmount(''); }}
+          style={{ color: C.slate, fontFamily: 'var(--font-body)', fontSize: '0.75rem', fontWeight: 300, letterSpacing: '0.06em', background: 'none', border: 'none', cursor: 'pointer', textAlign: 'left', padding: 0 }}
+        >
+          ← Volver a la red
+        </button>
 
-  return (
-    <div className="flex flex-col gap-4">
-
-      {/* Nueva Venta */}
-      <Section title="Nueva Venta">
-        {saleState === 'success' ? (
-          <div className="flex flex-col items-center gap-4 py-4 animate-fade-up">
-            <div
-              className="w-16 h-16 rounded-2xl flex items-center justify-center text-2xl font-black"
-              style={{ background: C.successBg, color: C.success, border: `1px solid rgba(16,185,129,0.3)` }}
-            >
-              ✓
-            </div>
-            <p className="text-base font-bold text-center" style={{ color: C.success }}>{saleMsg}</p>
-            <div
-              className="w-full rounded-xl px-4 py-3 text-center"
-              style={{ background: C.surfaceHi, border: `1px solid ${C.border}` }}
-            >
-              <p className="text-xs font-bold uppercase tracking-widest mb-1" style={{ color: C.slate }}>
-                Dile al cliente
-              </p>
-              <p className="text-sm font-semibold" style={{ color: C.white }}>
-                Acumulaste <span style={{ color: C.blue }}>{earnedPoints} puntos</span> en este establecimiento.
-              </p>
-            </div>
-            <GhostBtn onClick={() => setSaleState('idle')}>Registrar otra venta</GhostBtn>
-          </div>
-        ) : (
-          <form onSubmit={handleSale} className="flex flex-col gap-4">
-            <MerchantSelector merchants={merchants} value={selectedSale} onChange={setSelectedSale} />
-            <Input
-              label="Puntos a acumular"
-              type="number"
-              min="0.01"
-              step="0.01"
-              value={saleAmount}
-              onChange={(e) => setSaleAmount(e.target.value)}
-              placeholder="Ej. 50"
-            />
-            {saleState === 'error' && <StatusMsg type="error" msg={saleMsg} />}
-            <PrimaryBtn type="submit" disabled={saleState === 'loading' || !saleAmount || !selectedSale}>
-              {saleState === 'loading' ? 'Registrando…' : 'Registrar Venta'}
-            </PrimaryBtn>
-          </form>
-        )}
-      </Section>
-
-      {/* Canjear */}
-      <Section title="Canjear Puntos">
-        <form onSubmit={handleRedeem} className="flex flex-col gap-4">
-          <MerchantSelector merchants={merchants} value={selectedRedeem} onChange={setSelectedRedeem} />
-          <Input
-            label="Puntos a canjear"
-            type="number"
-            min="0.01"
-            step="0.01"
-            value={redeemAmount}
-            onChange={(e) => setRedeemAmount(e.target.value)}
-            placeholder="Ej. 100"
-          />
-          {redeemState === 'success' && <StatusMsg type="success" msg={redeemMsg} />}
-          {redeemState === 'error' && <StatusMsg type="error" msg={redeemMsg} />}
-          <PrimaryBtn type="submit" disabled={redeemState === 'loading' || !redeemAmount || !selectedRedeem}>
-            {redeemState === 'loading' ? 'Enviando…' : 'Solicitar Canje'}
-          </PrimaryBtn>
-        </form>
-
-        {redemptions.length > 0 && (
-          <div className="mt-4 flex flex-col gap-2">
-            <p className="text-xs font-bold uppercase tracking-widest mb-1" style={{ color: C.slate }}>
-              Solicitudes recientes
-            </p>
-            {redemptions.map((r) => (
+        {state === 'success' ? (
+          <Section>
+            <div className="flex flex-col items-center gap-4 py-4 text-center">
               <div
-                key={r.id}
-                className="flex items-center justify-between rounded-xl px-4 py-3"
-                style={{ background: C.surfaceHi, border: `1px solid ${C.border}` }}
+                className="w-12 h-12 rounded-xl flex items-center justify-center"
+                style={{ background: C.successBg, border: '1px solid rgba(16,185,129,0.3)' }}
               >
-                <span className="text-sm font-semibold" style={{ color: C.white }}>
-                  {parseFloat(r.amount_catr).toFixed(2)} pts
-                </span>
-                <span className="text-xs font-medium px-2 py-1 rounded-lg" style={{ background: C.surface, color: C.slate }}>
-                  {r.status}
-                </span>
+                <span style={{ color: C.success, fontSize: '1.25rem', fontWeight: 700 }}>✓</span>
               </div>
-            ))}
-          </div>
-        )}
-      </Section>
-    </div>
-  );
-}
+              <p style={{ color: C.white, fontFamily: 'var(--font-body)', fontWeight: 300, fontSize: '0.9rem' }}>{msg}</p>
+              <button
+                onClick={() => { setState('idle'); setMsg(''); }}
+                style={{ color: C.slate, fontFamily: 'var(--font-body)', fontSize: '0.75rem', fontWeight: 300, letterSpacing: '0.06em', background: 'none', border: 'none', cursor: 'pointer' }}
+              >
+                Nueva transacción
+              </button>
+            </div>
+          </Section>
+        ) : (
+          <div className="shimmer-border rounded-2xl p-px">
+            <form onSubmit={handleSpend} className="rounded-2xl px-5 py-6 flex flex-col gap-5" style={{ background: C.surface }}>
+              <div>
+                <p style={{ color: C.slate, fontFamily: 'var(--font-body)', fontSize: '0.65rem', fontWeight: 300, letterSpacing: '0.12em', textTransform: 'uppercase', marginBottom: '0.5rem' }}>
+                  Comercio
+                </p>
+                <p style={{ color: C.white, fontFamily: 'var(--font-body)', fontWeight: 400, fontSize: '1rem' }}>
+                  {selected.name}
+                </p>
+                <p style={{ color: C.slate, fontFamily: 'var(--font-body)', fontSize: '0.75rem', fontWeight: 300 }}>
+                  {selected.category}
+                </p>
+              </div>
 
-// ─── Tab 3: Admin ─────────────────────────────────────────────────────────────
-
-const ADMIN_PIN   = process.env.NEXT_PUBLIC_ADMIN_PIN   ?? '';
-const ADMIN_TOKEN = process.env.NEXT_PUBLIC_ADMIN_TOKEN ?? '';
-
-function AdminTab() {
-  const [pin, setPin] = useState('');
-  const [token, setToken] = useState('');
-  const [loaded, setLoaded] = useState(false);
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState('');
-  const [redemptions, setRedemptions] = useState<RedemptionRequest[]>([]);
-  const [payouts, setPayouts] = useState<RewardPayout[]>([]);
-
-  const [mintUserId, setMintUserId] = useState('');
-  const [mintAmount, setMintAmount] = useState('');
-  const [mintState, setMintState] = useState<'idle' | 'loading' | 'success' | 'error'>('idle');
-  const [mintMsg, setMintMsg] = useState('');
-
-  async function loadAdmin() {
-    if (pin !== ADMIN_PIN) { setError('PIN incorrecto.'); return; }
-    const jwt = ADMIN_TOKEN;
-    setLoading(true);
-    setError('');
-    try {
-      const [rRes, pRes] = await Promise.all([
-        getRedemptions(jwt, { status: 'PENDING_BURN' }),
-        getRewardQueue(jwt),
-      ]);
-      setToken(jwt);
-      setRedemptions(rRes.data);
-      setPayouts(pRes.data);
-      setLoaded(true);
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'Error al cargar datos de admin.');
-    } finally {
-      setLoading(false);
-    }
-  }
-
-  async function handleApproveRedemption(id: string) {
-    await approveRedemption(id, token);
-    const res = await getRedemptions(token, { status: 'PENDING_BURN' });
-    setRedemptions(res.data);
-  }
-
-  async function handleRejectRedemption(id: string) {
-    await rejectRedemption(id, token);
-    const res = await getRedemptions(token, { status: 'PENDING_BURN' });
-    setRedemptions(res.data);
-  }
-
-  async function handleApprovePayout(id: string) {
-    await approveRewardPayout(id, token);
-    const res = await getRewardQueue(token);
-    setPayouts(res.data);
-  }
-
-  async function handleManualMint(e: React.FormEvent) {
-    e.preventDefault();
-    if (!mintUserId || !mintAmount) return;
-    setMintState('loading');
-    try {
-      await spendCATR({ user_id: mintUserId, merchant_id: '', amount_catr: mintAmount });
-      setMintState('success');
-      setMintMsg(`${mintAmount} puntos acreditados correctamente.`);
-      setMintUserId('');
-      setMintAmount('');
-    } catch (err) {
-      setMintState('error');
-      setMintMsg(err instanceof Error ? err.message : 'Error al ejecutar mint.');
-    }
-  }
-
-  return (
-    <div className="flex flex-col gap-4">
-      {!loaded ? (
-        <Section title="Acceso Admin">
-          <div className="flex flex-col gap-4">
-            <Input
-              label="PIN de administrador"
-              type="password"
-              inputMode="numeric"
-              maxLength={4}
-              value={pin}
-              onChange={(e) => setPin(e.target.value)}
-              placeholder="••••"
-            />
-            {error && <StatusMsg type="error" msg={error} />}
-            <PrimaryBtn onClick={loadAdmin} disabled={loading}>
-              {loading ? 'Verificando…' : 'Entrar como Admin'}
-            </PrimaryBtn>
-          </div>
-        </Section>
-      ) : (
-        <>
-          {/* Manual Mint */}
-          <Section title="Acreditar Puntos (Piloto)">
-            <form onSubmit={handleManualMint} className="flex flex-col gap-4">
               <Input
-                label="User ID del cliente"
-                value={mintUserId}
-                onChange={(e) => setMintUserId(e.target.value)}
-                placeholder="UUID del usuario"
-              />
-              <Input
-                label="Puntos a acreditar"
+                label="Puntos a enviar"
                 type="number"
                 min="0.01"
                 step="0.01"
-                value={mintAmount}
-                onChange={(e) => setMintAmount(e.target.value)}
-                placeholder="Ej. 100"
+                value={amount}
+                onChange={(e) => setAmount(e.target.value)}
+                placeholder="0.00"
               />
-              {mintState === 'success' && <StatusMsg type="success" msg={mintMsg} />}
-              {mintState === 'error' && <StatusMsg type="error" msg={mintMsg} />}
-              <PrimaryBtn type="submit" disabled={mintState === 'loading' || !mintUserId || !mintAmount}>
-                {mintState === 'loading' ? 'Procesando…' : 'Acreditar Puntos'}
+
+              {state === 'error' && <StatusMsg type="error" msg={msg} />}
+
+              <PrimaryBtn type="submit" disabled={state === 'loading' || !amount}>
+                {state === 'loading' ? 'Procesando' : 'Enviar puntos'}
               </PrimaryBtn>
             </form>
-          </Section>
+          </div>
+        )}
+      </div>
+    );
+  }
 
-          {/* Canjes */}
-          <Section title="Canjes pendientes">
-            {redemptions.length === 0 ? (
-              <p className="text-sm text-center py-2" style={{ color: C.slate }}>Sin canjes pendientes.</p>
-            ) : (
-              <div className="flex flex-col gap-3">
-                {redemptions.map((r) => (
-                  <div
-                    key={r.id}
-                    className="rounded-xl px-4 py-3 flex flex-col gap-3"
-                    style={{ background: C.surfaceHi, border: `1px solid ${C.border}` }}
-                  >
-                    <div className="flex items-center justify-between">
-                      <span className="text-sm font-bold" style={{ color: C.white }}>
-                        {parseFloat(r.amount_catr).toFixed(2)} pts
-                      </span>
-                      <span className="text-xs px-2 py-1 rounded-lg" style={{ background: C.surface, color: C.slate }}>
-                        {r.tier}
-                      </span>
-                    </div>
-                    <div className="flex gap-2">
-                      <button
-                        onClick={() => handleApproveRedemption(r.id)}
-                        className="flex-1 py-2 rounded-xl text-sm font-bold text-white transition-all active:scale-95"
-                        style={{ background: 'rgba(16,185,129,0.2)', color: C.success, border: `1px solid rgba(16,185,129,0.3)` }}
-                      >
-                        Aprobar
-                      </button>
-                      <button
-                        onClick={() => handleRejectRedemption(r.id)}
-                        className="flex-1 py-2 rounded-xl text-sm font-bold transition-all active:scale-95"
-                        style={{ background: 'rgba(239,68,68,0.12)', color: C.error, border: `1px solid rgba(239,68,68,0.3)` }}
-                      >
-                        Rechazar
-                      </button>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            )}
-          </Section>
+  return (
+    <div className="flex flex-col gap-4">
+      <Section title={`${active.length} establecimiento${active.length !== 1 ? 's' : ''} en la red`}>
+        {active.length === 0 ? (
+          <p className="text-sm py-4 text-center" style={{ color: C.slate }}>
+            No hay comercios activos aún.
+          </p>
+        ) : (
+          <div className="flex flex-col gap-2">
+            {active.map((m) => (
+              <button
+                key={m.id}
+                onClick={() => setSelected(m)}
+                className="flex items-center gap-3 rounded-xl px-4 py-3 w-full text-left transition-all active:scale-95"
+                style={{ background: C.surfaceHi, border: `1px solid ${C.border}`, cursor: 'pointer' }}
+              >
+                <div
+                  className="w-10 h-10 rounded-xl flex items-center justify-center text-sm font-black flex-shrink-0"
+                  style={{ background: 'rgba(255,255,255,0.05)', color: C.slateHi }}
+                >
+                  {m.name.charAt(0).toUpperCase()}
+                </div>
+                <div className="flex-1 min-w-0">
+                  <p className="text-sm font-semibold truncate" style={{ color: C.white, fontFamily: 'var(--font-body)' }}>{m.name}</p>
+                  <p className="text-xs" style={{ color: C.slate, fontFamily: 'var(--font-body)', fontWeight: 300 }}>{m.category}</p>
+                </div>
+                <span style={{ color: C.slate, fontSize: '0.75rem' }}>→</span>
+              </button>
+            ))}
+          </div>
+        )}
+      </Section>
 
-          {/* Recompensas */}
-          <Section title="Cola de recompensas">
-            {payouts.length === 0 ? (
-              <p className="text-sm text-center py-2" style={{ color: C.slate }}>Sin pagos pendientes.</p>
-            ) : (
-              <div className="flex flex-col gap-3">
-                {payouts.map((p) => (
-                  <div
-                    key={p.id}
-                    className="rounded-xl px-4 py-3 flex flex-col gap-3"
-                    style={{ background: C.surfaceHi, border: `1px solid ${C.border}` }}
-                  >
-                    <div className="flex items-center justify-between">
-                      <span className="text-sm font-bold" style={{ color: C.white }}>
-                        {parseFloat(p.amount_catr).toFixed(2)} pts
-                      </span>
-                      <span className="text-xs" style={{ color: C.slate }}>{p.status}</span>
-                    </div>
-                    <PrimaryBtn onClick={() => handleApprovePayout(p.id)}>
-                      Autorizar pago
-                    </PrimaryBtn>
-                  </div>
-                ))}
-              </div>
-            )}
-          </Section>
-        </>
-      )}
+      <div
+        className="rounded-2xl px-5 py-4 text-center"
+        style={{ background: C.surfaceHi, border: `1px solid ${C.border}` }}
+      >
+        <p style={{ color: C.slate, fontFamily: 'var(--font-body)', fontSize: '0.65rem', fontWeight: 300, letterSpacing: '0.06em' }}>
+          Selecciona un comercio para enviar puntos.
+          <br />
+          1 punto = 1 Lempira.
+        </p>
+      </div>
     </div>
   );
 }
 
 // ─── Root ─────────────────────────────────────────────────────────────────────
 
-export default function PilotPage() {
+const SESSION_KEY = 'fidelio_session';
+
+export default function ClientPage() {
+  const [introComplete, setIntroComplete] = useState(false);
+  const [token, setToken] = useState<string | null>(null);
   const [user, setUser] = useState<UserRecord | null>(null);
-  const [activeTab, setActiveTab] = useState<Tab>('cuenta');
   const [transactions, setTransactions] = useState<Transaction[]>([]);
   const [milestones, setMilestones] = useState<Milestone[]>([]);
   const [merchants, setMerchants] = useState<Merchant[]>([]);
+  const [activeTab, setActiveTab] = useState<Tab>('cuenta');
 
-  async function handleLogin(res: { user: UserRecord; transactions: Transaction[]; milestones: Milestone[]; merchants: Merchant[] }) {
-    setTransactions(res.transactions);
-    setMilestones(res.milestones);
-    setMerchants(res.merchants);
-    setUser(res.user);
+  useEffect(() => {
+    const raw = localStorage.getItem(SESSION_KEY);
+    if (!raw) return;
+    try {
+      const session = JSON.parse(raw);
+      setToken(session.token);
+      setUser(session.user);
+      setTransactions(session.transactions ?? []);
+      setMilestones(session.milestones ?? []);
+      setMerchants(session.merchants ?? []);
+      setIntroComplete(true);
+    } catch {
+      localStorage.removeItem(SESSION_KEY);
+    }
+  }, []);
+
+  function handleLogin(data: { token: string; user: UserRecord; transactions: Transaction[]; milestones: Milestone[]; merchants: Merchant[] }) {
+    setToken(data.token);
+    setUser(data.user);
+    setTransactions(data.transactions);
+    setMilestones(data.milestones);
+    setMerchants(data.merchants);
+    localStorage.setItem(SESSION_KEY, JSON.stringify(data));
   }
 
   async function refreshUser() {
-    if (!user) return;
-    const [userRes, txRes] = await Promise.all([
-      getUser(user.id),
-      getUserTransactions(user.id),
-    ]);
-    setUser(userRes.data);
-    setTransactions(txRes.data);
+    if (!user || !token) return;
+    try {
+      const [userRes, txRes] = await Promise.all([
+        getUser(user.id, token),
+        getUserTransactions(user.id, token),
+      ]);
+      setUser(userRes.data);
+      setTransactions(txRes.data);
+      const raw = localStorage.getItem(SESSION_KEY);
+      if (raw) {
+        const session = JSON.parse(raw);
+        localStorage.setItem(SESSION_KEY, JSON.stringify({ ...session, user: userRes.data, transactions: txRes.data }));
+      }
+    } catch { /* silent */ }
   }
 
   function handleLogout() {
+    localStorage.removeItem(SESSION_KEY);
+    setToken(null);
     setUser(null);
     setTransactions([]);
     setMilestones([]);
@@ -961,15 +749,16 @@ export default function PilotPage() {
     setActiveTab('cuenta');
   }
 
+  if (!introComplete) return <FidelioIntro onComplete={() => setIntroComplete(true)} />;
   if (!user) return <LoginScreen onLogin={handleLogin} />;
 
   return (
     <div className="min-h-screen" style={{ background: C.bg }}>
       <TopBar user={user} onLogout={handleLogout} />
       <main className="px-4 pt-5 pb-28 flex flex-col gap-4">
-        {activeTab === 'cuenta'  && <CuentaTab user={user} transactions={transactions} milestones={milestones} merchants={merchants} />}
-        {activeTab === 'negocio' && <NegocioTab merchants={merchants} />}
-        {activeTab === 'admin'   && <AdminTab />}
+        {activeTab === 'cuenta'    && <CuentaTab user={user} />}
+        {activeTab === 'actividad' && <ActividadTab transactions={transactions} milestones={milestones} />}
+        {activeTab === 'red'       && <RedTab merchants={merchants} user={user} token={token!} onSpend={refreshUser} />}
       </main>
       <TabBar active={activeTab} onChange={setActiveTab} />
     </div>

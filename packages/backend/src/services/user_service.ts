@@ -7,8 +7,8 @@ export class UserService {
     return this.db.user.create({ data });
   }
 
-  async getUser(id: string): Promise<User | null> {
-    return this.db.user.findUnique({ where: { id } });
+  async getUser(id: string): Promise<(User & { wallet: Wallet | null }) | null> {
+    return this.db.user.findUnique({ where: { id }, include: { wallet: true } });
   }
 
   async createWallet(user_id: string, address: string): Promise<Wallet> {

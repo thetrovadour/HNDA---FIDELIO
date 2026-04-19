@@ -1,7 +1,7 @@
 import { Router, Request, Response } from 'express';
 import { z } from 'zod';
 import { validate } from '../middleware/validate';
-import { adminAuth } from '../middleware/auth';
+import { adminAuth, userAuth } from '../middleware/auth';
 import { TransactionService } from '../services/transaction_service';
 import db from '../db';
 
@@ -23,7 +23,11 @@ export function transactionsRouter(transactionService: TransactionService): Rout
     res.status(200).json({ data: tx });
   });
 
-  router.post('/spend', adminAuth, validate(SpendSchema), async (req: Request, res: Response) => {
+  router.post('/spend', userAuth, validate(SpendSchema), async (req: Request, res: Response) => {
+    if (req.user!.id !== req.body.user_id) {
+      res.status(403).json({ error: 'Forbidden', code: 'ACCESS_DENIED' });
+      return;
+    }
     try {
       const tx = await transactionService.recordSpend(req.body);
       res.status(201).json({ data: tx });

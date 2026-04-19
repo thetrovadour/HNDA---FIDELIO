@@ -5,10 +5,10 @@ import { InteractiveGridPattern } from "@/components/ui/interactive-grid-pattern
 import { EncryptedText } from "@/components/ui/encrypted-text"
 
 // "FIDELIO" = 7 chars × 80ms reveal + 300ms pause + 400ms fade = ~1.3s total
-const REVEAL_DELAY_MS = 48.32
+const REVEAL_DELAY_MS = 58.32
 const TEXT = "FIDELIO"
 const PAUSE_AFTER_REVEAL = 800
-const FADE_DURATION = 700
+const FADE_DURATION = 900
 const DISMISS_AFTER = TEXT.length * REVEAL_DELAY_MS + PAUSE_AFTER_REVEAL
 
 interface FidelioIntroProps {
@@ -58,7 +58,7 @@ export function FidelioIntro({ onComplete }: FidelioIntroProps) {
       >
         <InteractiveGridPattern
           squares={[80, 80]}
-          className="opacity-70"
+          className="opacity-90"
           squaresClassName="hover:fill-sky-400/20"
         />
       </div>
@@ -69,8 +69,8 @@ export function FidelioIntro({ onComplete }: FidelioIntroProps) {
           position: "relative",
           zIndex: 1,
           fontSize: "clamp(4rem, 10vw, 4rem)",
-          fontWeight: 50,
-          letterSpacing: "0.12em",
+          fontWeight: 30,
+          letterSpacing: "0.09em",
           color: "white",
         }}
       >
@@ -78,7 +78,7 @@ export function FidelioIntro({ onComplete }: FidelioIntroProps) {
           text={TEXT}
           revealDelayMs={REVEAL_DELAY_MS}
           flipDelayMs={40}
-          encryptedClassName="opacity-40"
+          encryptedClassName="opacity-20"
           revealedClassName="opacity-100"
         />
       </span>

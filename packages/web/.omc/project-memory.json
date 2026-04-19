@@ -1,0 +1,140 @@
+{
+  "version": "1.0.0",
+  "lastScanned": 1776575492402,
+  "projectRoot": "/home/cristian-rodriguez/proyectos/HNDA---FIDELIO/packages/web",
+  "techStack": {
+    "languages": [
+      {
+        "name": "JavaScript/TypeScript",
+        "version": null,
+        "confidence": "high",
+        "markers": [
+          "package.json"
+        ]
+      },
+      {
+        "name": "TypeScript",
+        "version": null,
+        "confidence": "high",
+        "markers": [
+          "tsconfig.json"
+        ]
+      }
+    ],
+    "frameworks": [
+      {
+        "name": "next",
+        "version": "16.2.2",
+        "category": "fullstack"
+      },
+      {
+        "name": "react",
+        "version": "18",
+        "category": "frontend"
+      },
+      {
+        "name": "react-dom",
+        "version": "18",
+        "category": "frontend"
+      }
+    ],
+    "packageManager": "npm",
+    "runtime": null
+  },
+  "build": {
+    "buildCommand": "npm run build",
+    "testCommand": "npm test",
+    "lintCommand": null,
+    "devCommand": "npm run dev",
+    "scripts": {
+      "dev": "next dev -p 3000 -H 0.0.0.0",
+      "build": "next build",
+      "start": "next start",
+      "test": "echo \"no tests yet\" && exit 0"
+    }
+  },
+  "conventions": {
+    "namingStyle": null,
+    "importStyle": null,
+    "testPattern": null,
+    "fileOrganization": "type-based"
+  },
+  "structure": {
+    "isMonorepo": false,
+    "workspaces": [],
+    "mainDirectories": [
+      "src"
+    ],
+    "gitBranches": null
+  },
+  "customNotes": [],
+  "directoryMap": {
+    "src": {
+      "path": "src",
+      "purpose": "Source code",
+      "fileCount": 0,
+      "lastAccessed": 1776575492386,
+      "keyFiles": []
+    },
+    "src/app": {
+      "path": "src/app",
+      "purpose": "Application code",
+      "fileCount": 9,
+      "lastAccessed": 1776575492388,
+      "keyFiles": [
+        "apple-icon.png",
+        "globals.css",
+        "icon.png"
+      ]
+    },
+    "src/components": {
+      "path": "src/components",
+      "purpose": "UI components",
+      "fileCount": 15,
+      "lastAccessed": 1776575492394,
+      "keyFiles": [
+        "AwardPoints.tsx",
+        "CanvasBackground.tsx",
+        "FidelioIntro.tsx"
+      ]
+    },
+    "src/lib": {
+      "path": "src/lib",
+      "purpose": "Library code",
+      "fileCount": 3,
+      "lastAccessed": 1776575492396,
+      "keyFiles": [
+        "api.ts",
+        "utils.ts",
+        "wagmi.ts"
+      ]
+    }
+  },
+  "hotPaths": [
+    {
+      "path": "src/app/admin/page.tsx",
+      "accessCount": 3,
+      "lastAccessed": 1776575953939,
+      "type": "file"
+    },
+    {
+      "path": "src/components/MerchantList.tsx",
+      "accessCount": 2,
+      "lastAccessed": 1776576270500,
+      "type": "file"
+    },
+    {
+      "path": "src/components/RedemptionQueue.tsx",
+      "accessCount": 2,
+      "lastAccessed": 1776576294736,
+      "type": "file"
+    },
+    {
+      "path": "src/components/RewardPayoutQueue.tsx",
+      "accessCount": 2,
+      "lastAccessed": 1776576312289,
+      "type": "file"
+    }
+  ],
+  "userDirectives": []
+}

@@ -21,7 +21,13 @@ export class TransactionService {
     const merchant = await this.db.merchant.findUnique({ where: { id: params.merchant_id } });
     if (!merchant) throw new Error('Merchant not found');
 
-    const commission = new Decimal(params.amount_catr).mul('0.036');
+    const wallet = await this.db.wallet.findUnique({ where: { user_id: params.user_id } });
+    if (!wallet) throw new Error('Wallet not found');
+
+    const amount = new Decimal(params.amount_catr);
+    if (wallet.catr_balance.lessThan(amount)) throw new Error('Insufficient CATR balance');
+
+    const commission = amount.mul('0.036');
 
     const transaction = await this.db.$transaction(async (tx: TxClient) => {
       const txRecord = await tx.transaction.create({
@@ -30,7 +36,7 @@ export class TransactionService {
           merchant_id: params.merchant_id,
           type: 'SPEND',
           status: 'CONFIRMED',
-          amount_catr: new Decimal(params.amount_catr),
+          amount_catr: amount,
           commission_catr: commission,
         },
       });
@@ -40,6 +46,11 @@ export class TransactionService {
           user_id: params.user_id,
           merchant_id: params.merchant_id,
         },
+      });
+
+      await tx.wallet.update({
+        where: { user_id: params.user_id },
+        data: { catr_balance: { decrement: amount } },
       });
 
       return txRecord;

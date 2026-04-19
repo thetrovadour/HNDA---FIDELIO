@@ -29,7 +29,16 @@ export function usersRouter(userService: UserService, transactionService: Transa
       res.status(404).json({ error: 'User not found', code: 'NOT_FOUND' });
       return;
     }
-    res.status(200).json({ data: user });
+    res.status(200).json({
+      data: {
+        id: user.id,
+        full_name: user.full_name,
+        email: user.email,
+        catr_balance: user.wallet?.catr_balance?.toString() ?? '0',
+        wallet_address: user.wallet?.address,
+        created_at: user.created_at,
+      },
+    });
   });
 
   router.get('/:id/transactions', selfOrAdmin, async (req: Request, res: Response) => {

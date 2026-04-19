@@ -1,5 +1,6 @@
 import { Router, Request, Response } from 'express';
 import { z } from 'zod';
+import jwt from 'jsonwebtoken';
 import { validate } from '../middleware/validate';
 import db from '../db';
 
@@ -24,6 +25,18 @@ export function authRouter(): Router {
       return;
     }
 
+    const jwtSecret = process.env.JWT_SECRET;
+    if (!jwtSecret) {
+      res.status(500).json({ error: 'Auth not configured', code: 'JWT_NOT_CONFIGURED' });
+      return;
+    }
+
+    const token = jwt.sign(
+      { id: user.id, role: 'user' },
+      jwtSecret,
+      { algorithm: 'HS256', expiresIn: '7d' }
+    );
+
     const [transactions, milestones, merchants] = await Promise.all([
       db.transaction.findMany({
         where: { user_id: user.id },
@@ -38,6 +51,7 @@ export function authRouter(): Router {
 
     res.status(200).json({
       data: {
+        token,
         user: {
           id: user.id,
           full_name: user.full_name,

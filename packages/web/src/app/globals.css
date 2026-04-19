@@ -127,6 +127,24 @@ body {
   animation: shimmer 9s linear infinite;
 }
 
+/* ── Shimmer box border ───────────────────────────── */
+
+@keyframes border-shimmer {
+  0%   { background-position: 200% center; }
+  100% { background-position: -200% center; }
+}
+
+.shimmer-border {
+  background: linear-gradient(
+    90deg,
+    rgba(255,255,255,0.04) 0%,
+    rgba(255,255,255,0.10) 40%,
+    rgba(255,255,255,0.04) 100%
+  );
+  background-size: 300% 100%;
+  animation: border-shimmer 5s ease-in-out infinite;
+}
+
 /* ── Scrollbar ────────────────────────────────────── */
 
 ::-webkit-scrollbar { width: 4px; }

@@ -9,7 +9,30 @@ interface Props {
   onRefresh: () => void;
 }
 
+const C = {
+  surface:   '#0C1018',
+  surfaceHi: '#111820',
+  border:    'rgba(255,255,255,0.07)',
+  gold:      '#C9A84C',
+  goldDim:   'rgba(201,168,76,0.12)',
+  white:     '#F1F5F9',
+  slate:     '#64748B',
+  slateHi:   '#94A3B8',
+  danger:    '#EF4444',
+  dangerBg:  'rgba(239,68,68,0.08)',
+  success:   '#10B981',
+  successBg: 'rgba(16,185,129,0.08)',
+};
+const font = { fontFamily: 'var(--font-body)' };
+
 const emptyForm = { name: '', category: '', wallet_address: '', contact_email: '' };
+
+const FIELD_LABELS: Record<string, string> = {
+  name: 'Name',
+  category: 'Category',
+  wallet_address: 'Wallet Address',
+  contact_email: 'Contact Email',
+};
 
 export default function MerchantList({ merchants, token, onRefresh }: Props) {
   const [form, setForm] = useState(emptyForm);
@@ -44,33 +67,53 @@ export default function MerchantList({ merchants, token, onRefresh }: Props) {
     }
   }
 
+  const thStyle: React.CSSProperties = {
+    ...font,
+    padding: '0.5rem 0.75rem',
+    fontSize: '0.6rem',
+    fontWeight: 400,
+    letterSpacing: '0.12em',
+    textTransform: 'uppercase',
+    color: C.slate,
+    borderBottom: `1px solid ${C.border}`,
+    textAlign: 'left',
+  };
+
+  const tdStyle: React.CSSProperties = {
+    ...font,
+    padding: '0.6rem 0.75rem',
+    fontSize: '0.78rem',
+    color: C.slateHi,
+    borderBottom: `1px solid ${C.border}`,
+  };
+
   return (
-    <div className="flex flex-col gap-6">
-      <div className="overflow-x-auto">
-        <table className="w-full text-sm border-collapse">
+    <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
+      <div style={{ overflowX: 'auto' }}>
+        <table style={{ width: '100%', borderCollapse: 'collapse' }}>
           <thead>
-            <tr className="bg-gray-100 text-left">
-              <th className="px-3 py-2 border border-gray-200">Name</th>
-              <th className="px-3 py-2 border border-gray-200">Category</th>
-              <th className="px-3 py-2 border border-gray-200">Active</th>
-              <th className="px-3 py-2 border border-gray-200">Actions</th>
+            <tr style={{ background: C.surfaceHi }}>
+              <th style={thStyle}>Name</th>
+              <th style={thStyle}>Category</th>
+              <th style={thStyle}>Active</th>
+              <th style={thStyle}>Actions</th>
             </tr>
           </thead>
           <tbody>
             {merchants.map((m) => (
-              <tr key={m.id} className="hover:bg-gray-50">
-                <td className="px-3 py-2 border border-gray-200">{m.name}</td>
-                <td className="px-3 py-2 border border-gray-200">{m.category}</td>
-                <td className="px-3 py-2 border border-gray-200">
-                  <span className={m.active ? 'text-green-600' : 'text-red-500'}>
-                    {m.active ? 'Yes' : 'No'}
+              <tr key={m.id}>
+                <td style={{ ...tdStyle, color: C.white }}>{m.name}</td>
+                <td style={tdStyle}>{m.category}</td>
+                <td style={tdStyle}>
+                  <span style={{ color: m.active ? C.success : C.danger }}>
+                    {m.active ? 'Active' : 'Inactive'}
                   </span>
                 </td>
-                <td className="px-3 py-2 border border-gray-200">
+                <td style={tdStyle}>
                   {m.active && (
                     <button
                       onClick={() => handleDeactivate(m.id)}
-                      className="text-red-600 hover:underline text-xs"
+                      style={{ ...font, background: C.dangerBg, border: `1px solid rgba(239,68,68,0.2)`, borderRadius: '0.25rem', color: C.danger, fontSize: '0.65rem', padding: '0.2rem 0.5rem', cursor: 'pointer' }}
                     >
                       Deactivate
                     </button>
@@ -80,37 +123,45 @@ export default function MerchantList({ merchants, token, onRefresh }: Props) {
             ))}
             {merchants.length === 0 && (
               <tr>
-                <td colSpan={4} className="px-3 py-4 text-center text-gray-400">No merchants.</td>
+                <td colSpan={4} style={{ ...tdStyle, textAlign: 'center', color: C.slate, padding: '1.5rem' }}>
+                  No merchants.
+                </td>
               </tr>
             )}
           </tbody>
         </table>
       </div>
 
-      <div className="border-t pt-4">
-        <h3 className="text-sm font-semibold text-gray-700 mb-3">Add Merchant</h3>
-        <form onSubmit={handleAdd} className="grid grid-cols-2 gap-3 max-w-lg">
+      <div style={{ borderTop: `1px solid ${C.border}`, paddingTop: '1.25rem' }}>
+        <p style={{ ...font, fontSize: '0.65rem', fontWeight: 400, letterSpacing: '0.12em', color: C.slate, textTransform: 'uppercase', marginBottom: '0.75rem' }}>
+          Add Merchant
+        </p>
+        <form onSubmit={handleAdd} style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.75rem', maxWidth: '560px' }}>
           {(['name', 'category', 'wallet_address', 'contact_email'] as const).map((field) => (
-            <label key={field} className="flex flex-col gap-1 text-xs text-gray-600">
-              {field.replace('_', ' ').replace(/\b\w/g, (c) => c.toUpperCase())}
+            <div key={field} style={{ display: 'flex', flexDirection: 'column', gap: '0.3rem' }}>
+              <label style={{ ...font, fontSize: '0.6rem', letterSpacing: '0.1em', color: C.slate, textTransform: 'uppercase' }}>
+                {FIELD_LABELS[field]}
+              </label>
               <input
                 name={field}
                 value={form[field]}
                 onChange={handleChange}
                 required
-                className="border border-gray-300 rounded px-2 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                style={{ ...font, background: C.surfaceHi, border: `1px solid ${C.border}`, borderRadius: '0.375rem', padding: '0.5rem 0.75rem', color: C.white, fontSize: '0.8rem', outline: 'none' }}
               />
-            </label>
+            </div>
           ))}
-          <div className="col-span-2">
+          <div style={{ gridColumn: '1 / -1' }}>
             <button
               type="submit"
               disabled={formStatus === 'loading'}
-              className="bg-indigo-600 text-white px-4 py-2 rounded text-sm font-medium hover:bg-indigo-700 disabled:opacity-50"
+              style={{ ...font, background: C.goldDim, border: `1px solid ${C.gold}`, borderRadius: '0.375rem', color: C.gold, fontSize: '0.7rem', fontWeight: 400, letterSpacing: '0.1em', padding: '0.5rem 1.25rem', cursor: 'pointer', textTransform: 'uppercase', opacity: formStatus === 'loading' ? 0.5 : 1 }}
             >
-              {formStatus === 'loading' ? 'Adding…' : 'Add Merchant'}
+              {formStatus === 'loading' ? 'Adding...' : 'Add Merchant'}
             </button>
-            {formStatus === 'error' && <p className="text-red-600 text-xs mt-1">{formError}</p>}
+            {formStatus === 'error' && (
+              <p style={{ ...font, color: C.danger, fontSize: '0.75rem', marginTop: '0.5rem' }}>{formError}</p>
+            )}
           </div>
         </form>
       </div>
