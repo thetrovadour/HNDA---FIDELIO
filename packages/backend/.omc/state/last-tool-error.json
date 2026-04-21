@@ -1,7 +1,0 @@
-{
-  "tool_name": "Bash",
-  "tool_input_preview": "{\"command\":\"npm test 2>&1\",\"timeout\":60000}",
-  "error": "Exit code 1\n\n> @hnda/backend@0.1.0 test\n> jest --passWithNoTests\n\nPASS tests/services/transaction_service.test.ts (5.819 s)\nPASS tests/services/mint_service.test.ts (5.863 s)\nPASS tests/services/reward_service.test.ts (5.862 s)\nPASS tests/jobs/reconciliation.test.ts (5.892 s)\nPASS tests/services/redemption_service.test.ts (5.944 s)\nPASS tests/routes/bridge_events.test.ts (6.225 s)\nPASS tests/routes/redemptions.test.ts (6.186 s)\nFAIL tests/routes/rewards.test.ts (8.286 s)\n  ● PATCH /api/rewards/q...",
-  "timestamp": "2026-04-17T01:54:41.941Z",
-  "retry_count": 1
-}
