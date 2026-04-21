@@ -1,39 +1,113 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { getAdminUsers, adminMint, type AdminUser } from '@/lib/api';
+import { getAdminUsers, getMerchants, adminMint, type AdminUser, type Merchant } from '@/lib/api';
 
-interface Props {
-  token: string;
+const C = {
+  bg:        '#06080D',
+  surface:   '#0C1018',
+  surfaceHi: '#111820',
+  border:    'rgba(255,255,255,0.07)',
+  borderHi:  'rgba(255,255,255,0.13)',
+  gold:      '#C9A84C',
+  goldDim:   'rgba(201,168,76,0.12)',
+  white:     '#F1F5F9',
+  slate:     '#64748B',
+  slateHi:   '#94A3B8',
+  success:   '#10B981',
+  successBg: 'rgba(16,185,129,0.08)',
+  error:     '#EF4444',
+  errorBg:   'rgba(239,68,68,0.08)',
+};
+
+const font = { fontFamily: 'var(--font-body)' };
+
+type TargetType = 'client' | 'merchant' | 'address';
+
+function Label({ children }: { children: React.ReactNode }) {
+  return (
+    <span style={{ ...font, fontSize: '0.65rem', fontWeight: 400, letterSpacing: '0.12em', color: C.slate, textTransform: 'uppercase' as const }}>
+      {children}
+    </span>
+  );
 }
 
-export default function AwardPoints({ token }: Props) {
-  const [users, setUsers] = useState<AdminUser[]>([]);
-  const [loadingUsers, setLoadingUsers] = useState(true);
-  const [usersError, setUsersError] = useState('');
+function FieldBox({ children }: { children: React.ReactNode }) {
+  return (
+    <div style={{ display: 'flex', flexDirection: 'column' as const, gap: '0.4rem' }}>
+      {children}
+    </div>
+  );
+}
 
-  const [selectedUserId, setSelectedUserId] = useState('');
-  const [amount, setAmount] = useState('');
+const selectStyle: React.CSSProperties = {
+  ...font,
+  background: C.surfaceHi,
+  border: `1px solid ${C.borderHi}`,
+  borderRadius: '0.625rem',
+  padding: '0.65rem 0.875rem',
+  color: C.white,
+  fontSize: '0.875rem',
+  fontWeight: 300,
+  width: '100%',
+  outline: 'none',
+};
+
+const inputStyle: React.CSSProperties = {
+  ...font,
+  background: C.surfaceHi,
+  border: `1px solid ${C.borderHi}`,
+  borderRadius: '0.625rem',
+  padding: '0.65rem 0.875rem',
+  color: C.white,
+  fontSize: '0.875rem',
+  fontWeight: 300,
+  width: '100%',
+  outline: 'none',
+};
+
+export default function AwardPoints({ token }: { token: string }) {
+  const [targetType, setTargetType] = useState<TargetType>('client');
+  const [users, setUsers]         = useState<AdminUser[]>([]);
+  const [merchants, setMerchants] = useState<Merchant[]>([]);
+  const [loading, setLoading]     = useState(true);
+  const [loadErr, setLoadErr]     = useState('');
+
+  const [selectedUserId,     setSelectedUserId]     = useState('');
+  const [selectedMerchantId, setSelectedMerchantId] = useState('');
+  const [rawAddress,         setRawAddress]         = useState('');
+  const [amount,             setAmount]             = useState('');
+
   const [submitting, setSubmitting] = useState(false);
-  const [result, setResult] = useState<{ reference_code: string; wallet_address: string; amount: number } | null>(null);
-  const [error, setError] = useState('');
+  const [result,     setResult]     = useState<{ reference_code: string; wallet_address: string; amount: number } | null>(null);
+  const [error,      setError]      = useState('');
 
   useEffect(() => {
-    getAdminUsers(token)
-      .then((res) => setUsers(res.data))
-      .catch((err) => setUsersError(err instanceof Error ? err.message : 'Failed to load users.'))
-      .finally(() => setLoadingUsers(false));
+    Promise.all([getAdminUsers(token), getMerchants(token)])
+      .then(([u, m]) => { setUsers(u.data); setMerchants(m.data); })
+      .catch((e) => setLoadErr(e instanceof Error ? e.message : 'Error al cargar datos.'))
+      .finally(() => setLoading(false));
   }, [token]);
+
+  function reset() {
+    setResult(null);
+    setError('');
+  }
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
-    setError('');
-    setResult(null);
+    reset();
     setSubmitting(true);
     try {
-      const res = await adminMint({ user_id: selectedUserId, amount: Number(amount) }, token);
+      let body: Parameters<typeof adminMint>[0];
+      if (targetType === 'client')   body = { user_id: selectedUserId, amount: Number(amount) };
+      else if (targetType === 'merchant') body = { merchant_id: selectedMerchantId, amount: Number(amount) };
+      else body = { wallet_address: rawAddress.trim(), amount: Number(amount) };
+
+      const res = await adminMint(body, token);
       setResult(res.data);
       setAmount('');
+      setRawAddress('');
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Mint failed.');
     } finally {
@@ -41,99 +115,181 @@ export default function AwardPoints({ token }: Props) {
     }
   }
 
-  const selectedUser = users.find((u) => u.id === selectedUserId);
+  const selectedUser     = users.find((u) => u.id === selectedUserId);
+  const selectedMerchant = merchants.find((m) => m.id === selectedMerchantId);
+
+  const canSubmit = !submitting && !!amount &&
+    (targetType === 'client'   ? !!selectedUserId :
+     targetType === 'merchant' ? !!selectedMerchantId :
+     rawAddress.trim().length > 0);
 
   return (
-    <div className="flex flex-col gap-6 max-w-lg">
-      <h2 className="text-lg font-semibold text-gray-800">Award CATR Points</h2>
+    <div style={{ display: 'flex', flexDirection: 'column' as const, gap: '1rem', maxWidth: '480px' }}>
 
-      {loadingUsers && <p className="text-sm text-gray-500">Loading users...</p>}
-      {usersError && <p className="text-sm text-red-600">{usersError}</p>}
-
-      {!loadingUsers && !usersError && (
-        <form onSubmit={handleSubmit} className="flex flex-col gap-4">
-          {/* User selector */}
-          <label className="flex flex-col gap-1 text-sm text-gray-600">
-            Select user
-            <select
-              value={selectedUserId}
-              onChange={(e) => { setSelectedUserId(e.target.value); setResult(null); setError(''); }}
-              className="border border-gray-300 rounded px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"
-              required
+      {/* Target type selector */}
+      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '0.5rem' }}>
+        {(['client', 'merchant', 'address'] as TargetType[]).map((t) => {
+          const labels = { client: 'Cliente', merchant: 'Comercio', address: 'Dirección' };
+          const isActive = targetType === t;
+          return (
+            <button
+              key={t}
+              type="button"
+              onClick={() => { setTargetType(t); reset(); }}
+              style={{
+                ...font,
+                padding: '0.6rem',
+                borderRadius: '0.625rem',
+                border: isActive ? `1px solid rgba(201,168,76,0.4)` : `1px solid ${C.border}`,
+                background: isActive ? C.goldDim : C.surfaceHi,
+                color: isActive ? C.gold : C.slate,
+                fontSize: '0.7rem',
+                fontWeight: isActive ? 500 : 300,
+                letterSpacing: '0.08em',
+                textTransform: 'uppercase' as const,
+                cursor: 'pointer',
+                transition: 'all 0.15s',
+              }}
             >
-              <option value="">— choose a user —</option>
-              {users.map((u) => (
-                <option key={u.id} value={u.id}>
-                  {u.full_name} ({u.email})
-                </option>
-              ))}
-            </select>
-          </label>
+              {labels[t]}
+            </button>
+          );
+        })}
+      </div>
 
-          {/* Show wallet info */}
-          {selectedUser && (
-            <div className="bg-gray-50 border border-gray-200 rounded p-3 text-xs text-gray-500 break-all">
-              <span className="font-medium text-gray-700">Wallet: </span>
-              {selectedUser.wallet ? (
-                <>
-                  <span>{selectedUser.wallet.address}</span>
-                  <span className="ml-2 text-indigo-600 font-medium">
-                    {Number(selectedUser.wallet.catr_balance).toFixed(2)} CATR
+      {loading && <p style={{ ...font, color: C.slate, fontSize: '0.8rem' }}>Cargando…</p>}
+      {loadErr && <p style={{ ...font, color: C.error, fontSize: '0.8rem' }}>{loadErr}</p>}
+
+      {!loading && !loadErr && (
+        <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column' as const, gap: '0.875rem' }}>
+
+          {/* Target selector */}
+          {targetType === 'client' && (
+            <FieldBox>
+              <Label>Cliente</Label>
+              <select
+                value={selectedUserId}
+                onChange={(e) => { setSelectedUserId(e.target.value); reset(); }}
+                style={selectStyle}
+                required
+              >
+                <option value="">— seleccionar cliente —</option>
+                {users.map((u) => (
+                  <option key={u.id} value={u.id}>
+                    {u.full_name} · {u.email}
+                  </option>
+                ))}
+              </select>
+              {selectedUser && (
+                <div style={{ display: 'flex', justifyContent: 'space-between', padding: '0.5rem 0.75rem', borderRadius: '0.5rem', background: C.surfaceHi, border: `1px solid ${C.border}` }}>
+                  <Label>Balance</Label>
+                  <span style={{ ...font, fontSize: '0.75rem', color: C.gold }}>
+                    {selectedUser.wallet ? `${Number(selectedUser.wallet.catr_balance).toFixed(2)} CATR` : 'Sin wallet'}
                   </span>
-                </>
-              ) : (
-                <span className="text-red-500">No wallet assigned</span>
+                </div>
               )}
-            </div>
+            </FieldBox>
+          )}
+
+          {targetType === 'merchant' && (
+            <FieldBox>
+              <Label>Comercio</Label>
+              <select
+                value={selectedMerchantId}
+                onChange={(e) => { setSelectedMerchantId(e.target.value); reset(); }}
+                style={selectStyle}
+                required
+              >
+                <option value="">— seleccionar comercio —</option>
+                {merchants.map((m) => (
+                  <option key={m.id} value={m.id}>
+                    {m.name} · {m.category}
+                  </option>
+                ))}
+              </select>
+              {selectedMerchant && (
+                <div style={{ display: 'flex', justifyContent: 'space-between', padding: '0.5rem 0.75rem', borderRadius: '0.5rem', background: C.surfaceHi, border: `1px solid ${C.border}` }}>
+                  <Label>Wallet</Label>
+                  <span style={{ ...font, fontSize: '0.7rem', color: C.slateHi, fontFamily: 'monospace' }}>
+                    {selectedMerchant.wallet_address.slice(0, 10)}…{selectedMerchant.wallet_address.slice(-6)}
+                  </span>
+                </div>
+              )}
+            </FieldBox>
+          )}
+
+          {targetType === 'address' && (
+            <FieldBox>
+              <Label>Dirección de wallet</Label>
+              <input
+                type="text"
+                value={rawAddress}
+                onChange={(e) => { setRawAddress(e.target.value); reset(); }}
+                placeholder="0x..."
+                style={inputStyle}
+                required
+              />
+            </FieldBox>
           )}
 
           {/* Amount */}
-          <label className="flex flex-col gap-1 text-sm text-gray-600">
-            Amount (CATR)
+          <FieldBox>
+            <Label>Cantidad (CATR)</Label>
             <input
               type="number"
               min="1"
               max="10000"
               step="1"
               value={amount}
-              onChange={(e) => setAmount(e.target.value)}
-              placeholder="e.g. 100"
-              className="border border-gray-300 rounded px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"
+              onChange={(e) => { setAmount(e.target.value); reset(); }}
+              placeholder="0"
+              style={inputStyle}
               required
             />
-          </label>
+          </FieldBox>
 
           <button
             type="submit"
-            disabled={submitting || !selectedUserId || !amount}
-            className="bg-indigo-600 text-white px-4 py-2 rounded text-sm font-medium hover:bg-indigo-700 disabled:opacity-50 disabled:cursor-not-allowed"
+            disabled={!canSubmit}
+            style={{
+              ...font,
+              background: canSubmit ? C.goldDim : 'rgba(255,255,255,0.03)',
+              border: `1px solid ${canSubmit ? 'rgba(201,168,76,0.4)' : C.border}`,
+              borderRadius: '0.625rem',
+              color: canSubmit ? C.gold : C.slate,
+              fontSize: '0.75rem',
+              fontWeight: 400,
+              letterSpacing: '0.1em',
+              padding: '0.75rem',
+              cursor: canSubmit ? 'pointer' : 'not-allowed',
+              textTransform: 'uppercase' as const,
+              transition: 'all 0.15s',
+            }}
           >
-            {submitting ? 'Sending to bridge...' : 'Award Points'}
+            {submitting ? 'Enviando al bridge…' : 'Emitir CATR'}
           </button>
         </form>
       )}
 
-      {/* Success */}
       {result && (
-        <div className="bg-green-50 border border-green-200 rounded p-4 text-sm flex flex-col gap-1">
-          <p className="font-semibold text-green-700">Mint queued successfully.</p>
-          <p className="text-gray-600">The bridge will execute the on-chain transaction shortly.</p>
-          <p className="text-xs text-gray-500 mt-1 break-all">
-            <span className="font-medium">Reference:</span> {result.reference_code}
+        <div style={{ background: C.successBg, border: '1px solid rgba(16,185,129,0.25)', borderRadius: '0.625rem', padding: '0.875rem', display: 'flex', flexDirection: 'column' as const, gap: '0.35rem' }}>
+          <p style={{ ...font, fontSize: '0.8rem', fontWeight: 500, color: C.success }}>Mint ejecutado correctamente.</p>
+          <p style={{ ...font, fontSize: '0.7rem', color: C.slateHi }}>El bridge procesará la transacción on-chain en breve.</p>
+          <p style={{ ...font, fontSize: '0.65rem', color: C.slate, marginTop: '0.25rem', wordBreak: 'break-all' as const }}>
+            Ref: {result.reference_code}
           </p>
-          <p className="text-xs text-gray-500 break-all">
-            <span className="font-medium">Wallet:</span> {result.wallet_address}
+          <p style={{ ...font, fontSize: '0.65rem', color: C.slate, wordBreak: 'break-all' as const }}>
+            Wallet: {result.wallet_address}
           </p>
-          <p className="text-xs text-gray-500">
-            <span className="font-medium">Amount:</span> {result.amount} CATR
+          <p style={{ ...font, fontSize: '0.65rem', color: C.gold }}>
+            {result.amount} CATR emitidos
           </p>
         </div>
       )}
 
-      {/* Error */}
       {error && (
-        <div className="bg-red-50 border border-red-200 rounded p-3 text-sm text-red-700">
-          {error}
+        <div style={{ background: C.errorBg, border: '1px solid rgba(239,68,68,0.25)', borderRadius: '0.625rem', padding: '0.75rem' }}>
+          <p style={{ ...font, fontSize: '0.8rem', color: C.error }}>{error}</p>
         </div>
       )}
     </div>

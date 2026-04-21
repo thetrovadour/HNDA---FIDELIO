@@ -4,3 +4,17 @@ packages/merlink/core/build/
 reviews/
 PILOT_KEYS.md
 ideas_and_extras/
+
+# Build outputs
+packages/backend/dist/
+packages/web/.next/
+
+# Turborepo cache
+.turbo/
+packages/web/.turbo/
+
+# Next.js auto-generated
+packages/web/next-env.d.ts
+
+# OMC runtime state
+.omc/

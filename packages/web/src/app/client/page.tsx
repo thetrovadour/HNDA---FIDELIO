@@ -739,6 +739,13 @@ export default function ClientPage() {
     } catch { /* silent */ }
   }
 
+  // Live balance polling — every 15 seconds
+  useEffect(() => {
+    if (!user || !token) return;
+    const interval = setInterval(() => { refreshUser(); }, 15_000);
+    return () => clearInterval(interval);
+  }, [user?.id, token]);
+
   function handleLogout() {
     localStorage.removeItem(SESSION_KEY);
     setToken(null);

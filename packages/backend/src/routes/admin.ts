@@ -13,10 +13,11 @@ const BREAKEVEN_MONTHLY_FIXED_COSTS = new Decimal('0'); // no fixed costs yet
 
 const BRIDGE_HTTP_URL = process.env.BRIDGE_HTTP_URL ?? 'http://localhost:3002';
 
-const AdminMintSchema = z.object({
-  user_id: z.string().uuid(),
-  amount: z.number().positive().max(10000),
-});
+const AdminMintSchema = z.union([
+  z.object({ user_id: z.string().uuid(), amount: z.number().positive().max(10000) }),
+  z.object({ merchant_id: z.string().uuid(), amount: z.number().positive().max(10000) }),
+  z.object({ wallet_address: z.string().min(1), amount: z.number().positive().max(10000) }),
+]);
 
 export function adminRouter(mintService: MintService): Router {
   const router = Router();
@@ -30,22 +31,45 @@ export function adminRouter(mintService: MintService): Router {
     res.status(200).json({ data: users });
   });
 
-  // Award CATR to a user by user_id
+  // Award CATR to any target: user, merchant, or raw wallet address
   router.post('/mint', adminAuth, validate(AdminMintSchema), async (req: Request, res: Response) => {
-    const { user_id, amount } = req.body as { user_id: string; amount: number };
+    const body = req.body as { amount: number } & (
+      | { user_id: string }
+      | { merchant_id: string }
+      | { wallet_address: string }
+    );
+    const { amount } = body;
 
-    const wallet = await db.wallet.findUnique({ where: { user_id } });
-    if (!wallet) {
-      res.status(404).json({ error: 'User has no wallet', code: 'NO_WALLET' });
-      return;
+    let walletAddress: string;
+    let targetId: string;
+
+    if ('user_id' in body) {
+      const wallet = await db.wallet.findUnique({ where: { user_id: body.user_id } });
+      if (!wallet) {
+        res.status(404).json({ error: 'User has no wallet', code: 'NO_WALLET' });
+        return;
+      }
+      walletAddress = wallet.address;
+      targetId = body.user_id;
+    } else if ('merchant_id' in body) {
+      const merchant = await db.merchant.findUnique({ where: { id: body.merchant_id } });
+      if (!merchant) {
+        res.status(404).json({ error: 'Merchant not found', code: 'NOT_FOUND' });
+        return;
+      }
+      walletAddress = merchant.wallet_address;
+      targetId = body.merchant_id;
+    } else {
+      walletAddress = body.wallet_address;
+      targetId = body.wallet_address;
     }
 
-    const reference_code = `ADMIN-${user_id}-${Date.now()}`;
+    const reference_code = `ADMIN-${targetId}-${Date.now()}`;
 
     const result = await mintService.receivePaymentEvent({
       reference_code,
       amount_lempiras: amount,
-      client_wallet: wallet.address,
+      client_wallet: walletAddress,
       source: 'ADMIN',
       received_at: Math.floor(Date.now() / 1000),
     });
@@ -63,7 +87,7 @@ export function adminRouter(mintService: MintService): Router {
         body: JSON.stringify({
           reference_code,
           amount_lempiras: amount,
-          client_wallet: wallet.address,
+          client_wallet: walletAddress,
           source: 'ADMIN',
           received_at: Math.floor(Date.now() / 1000),
         }),
@@ -77,7 +101,7 @@ export function adminRouter(mintService: MintService): Router {
     }
 
     res.status(200).json({
-      data: { reference_code, wallet_address: wallet.address, amount },
+      data: { reference_code, wallet_address: walletAddress, amount },
     });
   });
 

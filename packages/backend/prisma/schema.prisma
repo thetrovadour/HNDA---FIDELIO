@@ -7,101 +7,75 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
-// ─── Users ───────────────────────────────────────────────────────────────────
-
 model User {
-  id              String   @id @default(uuid())
+  id              String            @id @default(uuid())
   full_name       String
-  email           String   @unique
+  email           String            @unique
   phone           String?
+  created_at      DateTime          @default(now())
+  updated_at      DateTime          @updatedAt
   pin             String?
-  created_at      DateTime @default(now())
-  updated_at      DateTime @updatedAt
-
-  wallet          Wallet?
-  transactions    Transaction[]
-  referrals_made  Referral[]       @relation("referrer")
-  referrals_recv  Referral[]       @relation("referred")
-  milestones      RewardMilestone[]
+  owned_merchants Merchant[]        @relation("merchant_owner")
   merchant_visits MerchantVisit[]
+  referrals_recv  Referral?         @relation("referred")
+  referrals_made  Referral[]        @relation("referrer")
+  milestones      RewardMilestone[]
+  transactions    Transaction[]
   gold_statuses   UserGoldStatus[]
-  owned_merchants Merchant[]       @relation("merchant_owner")
+  wallet          Wallet?
 }
-
-// ─── Wallets ──────────────────────────────────────────────────────────────────
 
 model Wallet {
   id           String   @id @default(uuid())
   user_id      String   @unique
-  address      String   @unique       // Base L2 address (custodial)
+  address      String   @unique
   catr_balance Decimal  @default(0) @db.Decimal(36, 18)
   created_at   DateTime @default(now())
   updated_at   DateTime @updatedAt
-
   user         User     @relation(fields: [user_id], references: [id])
 
   @@index([address])
 }
 
-// ─── Merchants ────────────────────────────────────────────────────────────────
-
 model Merchant {
-  id             String   @id @default(uuid())
-  name           String
-  category       String
-  wallet_address String   @unique
-  contact_email  String
-  active         Boolean  @default(true)
-  created_at     DateTime @default(now())
-  updated_at     DateTime @updatedAt
-
-  owner_user_id  String?
-  owner          User?    @relation("merchant_owner", fields: [owner_user_id], references: [id])
-
-  transactions        Transaction[]
-  redemption_requests RedemptionRequest[]
-  merchant_visits     MerchantVisit[]
-  gca_allocation      MerchantGcaAllocation?
-  gca_transactions    GcaTransaction[]
+  id                  String                 @id @default(uuid())
+  name                String
+  category            String
+  wallet_address      String                 @unique
+  contact_email       String
+  active              Boolean                @default(true)
+  created_at          DateTime               @default(now())
+  updated_at          DateTime               @updatedAt
+  owner_user_id       String?
   gca_redemptions     GcaRedemptionRequest[]
+  gca_transactions    GcaTransaction[]
+  owner               User?                  @relation("merchant_owner", fields: [owner_user_id], references: [id])
+  gca_allocation      MerchantGcaAllocation?
+  merchant_visits     MerchantVisit[]
+  redemption_requests RedemptionRequest[]
+  transactions        Transaction[]
 
   @@index([wallet_address])
   @@index([owner_user_id])
 }
 
-// ─── Transactions ─────────────────────────────────────────────────────────────
-// Covers both MINT (client buys CATR) and SPEND (client pays merchant).
-// MINT transactions are created only by MintService — never by clients directly.
-
-enum TransactionType {
-  MINT
-  SPEND
-}
-
-enum TransactionStatus {
-  PENDING
-  CONFIRMED
-  FAILED
-}
-
 model Transaction {
-  id              String            @id @default(uuid())
-  user_id         String
-  merchant_id     String?           // null for MINT transactions
-  type            TransactionType
-  status          TransactionStatus @default(PENDING)
-  amount_catr     Decimal           @db.Decimal(36, 18)
-  amount_lempiras Decimal?          @db.Decimal(12, 2)  // only on MINT
-  reference_code  String?           @unique              // only on MINT (CATR-wallet-timestamp)
-  tx_hash         String?                                // on-chain tx hash, set when confirmed
-  commission_catr     Decimal?  @db.Decimal(36, 18) // 3.6% on SPEND
-  cashback_processed  Boolean   @default(false)      // set true by CashbackJob after processing
-  created_at      DateTime          @default(now())
-  confirmed_at    DateTime?
-
-  user         User      @relation(fields: [user_id], references: [id])
-  merchant     Merchant? @relation(fields: [merchant_id], references: [id])
-  pending_mint PendingMint?
+  id                 String            @id @default(uuid())
+  user_id            String
+  merchant_id        String?
+  type               TransactionType
+  status             TransactionStatus @default(PENDING)
+  amount_catr        Decimal           @db.Decimal(36, 18)
+  amount_lempiras    Decimal?          @db.Decimal(12, 2)
+  reference_code     String?           @unique
+  tx_hash            String?
+  commission_catr    Decimal?          @db.Decimal(36, 18)
+  created_at         DateTime          @default(now())
+  confirmed_at       DateTime?
+  cashback_processed Boolean           @default(false)
+  pending_mint       PendingMint?
+  merchant           Merchant?         @relation(fields: [merchant_id], references: [id])
+  user               User              @relation(fields: [user_id], references: [id])
 
   @@index([user_id])
   @@index([merchant_id])
@@ -110,25 +84,12 @@ model Transaction {
   @@index([status, type])
 }
 
-// ─── Pending Mints ────────────────────────────────────────────────────────────
-// Safety net between "payment confirmed" and "mint executed."
-// bridge POSTs PaymentEvent → write PENDING row here immediately.
-// When bridge ACKs the mint tx → mark MINTED.
-// Reconciliation job resolves PENDING rows older than N minutes.
-
-enum PendingMintStatus {
-  PENDING  // payment seen, mint not yet sent to bridge
-  SENT     // mint request sent to bridge, awaiting ACK
-  MINTED   // bridge returned ACK, tx_hash recorded
-  FAILED   // bridge returned NACK or reconciliation gave up
-}
-
 model PendingMint {
   id              String            @id @default(uuid())
   reference_code  String            @unique
   client_wallet   String
   amount_lempiras Decimal           @db.Decimal(12, 2)
-  source          String            // EMAIL | NFC | WEBHOOK
+  source          String
   status          PendingMintStatus @default(PENDING)
   attempts        Int               @default(0)
   last_attempt_at DateTime?
@@ -138,17 +99,12 @@ model PendingMint {
   resolved_at     DateTime?
   created_at      DateTime          @default(now())
   updated_at      DateTime          @updatedAt
-
-  transaction Transaction? @relation(fields: [transaction_id], references: [id])
+  transaction     Transaction?      @relation(fields: [transaction_id], references: [id])
 
   @@index([status])
   @@index([created_at])
   @@index([reference_code])
 }
-
-// ─── Processed References ─────────────────────────────────────────────────────
-// Fallback deduplication for bloom filter false positives (~1%).
-// The C++ bloom filter handles 99% of duplicates in O(1) before they touch the DB.
 
 model ProcessedReference {
   reference_code String   @id
@@ -158,224 +114,135 @@ model ProcessedReference {
   @@index([processed_at])
 }
 
-// ─── Redemption Requests ──────────────────────────────────────────────────────
-
-enum RedemptionStatus {
-  PENDING_BURN    // merchant requested; burn not yet submitted
-  BURN_SUBMITTED  // burn tx sent on-chain
-  BURNED          // burn confirmed on-chain
-  LEMPIRAS_SENT   // HNDA transferred Lempiras to merchant
-  FAILED
-}
-
-enum RedemptionTier {
-  AUTO           // < 50 CATR  → auto-process
-  ADMIN_APPROVAL // 50–500 CATR → admin approves in dashboard
-  VAULT_OP       // > 500 CATR → VaultOp (Gnosis Safe 2-of-2, Cristian + Víctor)
-}
-
 model RedemptionRequest {
   id              String           @id @default(uuid())
   merchant_id     String
   amount_catr     Decimal          @db.Decimal(36, 18)
-  amount_lempiras Decimal?         @db.Decimal(12, 2)  // set after burn confirmed
+  amount_lempiras Decimal?         @db.Decimal(12, 2)
   tier            RedemptionTier
   status          RedemptionStatus @default(PENDING_BURN)
   burn_tx_hash    String?
-  approved_by     String?          // admin user id or "VAULT_OP"
+  approved_by     String?
   notes           String?
   created_at      DateTime         @default(now())
   updated_at      DateTime         @updatedAt
-
-  merchant Merchant @relation(fields: [merchant_id], references: [id])
+  merchant        Merchant         @relation(fields: [merchant_id], references: [id])
 
   @@index([merchant_id])
   @@index([status])
   @@index([tier])
 }
 
-// ─── Reward Milestones ────────────────────────────────────────────────────────
-
-enum MilestoneType {
-  TX_5
-  TX_10
-  TX_25
-  CROSS_MERCHANT
-}
-
-enum MilestoneStatus {
-  PENDING
-  PAID
-}
-
 model RewardMilestone {
-  id              String          @id @default(uuid())
+  id              String             @id @default(uuid())
   user_id         String
   type            MilestoneType
-  amount_catr     Decimal         @db.Decimal(36, 18)
-  status          MilestoneStatus @default(PENDING)
-  payout_queue_id String?         @unique
-  triggered_at    DateTime        @default(now())
+  amount_catr     Decimal            @db.Decimal(36, 18)
+  status          MilestoneStatus    @default(PENDING)
+  payout_queue_id String?            @unique
+  triggered_at    DateTime           @default(now())
   paid_at         DateTime?
+  payout_entry    RewardPayoutQueue? @relation(fields: [payout_queue_id], references: [id])
+  user            User               @relation(fields: [user_id], references: [id])
 
-  user         User               @relation(fields: [user_id], references: [id])
-  payout_entry RewardPayoutQueue? @relation(fields: [payout_queue_id], references: [id])
-
-  @@unique([user_id, type]) // DB-level guarantee: each milestone awarded exactly once per user
+  @@unique([user_id, type])
   @@index([user_id])
   @@index([status])
 }
-
-// ─── Merchant Visits ──────────────────────────────────────────────────────────
-// Tracks visits per user for the cross-merchant bonus
-// (3+ unique merchants in 30 days → 10% commission reward)
 
 model MerchantVisit {
   id          String   @id @default(uuid())
   user_id     String
   merchant_id String
   visited_at  DateTime @default(now())
+  merchant    Merchant @relation(fields: [merchant_id], references: [id])
+  user        User     @relation(fields: [user_id], references: [id])
 
-  user     User     @relation(fields: [user_id], references: [id])
-  merchant Merchant @relation(fields: [merchant_id], references: [id])
-
-  @@index([user_id, visited_at])  // range query for 30-day window
-  @@index([user_id, merchant_id]) // dedup: has user visited this merchant before?
-}
-
-// ─── Referrals ────────────────────────────────────────────────────────────────
-
-enum ReferralStatus {
-  PENDING   // referred user registered but hasn't bought CATR yet
-  TRIGGERED // referred user bought CATR → reward queued
-  PAID
+  @@index([user_id, visited_at])
+  @@index([user_id, merchant_id])
 }
 
 model Referral {
-  id              String         @id @default(uuid())
+  id              String             @id @default(uuid())
   referrer_id     String
-  referred_id     String         @unique // one referrer per referred user
-  status          ReferralStatus @default(PENDING)
-  reward_catr     Decimal?       @db.Decimal(36, 18)
-  payout_queue_id String?        @unique
-  created_at      DateTime       @default(now())
+  referred_id     String             @unique
+  status          ReferralStatus     @default(PENDING)
+  reward_catr     Decimal?           @db.Decimal(36, 18)
+  payout_queue_id String?            @unique
+  created_at      DateTime           @default(now())
   triggered_at    DateTime?
-
-  referrer     User               @relation("referrer", fields: [referrer_id], references: [id])
-  referred     User               @relation("referred", fields: [referred_id], references: [id])
-  payout_entry RewardPayoutQueue? @relation(fields: [payout_queue_id], references: [id])
+  payout_entry    RewardPayoutQueue? @relation(fields: [payout_queue_id], references: [id])
+  referred        User               @relation("referred", fields: [referred_id], references: [id])
+  referrer        User               @relation("referrer", fields: [referrer_id], references: [id])
 
   @@index([referrer_id])
   @@index([status])
 }
 
-// ─── Reward Payout Queue ──────────────────────────────────────────────────────
-
-enum PayoutStatus {
-  QUEUED
-  AUTO_PROCESSING
-  PENDING_ADMIN
-  PENDING_VAULT_OP
-  PAID
-  FAILED
-  DEFERRED  // pool solvency check failed — awaiting VaultOp top-up or admin review
-}
-
-enum PayoutTier {
-  AUTO
-  ADMIN_APPROVAL
-  VAULT_OP
-}
-
 model RewardPayoutQueue {
-  id               String       @id @default(uuid())
+  id               String           @id @default(uuid())
   recipient_wallet String
-  amount_catr      Decimal      @db.Decimal(36, 18)
+  amount_catr      Decimal          @db.Decimal(36, 18)
   tier             PayoutTier
-  status           PayoutStatus @default(QUEUED)
-  source_type      String       // "MILESTONE" | "CROSS_MERCHANT" | "REFERRAL"
-  source_id        String       // id of the originating record
+  status           PayoutStatus     @default(QUEUED)
+  source_type      String
+  source_id        String
   tx_hash          String?
   approved_by      String?
-  created_at       DateTime     @default(now())
-  updated_at       DateTime     @updatedAt
-
-  milestone RewardMilestone?
-  referral  Referral?
+  created_at       DateTime         @default(now())
+  updated_at       DateTime         @updatedAt
+  referral         Referral?
+  milestone        RewardMilestone?
 
   @@index([status])
   @@index([tier])
   @@index([recipient_wallet])
 }
 
-// ─── GCA (Guacacoin) — Merchant Growth Participation Token ───────────────────
-// Off-chain tracking until GCAToken.sol is deployed in Etapa 2.
-// Each merchant receives 200 GCA on join (gift) + up to 1,000 GCA via milestones.
-// Milestones: every 25,000 effective CATR processed → +100 GCA (max 10 milestones).
-// Effective CATR = actual CATR × unique_client_multiplier.
-// Unique client multiplier: <20%→1.0x | 20-40%→1.25x | 40-60%→1.5x | >60%→2.0x
-
 model MerchantGcaAllocation {
-  id                      String   @id @default(uuid())
-  merchant_id             String   @unique
-  gca_balance             Decimal  @default(0) @db.Decimal(20, 4)
-  lifetime_effective_catr Decimal  @default(0) @db.Decimal(36, 18)
-  milestones_claimed      Int      @default(0) // max 10
-  joined_at               DateTime @default(now())
-  updated_at              DateTime @updatedAt
-
-  merchant         Merchant         @relation(fields: [merchant_id], references: [id])
-  gca_transactions GcaTransaction[]
+  id                      String           @id @default(uuid())
+  merchant_id             String           @unique
+  gca_balance             Decimal          @default(0) @db.Decimal(20, 4)
+  lifetime_effective_catr Decimal          @default(0) @db.Decimal(36, 18)
+  milestones_claimed      Int              @default(0)
+  joined_at               DateTime         @default(now())
+  updated_at              DateTime         @updatedAt
+  gca_transactions        GcaTransaction[]
+  merchant                Merchant         @relation(fields: [merchant_id], references: [id])
 
   @@index([merchant_id])
 }
 
-enum GcaTransactionType {
-  GIFT         // 200 GCA on join
-  VEST         // milestone unlock (+100 GCA per 25k effective CATR)
-  TRADE_OUT    // sent to another merchant
-  TRADE_IN     // received from another merchant
-  REDEEM       // redeemed for HNL (after admin approval)
-}
-
 model GcaTransaction {
-  id                    String             @id @default(uuid())
-  allocation_id         String
-  merchant_id           String
-  type                  GcaTransactionType
-  amount_gca            Decimal            @db.Decimal(20, 4)
-  counterpart_merchant_id String?          // for TRADE_OUT / TRADE_IN
-  catr_paid             Decimal?           @db.Decimal(36, 18) // for trades
-  notes                 String?
-  created_at            DateTime           @default(now())
-
-  allocation Merchant @relation(fields: [merchant_id], references: [id])
-  gca_alloc  MerchantGcaAllocation @relation(fields: [allocation_id], references: [id])
+  id                      String                @id @default(uuid())
+  allocation_id           String
+  merchant_id             String
+  type                    GcaTransactionType
+  amount_gca              Decimal               @db.Decimal(20, 4)
+  counterpart_merchant_id String?
+  catr_paid               Decimal?              @db.Decimal(36, 18)
+  notes                   String?
+  created_at              DateTime              @default(now())
+  gca_alloc               MerchantGcaAllocation @relation(fields: [allocation_id], references: [id])
+  allocation              Merchant              @relation(fields: [merchant_id], references: [id])
 
   @@index([merchant_id])
   @@index([allocation_id])
   @@index([type])
 }
 
-enum GcaRedemptionStatus {
-  PENDING
-  APPROVED
-  REJECTED
-}
-
 model GcaRedemptionRequest {
-  id                  String              @id @default(uuid())
-  merchant_id         String
-  amount_gca          Decimal             @db.Decimal(20, 4)
-  price_floor_hnl     Decimal             @db.Decimal(12, 4) // locked at request time
-  amount_hnl_estimated Decimal            @db.Decimal(12, 2)
-  status              GcaRedemptionStatus @default(PENDING)
-  approved_by         String?
-  notes               String?
-  created_at          DateTime            @default(now())
-  updated_at          DateTime            @updatedAt
-
-  merchant Merchant @relation(fields: [merchant_id], references: [id])
+  id                   String              @id @default(uuid())
+  merchant_id          String
+  amount_gca           Decimal             @db.Decimal(20, 4)
+  price_floor_hnl      Decimal             @db.Decimal(12, 4)
+  amount_hnl_estimated Decimal             @db.Decimal(12, 2)
+  status               GcaRedemptionStatus @default(PENDING)
+  approved_by          String?
+  notes                String?
+  created_at           DateTime            @default(now())
+  updated_at           DateTime            @updatedAt
+  merchant             Merchant            @relation(fields: [merchant_id], references: [id])
 
   @@index([merchant_id])
   @@index([status])
@@ -391,19 +258,94 @@ model GcaPriceFloor {
   @@index([active])
 }
 
-// ─── User GOLD Status ─────────────────────────────────────────────────────────
-// GOLD is awarded every June/December after a 5-month lookback evaluation.
-// Active for 6 months. Resets at the next evaluation — no grandfathering.
-
 model UserGoldStatus {
   id           String   @id @default(uuid())
   user_id      String
   active_from  DateTime
   active_until DateTime
   granted_at   DateTime @default(now())
-
-  user User @relation(fields: [user_id], references: [id])
+  user         User     @relation(fields: [user_id], references: [id])
 
   @@index([user_id])
   @@index([active_until])
+}
+
+enum TransactionType {
+  MINT
+  SPEND
+}
+
+enum TransactionStatus {
+  PENDING
+  CONFIRMED
+  FAILED
+}
+
+enum PendingMintStatus {
+  PENDING
+  SENT
+  MINTED
+  FAILED
+}
+
+enum RedemptionStatus {
+  PENDING_BURN
+  BURN_SUBMITTED
+  BURNED
+  LEMPIRAS_SENT
+  FAILED
+}
+
+enum RedemptionTier {
+  AUTO
+  ADMIN_APPROVAL
+  VAULT_OP
+}
+
+enum MilestoneType {
+  TX_5
+  TX_10
+  TX_25
+  CROSS_MERCHANT
+}
+
+enum MilestoneStatus {
+  PENDING
+  PAID
+}
+
+enum ReferralStatus {
+  PENDING
+  TRIGGERED
+  PAID
+}
+
+enum PayoutStatus {
+  QUEUED
+  AUTO_PROCESSING
+  PENDING_ADMIN
+  PENDING_VAULT_OP
+  PAID
+  FAILED
+  DEFERRED
+}
+
+enum PayoutTier {
+  AUTO
+  ADMIN_APPROVAL
+  VAULT_OP
+}
+
+enum GcaTransactionType {
+  GIFT
+  VEST
+  TRADE_OUT
+  TRADE_IN
+  REDEEM
+}
+
+enum GcaRedemptionStatus {
+  PENDING
+  APPROVED
+  REJECTED
 }

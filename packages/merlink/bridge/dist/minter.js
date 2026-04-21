@@ -2,7 +2,10 @@
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.Minter = void 0;
 const ethers_1 = require("ethers");
-const MINT_ABI = ['function mint(address to, uint256 amount)'];
+const MINT_ABI = [
+    'function mint(address to, uint256 amount)',
+    'function burn(address from, uint256 amount)',
+];
 class Minter {
     constructor(contract) {
         this.contract = contract;
@@ -23,6 +26,19 @@ class Minter {
         try {
             const amountCATR = ethers_1.ethers.parseUnits(event.amount_lempiras.toString(), 18);
             const tx = await this.contract.mint(event.client_wallet, amountCATR);
+            const receipt = await tx.wait();
+            const tx_hash = tx.hash ?? receipt?.hash ?? '';
+            return { success: true, tx_hash };
+        }
+        catch (err) {
+            const reason = err instanceof Error ? err.message : String(err);
+            return { success: false, reason };
+        }
+    }
+    async burn(walletAddress, amountCATR) {
+        try {
+            const amount = ethers_1.ethers.parseUnits(amountCATR.toString(), 18);
+            const tx = await this.contract.burn(walletAddress, amount);
             const receipt = await tx.wait();
             const tx_hash = tx.hash ?? receipt?.hash ?? '';
             return { success: true, tx_hash };

@@ -24,16 +24,18 @@ import { adminRouter } from './routes/admin';
 import { gcaRouter } from './routes/gca';
 import { evaluateGcaVesting } from './services/gca_service';
 
+const isDev = process.env.NODE_ENV !== 'production';
+
 const globalLimiter = rateLimit({
   windowMs: 15 * 60 * 1000,
-  max: 100,
+  max: isDev ? 2000 : 100,
   standardHeaders: true,
   legacyHeaders: false,
 });
 
 const sensitiveLimiter = rateLimit({
   windowMs: 15 * 60 * 1000,
-  max: 300,
+  max: isDev ? 2000 : 300,
   standardHeaders: true,
   legacyHeaders: false,
 });
@@ -62,10 +64,10 @@ export function createApp(): express.Application {
   // Routes
   app.use('/health', healthRouter());
   app.use('/api/auth', sensitiveLimiter, authRouter());
-  app.use('/internal/bridge', sensitiveLimiter, bridgeAuth, bridgeEventsRouter(mintService));
+  app.use('/internal/bridge', sensitiveLimiter, bridgeAuth, bridgeEventsRouter(mintService, redemptionService));
   app.use('/api/users', usersRouter(userService, transactionService));
   app.use('/api/wallets', walletsRouter(userService));
-  app.use('/api/merchants', merchantsRouter());
+  app.use('/api/merchants', merchantsRouter(redemptionService));
   app.use('/api/transactions', transactionsRouter(transactionService));
   app.use('/api/redemptions', sensitiveLimiter, redemptionsRouter(redemptionService));
   app.use('/api/rewards', sensitiveLimiter, rewardsRouter(db));

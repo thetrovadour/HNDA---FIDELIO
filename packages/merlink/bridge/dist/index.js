@@ -51,6 +51,9 @@ class NoopContractLike {
     async mint(_to, _amount) {
         throw new Error('No contract configured — set env vars');
     }
+    async burn(_from, _amount) {
+        throw new Error('No contract configured — set env vars');
+    }
 }
 const effectiveMinter = minter ?? new minter_1.Minter(new NoopContractLike());
 const HTTP_PORT = parseInt(process.env.BRIDGE_HTTP_PORT ?? '3002', 10);

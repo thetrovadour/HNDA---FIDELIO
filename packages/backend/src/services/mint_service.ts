@@ -93,11 +93,14 @@ export class MintService {
         });
       }
 
-      // Update wallet balance
-      await tx.wallet.update({
-        where: { address: pending.client_wallet },
-        data: { catr_balance: { increment: pending.amount_lempiras } },
-      });
+      // Update wallet balance (only exists for user wallets, not merchant wallets)
+      const wallet = await tx.wallet.findUnique({ where: { address: pending.client_wallet } });
+      if (wallet) {
+        await tx.wallet.update({
+          where: { address: pending.client_wallet },
+          data: { catr_balance: { increment: pending.amount_lempiras } },
+        });
+      }
     });
 
     // Reward evaluation after successful mint

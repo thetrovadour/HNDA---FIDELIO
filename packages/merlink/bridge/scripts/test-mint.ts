@@ -72,7 +72,7 @@ async function main(): Promise<void> {
   // Send mint transaction
   console.log('Sending mint() transaction...');
   const amountWei = ethers.parseUnits(TEST_AMOUNT_LEMPIRAS.toString(), decimals);
-  const tx = await contract.mint(recipient, amountWei);
+  const tx = await contract.mint(recipient, amountWei, { gasLimit: 100_000 });
   console.log(`Tx hash   : ${tx.hash}`);
   console.log(`BaseScan  : https://sepolia.basescan.org/tx/${tx.hash}`);
   console.log('Waiting for confirmation...');

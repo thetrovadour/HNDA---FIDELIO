@@ -735,3 +735,69 @@ Both pages use the light theme isolated from the dark dashboard.
 - Merchant page (`/merchant/page.tsx`) — dashboard showing accumulated CATR from SPEND transactions, redemption flow
 - Route protection — redirect to login if no session
 - Login page extraction (`/login/page.tsx`)
+
+---
+
+### Session — 2026-04-21
+**Focus:** Contract redeployment integration, database reset, seed data, live balance polling, double-burn fix
+
+#### What happened
+
+**Contract address propagation**
+- Identified that `packages/backend/.env` still had `CONTRACT_ADDRESS=0x000...` after the 2026-04-19 redeployment to `0x692C...`
+- Updated backend `.env` to point to the new contract
+
+**Bridge private key fix**
+- Bridge was signing from `0x3A0b...` (old key) — the new contract's minter/burner is `0x2C8D...`
+- Updated `PRIVATE_KEY` in `packages/merlink/bridge/.env` to the `0x2C8D` key
+- Confirmed both `MINTER_ROLE` and `BURNER_ROLE` are correctly assigned to `0x2C8D` on `0x692C...`
+
+**`intrinsic gas too high` root cause**
+- `CALL_EXCEPTION` on `estimateGas` was caused by Base Sepolia RPC rejecting gas estimation
+- Fixed by adding `{ gasLimit: 100_000 }` to all `mint()` and `burn()` calls in `minter.ts` and `test-mint.ts`
+
+**Database reset + seed**
+- Wiped `fidelio_dev` via `prisma migrate reset` — all 6 migrations re-applied clean
+- Wrote `packages/backend/prisma/seed.ts` — creates Alejandro Reyes (client, PIN 1234, wallet `0x7afc...`), Pulpería Don Henry (merchant), and prints a 30-day admin JWT
+- Added `db:seed` script to backend `package.json`
+
+**GCA allocation missing**
+- Seed script created merchant directly via Prisma, bypassing the route that calls `initGcaAllocation`
+- Fixed by running `initGcaAllocation` directly against the merchant ID
+- Updated seed script flow awareness for future resets
+
+**`confirmMint` crashing on merchant wallets**
+- `mintService.confirmMint` unconditionally called `wallet.update({ where: { address } })` — merchants have no `Wallet` DB record, causing Prisma to throw and leaving `PendingMint` stuck at `PENDING`
+- Fixed: check if wallet exists before updating
+
+**Merchant balance endpoint extended**
+- `GET /merchants/:id/balance` previously only summed SPEND transactions
+- Now also includes confirmed `PendingMint` records where `client_wallet = merchant.wallet_address` — captures admin mints, AI-initiated mints, any source
+- Merchant balance = SPEND received + all mints to wallet − redemptions
+
+**Merchant transactions endpoint extended**
+- `GET /merchants/:id/transactions` previously only returned SPEND transactions
+- Now merges confirmed `PendingMint` records as `MINT` type entries, labeled by source (`Acreditación admin`, etc.)
+- All entries sorted by date, capped at 100
+
+**Live polling (client + merchant)**
+- Client page: polls `getUser` + `getUserTransactions` every 15s — balance animates up automatically on mint
+- Merchant page: polls balance, transactions (Movimientos), and redemptions (Canjear) every 15s independently per tab
+
+**Rate limiter loosened for dev**
+- Global limiter was 100 req/15min — too tight with polling
+- In `NODE_ENV !== 'production'`: raised to 2000 req/15min. Production limits unchanged.
+
+**Double-burn race condition fixed**
+- `force-burn` allowed re-firing on `BURN_SUBMITTED` status — if admin clicked twice quickly, both calls passed the guard and burned on-chain twice
+- Fixed: `force-burn` now only accepts `PENDING_BURN`. `BURN_SUBMITTED` = already in flight, returns 400.
+
+
+#### Key decisions
+- Merchant balance is calculated server-side from DB records (mints + spends − redemptions), not from on-chain balance query — keeps it fast and consistent
+- `gasLimit: 100_000` hardcoded — Base Sepolia public RPC can't estimate gas reliably; 71k was actual gas used on confirmed mint
+- `force-burn` retry path removed from `BURN_SUBMITTED` — if bridge fails mid-flight, it must fail to `FAILED` status and be retried explicitly, not silently re-triggered
+
+#### Next
+- Full end-to-end test: mint → spend → redeem cycle with new seed data
+- Admin AI automation roadmap (automated merchant onboarding via email/HNL confirmation)

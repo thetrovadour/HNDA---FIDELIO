@@ -2,6 +2,7 @@ import { Router, Request, Response } from 'express';
 import { z } from 'zod';
 import { validate } from '../middleware/validate';
 import { MintService } from '../services/mint_service';
+import { RedemptionService } from '../services/redemption_service';
 
 const PaymentEventSchema = z.object({
   reference_code: z.string().min(1),
@@ -17,7 +18,12 @@ const MintConfirmedSchema = z.object({
   block_number: z.number().optional(),
 });
 
-export function bridgeEventsRouter(mintService: MintService): Router {
+const BurnConfirmedSchema = z.object({
+  redemption_id: z.string().uuid(),
+  tx_hash: z.string().min(1),
+});
+
+export function bridgeEventsRouter(mintService: MintService, redemptionService: RedemptionService): Router {
   const router = Router();
 
   router.post('/payment-received', validate(PaymentEventSchema), async (req: Request, res: Response) => {
@@ -35,6 +41,15 @@ export function bridgeEventsRouter(mintService: MintService): Router {
       res.status(200).json({ status: 'ok' });
     } catch (err: any) {
       res.status(404).json({ error: err.message, code: 'NOT_FOUND' });
+    }
+  });
+
+  router.post('/burn-confirmed', validate(BurnConfirmedSchema), async (req: Request, res: Response) => {
+    try {
+      await redemptionService.confirmBurn(req.body.redemption_id, req.body.tx_hash);
+      res.status(200).json({ status: 'ok' });
+    } catch (err: any) {
+      res.status(400).json({ error: err.message, code: 'BAD_REQUEST' });
     }
   });
 

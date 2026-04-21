@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect, useCallback } from 'react';
-import { getRedemptions, approveRedemption, rejectRedemption, type RedemptionRequest } from '@/lib/api';
+import { getRedemptions, forceBurn, confirmLempirasSent, rejectRedemption, type RedemptionRequest } from '@/lib/api';
 
 interface Props { token: string; }
 
@@ -22,12 +22,14 @@ const C = {
 };
 const font = { fontFamily: 'var(--font-body)' };
 
-const STATUS_OPTIONS = ['ALL', 'PENDING', 'APPROVED', 'FAILED'];
+const STATUS_OPTIONS = ['ALL', 'PENDING_BURN', 'BURN_SUBMITTED', 'BURNED', 'LEMPIRAS_SENT', 'FAILED'];
 
 function statusColor(s: string) {
-  if (s === 'APPROVED') return '#10B981';
-  if (s === 'FAILED')   return '#EF4444';
-  return '#F59E0B';
+  if (s === 'LEMPIRAS_SENT') return '#10B981';
+  if (s === 'BURNED')        return '#10B981';
+  if (s === 'FAILED')        return '#EF4444';
+  if (s === 'BURN_SUBMITTED') return '#F59E0B';
+  return '#94A3B8';
 }
 
 export default function RedemptionQueue({ token }: Props) {
@@ -52,9 +54,14 @@ export default function RedemptionQueue({ token }: Props) {
 
   useEffect(() => { load(); }, [load]);
 
-  async function handleApprove(id: string) {
-    try { await approveRedemption(id, token); load(); }
-    catch (err) { alert(err instanceof Error ? err.message : 'Approve failed.'); }
+  async function handleForceBurn(id: string) {
+    try { await forceBurn(id, token); load(); }
+    catch (err) { alert(err instanceof Error ? err.message : 'Burn failed.'); }
+  }
+
+  async function handleConfirmLempiras(id: string) {
+    try { await confirmLempirasSent(id, token); load(); }
+    catch (err) { alert(err instanceof Error ? err.message : 'Confirm failed.'); }
   }
 
   async function handleReject(id: string) {
@@ -117,16 +124,23 @@ export default function RedemptionQueue({ token }: Props) {
                   <span style={{ color: statusColor(r.status) }}>{r.status}</span>
                 </td>
                 <td style={tdStyle}>
-                  {r.status === 'PENDING' && (
-                    <div style={{ display: 'flex', gap: '0.5rem' }}>
-                      <button onClick={() => handleApprove(r.id)} style={{ ...font, background: C.successBg, border: '1px solid rgba(16,185,129,0.2)', borderRadius: '0.25rem', color: C.success, fontSize: '0.65rem', padding: '0.2rem 0.5rem', cursor: 'pointer' }}>
-                        Approve
+                  <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap' }}>
+                    {(r.status === 'PENDING_BURN' || r.status === 'BURN_SUBMITTED') && (
+                      <>
+                        <button onClick={() => handleForceBurn(r.id)} style={{ ...font, background: 'rgba(245,158,11,0.1)', border: '1px solid rgba(245,158,11,0.3)', borderRadius: '0.25rem', color: C.warn, fontSize: '0.65rem', padding: '0.2rem 0.5rem', cursor: 'pointer' }}>
+                          Burn
+                        </button>
+                        <button onClick={() => handleReject(r.id)} style={{ ...font, background: C.dangerBg, border: '1px solid rgba(239,68,68,0.2)', borderRadius: '0.25rem', color: C.danger, fontSize: '0.65rem', padding: '0.2rem 0.5rem', cursor: 'pointer' }}>
+                          Reject
+                        </button>
+                      </>
+                    )}
+                    {r.status === 'BURNED' && (
+                      <button onClick={() => handleConfirmLempiras(r.id)} style={{ ...font, background: C.successBg, border: '1px solid rgba(16,185,129,0.2)', borderRadius: '0.25rem', color: C.success, fontSize: '0.65rem', padding: '0.2rem 0.5rem', cursor: 'pointer' }}>
+                        Confirmar HNL
                       </button>
-                      <button onClick={() => handleReject(r.id)} style={{ ...font, background: C.dangerBg, border: '1px solid rgba(239,68,68,0.2)', borderRadius: '0.25rem', color: C.danger, fontSize: '0.65rem', padding: '0.2rem 0.5rem', cursor: 'pointer' }}>
-                        Reject
-                      </button>
-                    </div>
-                  )}
+                    )}
+                  </div>
                 </td>
               </tr>
             ))}

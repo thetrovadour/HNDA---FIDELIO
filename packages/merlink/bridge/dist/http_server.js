@@ -40,11 +40,15 @@ const BRIDGE_SECRET = process.env.BRIDGE_SECRET ?? 'change_me_in_production';
 async function confirmMint(reference_code, tx_hash) {
     await fetch(`${BACKEND_URL}/internal/bridge/mint-confirmed`, {
         method: 'POST',
-        headers: {
-            'Content-Type': 'application/json',
-            'x-bridge-secret': BRIDGE_SECRET,
-        },
+        headers: { 'Content-Type': 'application/json', 'x-bridge-secret': BRIDGE_SECRET },
         body: JSON.stringify({ reference_code, tx_hash }),
+    });
+}
+async function confirmBurn(redemption_id, tx_hash) {
+    await fetch(`${BACKEND_URL}/internal/bridge/burn-confirmed`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'x-bridge-secret': BRIDGE_SECRET },
+        body: JSON.stringify({ redemption_id, tx_hash }),
     });
 }
 class HttpServer {
@@ -54,9 +58,13 @@ class HttpServer {
         this.server = http.createServer((req, res) => this.handleRequest(req, res));
     }
     handleRequest(req, res) {
-        if (req.method !== 'POST' || req.url !== '/mint') {
+        if (req.method !== 'POST' || (req.url !== '/mint' && req.url !== '/burn')) {
             res.writeHead(404);
             res.end(JSON.stringify({ error: 'Not found' }));
+            return;
+        }
+        if (req.url === '/burn') {
+            this.handleBurn(req, res);
             return;
         }
         let body = '';
@@ -84,6 +92,40 @@ class HttpServer {
                     console.error(`[bridge:http] Mint failed for ${event.reference_code}: ${outcome.reason}`);
                     res.writeHead(500, { 'Content-Type': 'application/json' });
                     res.end(JSON.stringify({ status: 'NACK', reference_code: event.reference_code, reason: outcome.reason }));
+                }
+            }).catch((err) => {
+                const reason = err instanceof Error ? err.message : String(err);
+                res.writeHead(500, { 'Content-Type': 'application/json' });
+                res.end(JSON.stringify({ status: 'NACK', reason }));
+            });
+        });
+    }
+    handleBurn(req, res) {
+        let body = '';
+        req.on('data', (chunk) => { body += chunk.toString(); });
+        req.on('end', () => {
+            let payload;
+            try {
+                payload = JSON.parse(body);
+            }
+            catch {
+                res.writeHead(400, { 'Content-Type': 'application/json' });
+                res.end(JSON.stringify({ status: 'NACK', reason: 'Invalid JSON' }));
+                return;
+            }
+            this.minter.burn(payload.wallet_address, payload.amount_catr).then(async (outcome) => {
+                if (outcome.success) {
+                    console.log(`[bridge:http] Burned ${payload.amount_catr} CATR from ${payload.wallet_address} → tx ${outcome.tx_hash}`);
+                    await confirmBurn(payload.redemption_id, outcome.tx_hash).catch((err) => {
+                        console.error('[bridge:http] Failed to confirm burn to backend:', err);
+                    });
+                    res.writeHead(200, { 'Content-Type': 'application/json' });
+                    res.end(JSON.stringify({ status: 'ACK', redemption_id: payload.redemption_id, tx_hash: outcome.tx_hash }));
+                }
+                else {
+                    console.error(`[bridge:http] Burn failed for ${payload.redemption_id}: ${outcome.reason}`);
+                    res.writeHead(500, { 'Content-Type': 'application/json' });
+                    res.end(JSON.stringify({ status: 'NACK', redemption_id: payload.redemption_id, reason: outcome.reason }));
                 }
             }).catch((err) => {
                 const reason = err instanceof Error ? err.message : String(err);

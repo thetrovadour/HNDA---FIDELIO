@@ -31,7 +31,7 @@ For additional project context, see `Organization and Research/Fidelio-Architect
 
 | Phase | Deliverable | Status |
 |---|---|---|
-| A | CATRToken.sol on Base Sepolia + VaultOp (Gnosis Safe 2-of-2) | ✅ Complete — redeployed at `0x4104abf8F8B691E88300A6Af9360589367990eBc` (3.6% / 65-35, 2026-04-17) |
+| A | CATRToken.sol on Base Sepolia + VaultOp (Gnosis Safe 2-of-2) | ✅ Complete — redeployed at `0x692C121357adf01fedb4ae087fe28292F64470C0` (unified minter+burner 0x2C8D, 2026-04-19) |
 | B | MerL1nk Etapa 1 (C++ Core + Node.js Bridge) | ✅ Complete — 74/74 tests passing |
 | C | Backend Core (Express API + PostgreSQL/Prisma) | ✅ Complete — 44/44 tests passing |
 | D | Web MVP (client + merchant + admin views) | ✅ Complete — build passing |

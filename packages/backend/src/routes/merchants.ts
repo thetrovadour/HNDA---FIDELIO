@@ -4,6 +4,7 @@ import { validate } from '../middleware/validate';
 import { adminAuth } from '../middleware/auth';
 import db from '../db';
 import { initGcaAllocation } from '../services/gca_service';
+import { RedemptionService } from '../services/redemption_service';
 
 const CreateMerchantSchema = z.object({
   name: z.string().min(1),
@@ -19,8 +20,115 @@ const UpdateMerchantSchema = z.object({
   active: z.boolean().optional(),
 });
 
-export function merchantsRouter(): Router {
+const MerchantRedemptionSchema = z.object({
+  amount_catr: z.string().min(1),
+});
+
+export function merchantsRouter(redemptionService: RedemptionService): Router {
   const router = Router();
+
+  // ── Public merchant-facing routes (no auth) ──────────────────────────────────
+
+  router.get('/:id/public', async (req: Request, res: Response) => {
+    const merchant = await db.merchant.findUnique({ where: { id: req.params.id } });
+    if (!merchant) {
+      res.status(404).json({ error: 'Merchant not found', code: 'NOT_FOUND' });
+      return;
+    }
+    res.status(200).json({ data: merchant });
+  });
+
+  router.get('/:id/balance', async (req: Request, res: Response) => {
+    const merchant = await db.merchant.findUnique({ where: { id: req.params.id } });
+    if (!merchant) {
+      res.status(404).json({ error: 'Merchant not found', code: 'NOT_FOUND' });
+      return;
+    }
+
+    const [received, minted, redeemed] = await Promise.all([
+      db.transaction.aggregate({
+        where: { merchant_id: req.params.id, type: 'SPEND', status: 'CONFIRMED' },
+        _sum: { amount_catr: true },
+      }),
+      db.pendingMint.aggregate({
+        where: { client_wallet: merchant.wallet_address, status: 'MINTED' },
+        _sum: { amount_lempiras: true },
+      }),
+      db.redemptionRequest.aggregate({
+        where: { merchant_id: req.params.id, status: { in: ['BURNED', 'LEMPIRAS_SENT'] } },
+        _sum: { amount_catr: true },
+      }),
+    ]);
+
+    const totalReceived = Number(received._sum.amount_catr ?? 0);
+    const totalMinted   = Number(minted._sum.amount_lempiras ?? 0);
+    const totalRedeemed = Number(redeemed._sum.amount_catr ?? 0);
+    const balance = totalReceived + totalMinted - totalRedeemed;
+
+    res.status(200).json({
+      data: {
+        catr_balance:    balance.toFixed(2),
+        total_received:  (totalReceived + totalMinted).toFixed(2),
+        total_redeemed:  totalRedeemed.toFixed(2),
+      },
+    });
+  });
+
+  router.get('/:id/transactions', async (req: Request, res: Response) => {
+    const merchant = await db.merchant.findUnique({ where: { id: req.params.id } });
+    if (!merchant) {
+      res.status(404).json({ error: 'Merchant not found', code: 'NOT_FOUND' });
+      return;
+    }
+
+    const [transactions, mints] = await Promise.all([
+      db.transaction.findMany({
+        where: { merchant_id: req.params.id, status: 'CONFIRMED' },
+        orderBy: { created_at: 'desc' },
+        take: 100,
+      }),
+      db.pendingMint.findMany({
+        where: { client_wallet: merchant.wallet_address, status: 'MINTED' },
+        orderBy: { resolved_at: 'desc' },
+        take: 100,
+      }),
+    ]);
+
+    const mintEntries = mints.map((m) => ({
+      id: m.id,
+      user_id: null,
+      amount_catr: m.amount_lempiras.toString(),
+      type: 'MINT',
+      status: 'CONFIRMED',
+      source: m.source,
+      created_at: m.resolved_at ?? m.created_at,
+    }));
+
+    const all = [...transactions, ...mintEntries].sort(
+      (a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
+    ).slice(0, 100);
+
+    res.status(200).json({ data: all });
+  });
+
+  router.get('/:id/redemptions', async (req: Request, res: Response) => {
+    const redemptions = await db.redemptionRequest.findMany({
+      where: { merchant_id: req.params.id },
+      orderBy: { created_at: 'desc' },
+    });
+    res.status(200).json({ data: redemptions });
+  });
+
+  router.post('/:id/redemptions', validate(MerchantRedemptionSchema), async (req: Request, res: Response) => {
+    try {
+      const result = await redemptionService.createRequest(req.params.id, req.body.amount_catr);
+      res.status(201).json({ data: result });
+    } catch (err: any) {
+      res.status(400).json({ error: err.message, code: 'BAD_REQUEST' });
+    }
+  });
+
+  // ── Admin routes ─────────────────────────────────────────────────────────────
 
   router.get('/', adminAuth, async (_req: Request, res: Response) => {
     const merchants = await db.merchant.findMany();

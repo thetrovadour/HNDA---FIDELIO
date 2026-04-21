@@ -65,12 +65,36 @@ export function spendCATR(body: { user_id: string; merchant_id: string; amount_c
 
 // --- Merchants ---
 
-export function getMerchants() {
-  return apiFetch<{ data: Merchant[] }>('/api/merchants');
+export function getMerchants(token?: string) {
+  return apiFetch<{ data: Merchant[] }>('/api/merchants', token ? { headers: authHeaders(token) } : undefined);
 }
 
 export function getMerchant(id: string) {
   return apiFetch<{ data: Merchant }>(`/api/merchants/${id}`);
+}
+
+export function getMerchantPublic(id: string) {
+  return apiFetch<{ data: Merchant }>(`/api/merchants/${id}/public`);
+}
+
+export function getMerchantBalance(id: string) {
+  return apiFetch<{ data: MerchantBalance }>(`/api/merchants/${id}/balance`);
+}
+
+export function getMerchantTransactions(id: string) {
+  return apiFetch<{ data: MerchantTransaction[] }>(`/api/merchants/${id}/transactions`);
+}
+
+export function getMerchantRedemptions(id: string) {
+  return apiFetch<{ data: RedemptionRequest[] }>(`/api/merchants/${id}/redemptions`);
+}
+
+export function createMerchantRedemption(merchantId: string, amount_catr: string) {
+  return apiFetch<{ data: RedemptionRequest }>(`/api/merchants/${merchantId}/redemptions`, {
+    method: 'POST',
+    headers: jsonHeaders(),
+    body: JSON.stringify({ amount_catr }),
+  });
 }
 
 export function createMerchant(
@@ -130,6 +154,20 @@ export function rejectRedemption(id: string, token: string) {
   });
 }
 
+export function forceBurn(id: string, token: string) {
+  return apiFetch<{ data: { redemption_id: string; tx_hash: string } }>(`/api/redemptions/${id}/force-burn`, {
+    method: 'POST',
+    headers: authHeaders(token),
+  });
+}
+
+export function confirmLempirasSent(id: string, token: string) {
+  return apiFetch<{ data: RedemptionRequest }>(`/api/redemptions/${id}/confirm-lempiras`, {
+    method: 'PATCH',
+    headers: authHeaders(token),
+  });
+}
+
 // --- Admin ---
 
 export function getAdminUsers(token: string) {
@@ -155,7 +193,12 @@ export function getRunway(token: string) {
   });
 }
 
-export function adminMint(body: { user_id: string; amount: number }, token: string) {
+export type AdminMintBody =
+  | { user_id: string; amount: number }
+  | { merchant_id: string; amount: number }
+  | { wallet_address: string; amount: number };
+
+export function adminMint(body: AdminMintBody, token: string) {
   return apiFetch<{ data: { reference_code: string; wallet_address: string; amount: number } }>(
     '/api/admin/mint',
     {
@@ -224,6 +267,22 @@ export interface RedemptionRequest {
   created_at: string;
 }
 
+export interface MerchantBalance {
+  catr_balance: string;
+  total_received: string;
+  total_redeemed: string;
+}
+
+export interface MerchantTransaction {
+  id: string;
+  user_id: string | null;
+  amount_catr: string;
+  type: string;
+  status: string;
+  source?: string;
+  created_at: string;
+}
+
 export interface RewardPayout {
   id: string;
   user_id: string;
@@ -269,6 +328,7 @@ export function getGcaBalance(merchantId: string) {
 export function redeemGca(body: { merchant_id: string; amount_gca: number }) {
   return apiFetch<{ data: GcaRedemptionRequest }>('/api/gca/redeem', {
     method: 'POST',
+    headers: jsonHeaders(),
     body: JSON.stringify(body),
   });
 }

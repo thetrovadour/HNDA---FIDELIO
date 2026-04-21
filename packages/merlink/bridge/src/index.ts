@@ -23,6 +23,9 @@ class NoopContractLike {
   async mint(_to: string, _amount: bigint): Promise<{ wait(): Promise<unknown> }> {
     throw new Error('No contract configured — set env vars');
   }
+  async burn(_from: string, _amount: bigint): Promise<{ wait(): Promise<unknown> }> {
+    throw new Error('No contract configured — set env vars');
+  }
 }
 
 const effectiveMinter = minter ?? new Minter(new NoopContractLike());
