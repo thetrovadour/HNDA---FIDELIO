@@ -445,7 +445,7 @@ function NegocioTab({ merchant }: { merchant: Merchant }) {
             </div>
             <div className="rounded-xl px-4 py-3" style={{ background: C.surfaceHi, border: `1px solid ${C.border}` }}>
               <p className="text-xs font-bold uppercase tracking-widest mb-0.5" style={{ color: C.slate }}>Token</p>
-              <p className="text-sm font-semibold" style={{ color: C.gold }}>CATR</p>
+              <p className="text-sm font-semibold" style={{ color: C.gold }}>CATR + GCA</p>
             </div>
           </div>
         </div>
