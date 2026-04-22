@@ -20,7 +20,7 @@ function jsonHeaders(): HeadersInit {
 
 // --- Auth ---
 
-export function pilotLogin(body: { full_name: string; pin: string }) {
+export function pilotLogin(body: { full_name: string; credential: string }) {
   return apiFetch<{
     data: {
       token: string;
@@ -36,7 +36,34 @@ export function pilotLogin(body: { full_name: string; pin: string }) {
   });
 }
 
+export function register(body:
+  | { role: 'client'; full_name: string; email: string; password: string }
+  | { role: 'merchant'; full_name: string; email: string; password: string; business_name: string; category: string }
+) {
+  return apiFetch<{ data: { role: 'client' | 'merchant'; user_id: string } }>('/api/auth/register', {
+    method: 'POST',
+    headers: jsonHeaders(),
+    body: JSON.stringify(body),
+  });
+}
+
+export function setPassword(body: { user_id: string; current_credential: string; new_password: string }) {
+  return apiFetch<{ data: { ok: boolean } }>('/api/auth/set-password', {
+    method: 'POST',
+    headers: jsonHeaders(),
+    body: JSON.stringify(body),
+  });
+}
+
 // --- User ---
+
+export function updateUser(id: string, body: { full_name?: string; email?: string; phone?: string }, token: string) {
+  return apiFetch<{ data: UserRecord }>(`/api/users/${id}`, {
+    method: 'PATCH',
+    headers: authHeaders(token),
+    body: JSON.stringify(body),
+  });
+}
 
 export function getUser(id: string, token: string) {
   return apiFetch<{ data: UserRecord }>(`/api/users/${id}`, { headers: authHeaders(token) });
@@ -104,6 +131,17 @@ export function createMerchant(
   return apiFetch<{ data: Merchant }>('/api/merchants', {
     method: 'POST',
     headers: authHeaders(token),
+    body: JSON.stringify(body),
+  });
+}
+
+export function updateMerchantProfile(
+  id: string,
+  body: { name?: string; category?: string; contact_email?: string }
+) {
+  return apiFetch<{ data: Merchant }>(`/api/merchants/${id}/profile`, {
+    method: 'PATCH',
+    headers: jsonHeaders(),
     body: JSON.stringify(body),
   });
 }
@@ -230,6 +268,7 @@ export interface UserRecord {
   id: string;
   full_name: string;
   email: string;
+  phone?: string;
   catr_balance: string;
   wallet_address?: string;
   created_at: string;

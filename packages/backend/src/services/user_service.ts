@@ -11,6 +11,10 @@ export class UserService {
     return this.db.user.findUnique({ where: { id }, include: { wallet: true } });
   }
 
+  async updateUser(id: string, data: { full_name?: string; email?: string; phone?: string }): Promise<User> {
+    return this.db.user.update({ where: { id }, data });
+  }
+
   async createWallet(user_id: string, address: string): Promise<Wallet> {
     return this.db.wallet.create({ data: { user_id, address } });
   }

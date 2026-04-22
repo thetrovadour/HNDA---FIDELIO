@@ -15,6 +15,7 @@ model User {
   created_at      DateTime          @default(now())
   updated_at      DateTime          @updatedAt
   pin             String?
+  password_hash   String?
   owned_merchants Merchant[]        @relation("merchant_owner")
   merchant_visits MerchantVisit[]
   referrals_recv  Referral?         @relation("referred")
@@ -41,7 +42,7 @@ model Merchant {
   id                  String                 @id @default(uuid())
   name                String
   category            String
-  wallet_address      String                 @unique
+  wallet_address      String?                @unique
   contact_email       String
   active              Boolean                @default(true)
   created_at          DateTime               @default(now())

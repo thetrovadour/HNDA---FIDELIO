@@ -1,6 +1,6 @@
 {
   "version": "1.0.0",
-  "lastScanned": 1776575492402,
+  "lastScanned": 1776815894688,
   "projectRoot": "/home/cristian-rodriguez/proyectos/HNDA---FIDELIO/packages/web",
   "techStack": {
     "languages": [
@@ -73,14 +73,14 @@
       "path": "src",
       "purpose": "Source code",
       "fileCount": 0,
-      "lastAccessed": 1776575492386,
+      "lastAccessed": 1776815894668,
       "keyFiles": []
     },
     "src/app": {
       "path": "src/app",
       "purpose": "Application code",
       "fileCount": 9,
-      "lastAccessed": 1776575492388,
+      "lastAccessed": 1776815894676,
       "keyFiles": [
         "apple-icon.png",
         "globals.css",
@@ -91,7 +91,7 @@
       "path": "src/components",
       "purpose": "UI components",
       "fileCount": 15,
-      "lastAccessed": 1776575492394,
+      "lastAccessed": 1776815894677,
       "keyFiles": [
         "AwardPoints.tsx",
         "CanvasBackground.tsx",
@@ -101,38 +101,32 @@
     "src/lib": {
       "path": "src/lib",
       "purpose": "Library code",
-      "fileCount": 3,
-      "lastAccessed": 1776575492396,
+      "fileCount": 4,
+      "lastAccessed": 1776815894680,
       "keyFiles": [
         "api.ts",
-        "utils.ts",
-        "wagmi.ts"
+        "i18n.ts",
+        "utils.ts"
       ]
     }
   },
   "hotPaths": [
     {
       "path": "src/app/admin/page.tsx",
+      "accessCount": 9,
+      "lastAccessed": 1776816053700,
+      "type": "file"
+    },
+    {
+      "path": "src/lib/i18n.ts",
+      "accessCount": 5,
+      "lastAccessed": 1776816006401,
+      "type": "file"
+    },
+    {
+      "path": "src/hooks/useLang.ts",
       "accessCount": 3,
-      "lastAccessed": 1776575953939,
-      "type": "file"
-    },
-    {
-      "path": "src/components/MerchantList.tsx",
-      "accessCount": 2,
-      "lastAccessed": 1776576270500,
-      "type": "file"
-    },
-    {
-      "path": "src/components/RedemptionQueue.tsx",
-      "accessCount": 2,
-      "lastAccessed": 1776576294736,
-      "type": "file"
-    },
-    {
-      "path": "src/components/RewardPayoutQueue.tsx",
-      "accessCount": 2,
-      "lastAccessed": 1776576312289,
+      "lastAccessed": 1776816010186,
       "type": "file"
     }
   ],

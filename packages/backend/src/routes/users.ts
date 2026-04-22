@@ -11,6 +11,12 @@ const CreateUserSchema = z.object({
   phone: z.string().optional(),
 });
 
+const UpdateUserSchema = z.object({
+  full_name: z.string().min(1).optional(),
+  email: z.string().email().optional(),
+  phone: z.string().optional(),
+});
+
 export function usersRouter(userService: UserService, transactionService: TransactionService): Router {
   const router = Router();
 
@@ -39,6 +45,23 @@ export function usersRouter(userService: UserService, transactionService: Transa
         created_at: user.created_at,
       },
     });
+  });
+
+  router.patch('/:id', selfOrAdmin, validate(UpdateUserSchema), async (req: Request, res: Response) => {
+    try {
+      const user = await userService.updateUser(req.params.id, req.body);
+      res.status(200).json({
+        data: {
+          id: user.id,
+          full_name: user.full_name,
+          email: user.email,
+          phone: user.phone ?? undefined,
+          created_at: user.created_at,
+        },
+      });
+    } catch (err: any) {
+      res.status(400).json({ error: err.message, code: 'BAD_REQUEST' });
+    }
   });
 
   router.get('/:id/transactions', selfOrAdmin, async (req: Request, res: Response) => {

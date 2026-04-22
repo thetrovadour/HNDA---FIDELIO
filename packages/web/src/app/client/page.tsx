@@ -1,11 +1,14 @@
 'use client';
 import { FidelioIntro } from '@/components/FidelioIntro';
 import { useState, useEffect, useRef } from 'react';
+import { useInactivityLogout } from '@/hooks/useInactivityLogout';
 import {
   pilotLogin,
   spendCATR,
   getUser,
   getUserTransactions,
+  updateUser,
+  setPassword,
 } from '@/lib/api';
 import type { UserRecord, Transaction, Milestone, Merchant } from '@/lib/api';
 
@@ -175,25 +178,35 @@ function IconCopy() {
   );
 }
 
+function IconSettings() {
+  return (
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.5} className="w-5 h-5">
+      <circle cx="12" cy="12" r="3" />
+      <path d="M19.4 15a1.65 1.65 0 00.33 1.82l.06.06a2 2 0 010 2.83 2 2 0 01-2.83 0l-.06-.06a1.65 1.65 0 00-1.82-.33 1.65 1.65 0 00-1 1.51V21a2 2 0 01-4 0v-.09A1.65 1.65 0 009 19.4a1.65 1.65 0 00-1.82.33l-.06.06a2 2 0 01-2.83-2.83l.06-.06A1.65 1.65 0 004.68 15a1.65 1.65 0 00-1.51-1H3a2 2 0 010-4h.09A1.65 1.65 0 004.6 9a1.65 1.65 0 00-.33-1.82l-.06-.06a2 2 0 012.83-2.83l.06.06A1.65 1.65 0 009 4.68a1.65 1.65 0 001-1.51V3a2 2 0 014 0v.09a1.65 1.65 0 001 1.51 1.65 1.65 0 001.82-.33l.06-.06a2 2 0 012.83 2.83l-.06.06A1.65 1.65 0 0019.4 9a1.65 1.65 0 001.51 1H21a2 2 0 010 4h-.09a1.65 1.65 0 00-1.51 1z" strokeLinecap="round" strokeLinejoin="round" />
+    </svg>
+  );
+}
+
 // ─── Login screen ─────────────────────────────────────────────────────────────
 
 interface LoginProps {
   onLogin: (data: { token: string; user: UserRecord; transactions: Transaction[]; milestones: Milestone[]; merchants: Merchant[] }) => void;
+  inactivity?: boolean;
 }
 
-function LoginScreen({ onLogin }: LoginProps) {
+function LoginScreen({ onLogin, inactivity }: LoginProps) {
   const [name, setName] = useState('');
-  const [pin, setPin] = useState('');
+  const [credential, setCredential] = useState('');
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
-    if (!name.trim() || pin.length !== 4) return;
+    if (!name.trim() || !credential) return;
     setLoading(true);
     setError('');
     try {
-      const res = await pilotLogin({ full_name: name.trim(), pin });
+      const res = await pilotLogin({ full_name: name.trim(), credential });
       onLogin(res.data);
     } catch (err) {
       const msg = err instanceof Error ? err.message : String(err);
@@ -252,18 +265,21 @@ function LoginScreen({ onLogin }: LoginProps) {
             autoComplete="name"
           />
           <Input
-            label="PIN"
+            label="PIN o contraseña"
             type="password"
-            inputMode="numeric"
-            maxLength={4}
-            value={pin}
-            onChange={(e) => setPin(e.target.value.replace(/\D/g, '').slice(0, 4))}
+            value={credential}
+            onChange={(e) => setCredential(e.target.value)}
             placeholder="••••"
+            autoComplete="current-password"
           />
+
+          {inactivity && (
+            <StatusMsg type="error" msg="Sesión cerrada por inactividad." />
+          )}
 
           {error && <StatusMsg type="error" msg={error} />}
 
-          <PrimaryBtn type="submit" disabled={loading || pin.length !== 4 || !name.trim()}>
+          <PrimaryBtn type="submit" disabled={loading || !credential || !name.trim()}>
             {loading ? 'Verificando' : 'Acceder'}
           </PrimaryBtn>
 
@@ -330,13 +346,14 @@ function TopBar({ user, onLogout }: { user: UserRecord; onLogout: () => void }) 
 
 // ─── Bottom tab bar ───────────────────────────────────────────────────────────
 
-type Tab = 'cuenta' | 'actividad' | 'red';
+type Tab = 'cuenta' | 'actividad' | 'red' | 'ajustes';
 
 function TabBar({ active, onChange }: { active: Tab; onChange: (t: Tab) => void }) {
   const tabs: { id: Tab; label: string; icon: React.ReactNode }[] = [
     { id: 'cuenta',    label: 'Mi Cuenta',  icon: <IconUser /> },
     { id: 'actividad', label: 'Actividad',  icon: <IconActivity /> },
     { id: 'red',       label: 'Red',        icon: <IconNetwork /> },
+    { id: 'ajustes',   label: 'Ajustes',    icon: <IconSettings /> },
   ];
 
   return (
@@ -546,6 +563,105 @@ function ActividadTab({ transactions, milestones }: { transactions: Transaction[
   );
 }
 
+// ─── Tab: Ajustes ─────────────────────────────────────────────────────────────
+
+function AjustesTab({ user, token, onUpdate }: { user: UserRecord; token: string; onUpdate: (u: UserRecord) => void }) {
+  const [fullName, setFullName] = useState(user.full_name);
+  const [email, setEmail] = useState(user.email);
+  const [phone, setPhone] = useState(user.phone ?? '');
+  const [profileState, setProfileState] = useState<'idle' | 'loading' | 'success' | 'error'>('idle');
+  const [profileMsg, setProfileMsg] = useState('');
+
+  const [currentCred, setCurrentCred] = useState('');
+  const [newPassword, setNewPassword] = useState('');
+  const [confirmPassword, setConfirmPassword] = useState('');
+  const [passState, setPassState] = useState<'idle' | 'loading' | 'success' | 'error'>('idle');
+  const [passMsg, setPassMsg] = useState('');
+
+  async function handleProfileSave(e: React.FormEvent) {
+    e.preventDefault();
+    setProfileState('loading');
+    setProfileMsg('');
+    try {
+      const res = await updateUser(user.id, { full_name: fullName, email, phone: phone || undefined }, token);
+      onUpdate({ ...user, ...res.data });
+      setProfileState('success');
+      setProfileMsg('Información actualizada.');
+    } catch (err) {
+      setProfileState('error');
+      setProfileMsg(err instanceof Error ? err.message : 'Error al guardar.');
+    }
+  }
+
+  async function handlePasswordSave(e: React.FormEvent) {
+    e.preventDefault();
+    if (newPassword !== confirmPassword) {
+      setPassState('error');
+      setPassMsg('Las contraseñas no coinciden.');
+      return;
+    }
+    if (newPassword.length < 6) {
+      setPassState('error');
+      setPassMsg('La contraseña debe tener al menos 6 caracteres.');
+      return;
+    }
+    setPassState('loading');
+    setPassMsg('');
+    try {
+      await setPassword({ user_id: user.id, current_credential: currentCred, new_password: newPassword });
+      setPassState('success');
+      setPassMsg('Contraseña actualizada.');
+      setCurrentCred(''); setNewPassword(''); setConfirmPassword('');
+    } catch (err) {
+      setPassState('error');
+      setPassMsg(err instanceof Error ? err.message : 'Error al cambiar contraseña.');
+    }
+  }
+
+  return (
+    <div className="flex flex-col gap-4">
+      <Section title="Información personal">
+        <form onSubmit={handleProfileSave} className="flex flex-col gap-3">
+          <Input label="Nombre completo" value={fullName} onChange={(e) => setFullName(e.target.value)} />
+          <Input label="Correo electrónico" type="email" value={email} onChange={(e) => setEmail(e.target.value)} />
+          <Input label="Teléfono (opcional)" type="tel" value={phone} onChange={(e) => setPhone(e.target.value)} placeholder="+504 0000-0000" />
+          {profileState === 'success' && <StatusMsg type="success" msg={profileMsg} />}
+          {profileState === 'error'   && <StatusMsg type="error"   msg={profileMsg} />}
+          <PrimaryBtn type="submit" disabled={profileState === 'loading'}>
+            {profileState === 'loading' ? 'Guardando' : 'Guardar cambios'}
+          </PrimaryBtn>
+        </form>
+      </Section>
+
+      <Section>
+        <a
+          href="/apply"
+          className="flex items-center justify-between w-full rounded-xl px-4 py-3 transition-all active:scale-95"
+          style={{ background: C.goldDim, border: `1px solid rgba(201,168,76,0.35)`, textDecoration: 'none' }}
+        >
+          <span style={{ color: C.gold, fontFamily: 'var(--font-body)', fontSize: '0.85rem', fontWeight: 600, letterSpacing: '0.06em' }}>
+            Aplicar para Comercio
+          </span>
+          <span style={{ color: C.gold, fontSize: '0.85rem' }}>→</span>
+        </a>
+      </Section>
+
+      <Section title="Cambiar contraseña">
+        <form onSubmit={handlePasswordSave} className="flex flex-col gap-3">
+          <Input label="PIN o contraseña actual" type="password" value={currentCred} onChange={(e) => setCurrentCred(e.target.value)} placeholder="••••" autoComplete="current-password" />
+          <Input label="Nueva contraseña" type="password" value={newPassword} onChange={(e) => setNewPassword(e.target.value)} placeholder="Mínimo 6 caracteres" autoComplete="new-password" />
+          <Input label="Confirmar contraseña" type="password" value={confirmPassword} onChange={(e) => setConfirmPassword(e.target.value)} placeholder="••••" autoComplete="new-password" />
+          {passState === 'success' && <StatusMsg type="success" msg={passMsg} />}
+          {passState === 'error'   && <StatusMsg type="error"   msg={passMsg} />}
+          <PrimaryBtn type="submit" disabled={passState === 'loading' || !currentCred || !newPassword || !confirmPassword}>
+            {passState === 'loading' ? 'Guardando' : 'Cambiar contraseña'}
+          </PrimaryBtn>
+        </form>
+      </Section>
+    </div>
+  );
+}
+
 // ─── Tab: Red ─────────────────────────────────────────────────────────────────
 
 function RedTab({ merchants, user, token, onSpend }: { merchants: Merchant[]; user: UserRecord; token: string; onSpend: () => void }) {
@@ -696,6 +812,7 @@ export default function ClientPage() {
   const [milestones, setMilestones] = useState<Milestone[]>([]);
   const [merchants, setMerchants] = useState<Merchant[]>([]);
   const [activeTab, setActiveTab] = useState<Tab>('cuenta');
+  const [inactivity, setInactivity] = useState(false);
 
   useEffect(() => {
     const raw = localStorage.getItem(SESSION_KEY);
@@ -746,7 +863,7 @@ export default function ClientPage() {
     return () => clearInterval(interval);
   }, [user?.id, token]);
 
-  function handleLogout() {
+  function handleLogout(reason?: 'inactivity') {
     localStorage.removeItem(SESSION_KEY);
     setToken(null);
     setUser(null);
@@ -754,10 +871,13 @@ export default function ClientPage() {
     setMilestones([]);
     setMerchants([]);
     setActiveTab('cuenta');
+    setInactivity(reason === 'inactivity');
   }
 
+  useInactivityLogout(5 * 60 * 1000, () => handleLogout('inactivity'), !!user);
+
   if (!introComplete) return <FidelioIntro onComplete={() => setIntroComplete(true)} />;
-  if (!user) return <LoginScreen onLogin={handleLogin} />;
+  if (!user) return <LoginScreen onLogin={(d) => { setInactivity(false); handleLogin(d); }} inactivity={inactivity} />;
 
   return (
     <div className="min-h-screen" style={{ background: C.bg }}>
@@ -766,6 +886,7 @@ export default function ClientPage() {
         {activeTab === 'cuenta'    && <CuentaTab user={user} />}
         {activeTab === 'actividad' && <ActividadTab transactions={transactions} milestones={milestones} />}
         {activeTab === 'red'       && <RedTab merchants={merchants} user={user} token={token!} onSpend={refreshUser} />}
+        {activeTab === 'ajustes'   && <AjustesTab user={user} token={token!} onUpdate={(u) => { setUser(u); const raw = localStorage.getItem(SESSION_KEY); if (raw) { const s = JSON.parse(raw); localStorage.setItem(SESSION_KEY, JSON.stringify({ ...s, user: u })); } }} />}
       </main>
       <TabBar active={activeTab} onChange={setActiveTab} />
     </div>

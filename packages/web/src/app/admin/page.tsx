@@ -1,6 +1,8 @@
 'use client';
 
 import { useState, useEffect, useCallback } from 'react';
+import { useInactivityLogout } from '@/hooks/useInactivityLogout';
+import { useLang } from '@/hooks/useLang';
 import {
   getMerchants,
   getAdminUsers,
@@ -38,15 +40,7 @@ const font = { fontFamily: 'var(--font-body)' };
 
 type Tab = 'merchants' | 'redemptions' | 'payouts' | 'mint' | 'health' | 'clients' | 'gca';
 
-const TABS: { id: Tab; label: string }[] = [
-  { id: 'merchants',   label: 'Merchants'   },
-  { id: 'redemptions', label: 'Redemptions' },
-  { id: 'payouts',     label: 'Payouts'     },
-  { id: 'mint',        label: 'Mint'        },
-  { id: 'health',      label: 'Health'      },
-  { id: 'clients',     label: 'Clients'     },
-  { id: 'gca',         label: 'GCA'         },
-];
+const TAB_IDS: Tab[] = ['merchants', 'redemptions', 'payouts', 'mint', 'health', 'clients', 'gca'];
 
 const SESSION_KEY = 'fidelio_admin_session';
 
@@ -122,8 +116,9 @@ function ClientsTab({ token }: { token: string }) {
 
 // ─── Auth screen ──────────────────────────────────────────────────────────────
 
-function AuthScreen({ onConnect }: { onConnect: (token: string) => void }) {
+function AuthScreen({ onConnect, inactivity }: { onConnect: (token: string) => void; inactivity?: boolean }) {
   const [value, setValue] = useState('');
+  const t = useLang();
 
   function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -146,17 +141,23 @@ function AuthScreen({ onConnect }: { onConnect: (token: string) => void }) {
                 FIDELIO
               </p>
               <h1 style={{ ...font, fontSize: '1.25rem', fontWeight: 300, color: C.white, letterSpacing: '0.06em' }}>
-                Admin Console
+                {t('admin.title')}
               </h1>
             </div>
 
+            {inactivity && (
+              <p style={{ fontFamily: 'var(--font-body)', fontSize: '0.75rem', color: '#EF4444', background: 'rgba(239,68,68,0.08)', border: '1px solid rgba(239,68,68,0.3)', borderRadius: '0.5rem', padding: '0.6rem 0.75rem', marginBottom: '0.5rem', textAlign: 'center' as const }}>
+                Sesión cerrada por inactividad.
+              </p>
+            )}
+
             <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
               <div style={{ display: 'flex', flexDirection: 'column', gap: '0.4rem' }}>
-                <Label>JWT Token</Label>
+                <Label>{t('admin.jwt_label')}</Label>
                 <textarea
                   value={value}
                   onChange={(e) => setValue(e.target.value)}
-                  placeholder="Paste admin JWT..."
+                  placeholder={t('admin.jwt_placeholder')}
                   rows={4}
                   required
                   style={{
@@ -191,7 +192,7 @@ function AuthScreen({ onConnect }: { onConnect: (token: string) => void }) {
                   textTransform: 'uppercase' as const,
                 }}
               >
-                Connect
+                {t('admin.connect')}
               </button>
             </form>
 
@@ -204,7 +205,9 @@ function AuthScreen({ onConnect }: { onConnect: (token: string) => void }) {
 
 // ─── Tab bar ──────────────────────────────────────────────────────────────────
 
-function TabBar({ active, onChange }: { active: Tab; onChange: (t: Tab) => void }) {
+function TabBar({ active, onChange }: { active: Tab; onChange: (tab: Tab) => void }) {
+  const t = useLang();
+  const TABS = TAB_IDS.map((id) => ({ id, label: t(`tab.${id}` as Parameters<typeof t>[0]) }));
   return (
     <nav style={{
       position: 'fixed',
@@ -217,12 +220,12 @@ function TabBar({ active, onChange }: { active: Tab; onChange: (t: Tab) => void 
       gap: '0.125rem',
       zIndex: 50,
     }}>
-      {TABS.map((t) => {
-        const isActive = t.id === active;
+      {TABS.map((tab) => {
+        const isActive = tab.id === active;
         return (
           <button
-            key={t.id}
-            onClick={() => onChange(t.id)}
+            key={tab.id}
+            onClick={() => onChange(tab.id)}
             style={{
               ...font,
               flex: '0 0 auto',
@@ -239,7 +242,7 @@ function TabBar({ active, onChange }: { active: Tab; onChange: (t: Tab) => void 
               transition: 'all 0.2s',
             }}
           >
-            {t.label}
+            {tab.label}
           </button>
         );
       })}
@@ -250,6 +253,7 @@ function TabBar({ active, onChange }: { active: Tab; onChange: (t: Tab) => void 
 // ─── Top bar ──────────────────────────────────────────────────────────────────
 
 function TopBar({ onDisconnect }: { onDisconnect: () => void }) {
+  const t = useLang();
   return (
     <header style={{
       display: 'flex',
@@ -260,7 +264,7 @@ function TopBar({ onDisconnect }: { onDisconnect: () => void }) {
     }}>
       <div>
         <p style={{ ...font, fontSize: '0.55rem', fontWeight: 300, letterSpacing: '0.2em', color: C.slate, textTransform: 'uppercase' as const }}>FIDELIO</p>
-        <h1 style={{ ...font, fontSize: '0.95rem', fontWeight: 400, color: C.white, letterSpacing: '0.06em' }}>Admin Console</h1>
+        <h1 style={{ ...font, fontSize: '0.95rem', fontWeight: 400, color: C.white, letterSpacing: '0.06em' }}>{t('admin.title')}</h1>
       </div>
       <button
         onClick={onDisconnect}
@@ -278,7 +282,7 @@ function TopBar({ onDisconnect }: { onDisconnect: () => void }) {
           textTransform: 'uppercase' as const,
         }}
       >
-        Disconnect
+        {t('admin.disconnect')}
       </button>
     </header>
   );
@@ -290,6 +294,7 @@ export default function AdminPage() {
   const [token, setToken] = useState<string | null>(null);
   const [tab, setTab] = useState<Tab>('merchants');
   const [merchants, setMerchants] = useState<Merchant[]>([]);
+  const [inactivity, setInactivity] = useState(false);
 
   useEffect(() => {
     const saved = localStorage.getItem(SESSION_KEY);
@@ -308,14 +313,17 @@ export default function AdminPage() {
     if (token) loadMerchants();
   }, [token, loadMerchants]);
 
-  function handleDisconnect() {
+  function handleDisconnect(reason?: 'inactivity') {
     localStorage.removeItem(SESSION_KEY);
     setToken(null);
     setMerchants([]);
     setTab('merchants');
+    setInactivity(reason === 'inactivity');
   }
 
-  if (!token) return <AuthScreen onConnect={setToken} />;
+  useInactivityLogout(5 * 60 * 1000, () => handleDisconnect('inactivity'), !!token);
+
+  if (!token) return <AuthScreen onConnect={(t) => { setInactivity(false); setToken(t); }} inactivity={inactivity} />;
 
   return (
     <div style={{ minHeight: '100vh', background: C.bg }}>

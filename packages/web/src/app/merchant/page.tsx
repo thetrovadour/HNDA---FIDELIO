@@ -2,6 +2,7 @@
 
 import { FidelioIntro } from '@/components/FidelioIntro';
 import { useState, useEffect } from 'react';
+import { useInactivityLogout } from '@/hooks/useInactivityLogout';
 import {
   getMerchantPublic,
   getMerchantBalance,
@@ -10,6 +11,7 @@ import {
   createMerchantRedemption,
   getGcaBalance,
   redeemGca,
+  updateMerchantProfile,
   type Merchant,
   type MerchantBalance,
   type MerchantTransaction,
@@ -212,9 +214,18 @@ function IconCopy() {
   );
 }
 
+function IconSettings() {
+  return (
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.5} className="w-5 h-5">
+      <circle cx="12" cy="12" r="3" />
+      <path d="M19.4 15a1.65 1.65 0 00.33 1.82l.06.06a2 2 0 010 2.83 2 2 0 01-2.83 0l-.06-.06a1.65 1.65 0 00-1.82-.33 1.65 1.65 0 00-1 1.51V21a2 2 0 01-4 0v-.09A1.65 1.65 0 009 19.4a1.65 1.65 0 00-1.82.33l-.06.06a2 2 0 01-2.83-2.83l.06-.06A1.65 1.65 0 004.68 15a1.65 1.65 0 00-1.51-1H3a2 2 0 010-4h.09A1.65 1.65 0 004.6 9a1.65 1.65 0 00-.33-1.82l-.06-.06a2 2 0 012.83-2.83l.06.06A1.65 1.65 0 009 4.68a1.65 1.65 0 001-1.51V3a2 2 0 014 0v.09a1.65 1.65 0 001 1.51 1.65 1.65 0 001.82-.33l.06-.06a2 2 0 012.83 2.83l-.06.06A1.65 1.65 0 0019.4 9a1.65 1.65 0 001.51 1H21a2 2 0 010 4h-.09a1.65 1.65 0 00-1.51 1z" strokeLinecap="round" strokeLinejoin="round" />
+    </svg>
+  );
+}
+
 // ─── Login screen ─────────────────────────────────────────────────────────────
 
-function LoginScreen({ onLogin }: { onLogin: (merchant: Merchant) => void }) {
+function LoginScreen({ onLogin, inactivity }: { onLogin: (merchant: Merchant) => void; inactivity?: boolean }) {
   const [merchantId, setMerchantId] = useState('');
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
@@ -279,6 +290,10 @@ function LoginScreen({ onLogin }: { onLogin: (merchant: Merchant) => void }) {
             placeholder="xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx"
             autoComplete="off"
           />
+
+          {inactivity && (
+            <StatusMsg type="error" msg="Sesión cerrada por inactividad." />
+          )}
 
           {error && <StatusMsg type="error" msg={error} />}
 
@@ -362,7 +377,7 @@ function TopBar({ merchant, balance, onLogout }: { merchant: Merchant; balance: 
 
 // ─── Bottom tab bar ───────────────────────────────────────────────────────────
 
-type Tab = 'negocio' | 'canjear' | 'gca' | 'movimientos';
+type Tab = 'negocio' | 'canjear' | 'gca' | 'movimientos' | 'ajustes';
 
 function TabBar({ active, onChange }: { active: Tab; onChange: (t: Tab) => void }) {
   const tabs: { id: Tab; label: string; icon: React.ReactNode }[] = [
@@ -370,6 +385,7 @@ function TabBar({ active, onChange }: { active: Tab; onChange: (t: Tab) => void 
     { id: 'canjear',     label: 'Canjear',     icon: <IconSwap /> },
     { id: 'gca',         label: 'GCA',         icon: <IconGem /> },
     { id: 'movimientos', label: 'Movimientos', icon: <IconList /> },
+    { id: 'ajustes',     label: 'Ajustes',     icon: <IconSettings /> },
   ];
 
   return (
@@ -892,6 +908,48 @@ function MovimientosTab({ merchant }: { merchant: Merchant }) {
   );
 }
 
+// ─── Tab: Ajustes ─────────────────────────────────────────────────────────────
+
+function AjustesTab({ merchant, onUpdate }: { merchant: Merchant; onUpdate: (m: Merchant) => void }) {
+  const [name, setName] = useState(merchant.name);
+  const [category, setCategory] = useState(merchant.category);
+  const [contactEmail, setContactEmail] = useState(merchant.contact_email);
+  const [profileState, setProfileState] = useState<'idle' | 'loading' | 'success' | 'error'>('idle');
+  const [profileMsg, setProfileMsg] = useState('');
+
+  async function handleSave(e: React.FormEvent) {
+    e.preventDefault();
+    setProfileState('loading');
+    setProfileMsg('');
+    try {
+      const res = await updateMerchantProfile(merchant.id, { name, category, contact_email: contactEmail });
+      onUpdate(res.data);
+      setProfileState('success');
+      setProfileMsg('Información actualizada.');
+    } catch (err) {
+      setProfileState('error');
+      setProfileMsg(err instanceof Error ? err.message : 'Error al guardar.');
+    }
+  }
+
+  return (
+    <div className="flex flex-col gap-4">
+      <Section title="Información del negocio">
+        <form onSubmit={handleSave} className="flex flex-col gap-3">
+          <Input label="Nombre del negocio" value={name} onChange={(e) => setName(e.target.value)} />
+          <Input label="Categoría" value={category} onChange={(e) => setCategory(e.target.value)} />
+          <Input label="Correo de contacto" type="email" value={contactEmail} onChange={(e) => setContactEmail(e.target.value)} />
+          {profileState === 'success' && <StatusMsg type="success" msg={profileMsg} />}
+          {profileState === 'error'   && <StatusMsg type="error"   msg={profileMsg} />}
+          <PrimaryBtn type="submit" disabled={profileState === 'loading'}>
+            {profileState === 'loading' ? 'Guardando' : 'Guardar cambios'}
+          </PrimaryBtn>
+        </form>
+      </Section>
+    </div>
+  );
+}
+
 // ─── Root ─────────────────────────────────────────────────────────────────────
 
 const SESSION_KEY = 'fidelio_merchant_session';
@@ -901,6 +959,7 @@ export default function MerchantPage() {
   const [merchant, setMerchant] = useState<Merchant | null>(null);
   const [balance, setBalance] = useState<MerchantBalance | null>(null);
   const [activeTab, setActiveTab] = useState<Tab>('negocio');
+  const [inactivity, setInactivity] = useState(false);
 
   useEffect(() => {
     const raw = localStorage.getItem(SESSION_KEY);
@@ -933,15 +992,18 @@ export default function MerchantPage() {
     localStorage.setItem(SESSION_KEY, JSON.stringify({ merchant: m }));
   }
 
-  function handleLogout() {
+  function handleLogout(reason?: 'inactivity') {
     localStorage.removeItem(SESSION_KEY);
     setMerchant(null);
     setBalance(null);
     setActiveTab('negocio');
+    setInactivity(reason === 'inactivity');
   }
 
+  useInactivityLogout(15 * 60 * 1000, () => handleLogout('inactivity'), !!merchant);
+
   if (!introComplete) return <FidelioIntro onComplete={() => setIntroComplete(true)} />;
-  if (!merchant)      return <LoginScreen onLogin={handleLogin} />;
+  if (!merchant)      return <LoginScreen onLogin={(m) => { setInactivity(false); handleLogin(m); }} inactivity={inactivity} />;
 
   return (
     <div className="min-h-screen" style={{ background: C.bg }}>
@@ -951,6 +1013,7 @@ export default function MerchantPage() {
         {activeTab === 'canjear'     && <CanjearTab     merchant={merchant} />}
         {activeTab === 'gca'         && <GcaTab         merchant={merchant} />}
         {activeTab === 'movimientos' && <MovimientosTab merchant={merchant} />}
+        {activeTab === 'ajustes'     && <AjustesTab     merchant={merchant} onUpdate={(m) => { setMerchant(m); localStorage.setItem(SESSION_KEY, JSON.stringify({ merchant: m })); }} />}
       </main>
       <TabBar active={activeTab} onChange={setActiveTab} />
     </div>

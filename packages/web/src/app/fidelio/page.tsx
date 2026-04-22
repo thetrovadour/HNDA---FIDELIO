@@ -63,6 +63,7 @@ export default function FidelioPage() {
           <a href="#how" style={navLink}>How it Works</a>
           <a href="#token" style={navLink}>CATR</a>
           <a href="#contact" style={{ ...navLink, background: "var(--accent)", color: "#fff", padding: "0.4rem 1rem", borderRadius: "999px", fontWeight: 600 }}>Join Network</a>
+          <a href="/client" style={{ ...navLink, background: "var(--text)", color: "#000000", padding: "0.4rem 1rem", borderRadius: "777px", fontWeight: 600 }}>Access</a>
         </div>
       </nav>
 

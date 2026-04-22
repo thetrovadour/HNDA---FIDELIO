@@ -64,6 +64,7 @@ export default function HndaHome() {
         borderBottom: "1px solid var(--border)",
         animation: "fadeIn 0.8s ease-out both",
       }}>
+        <div style={{ display: "flex", alignItems: "center", gap: "2rem" }}>
         <a href="#hero" style={{ display: "flex", alignItems: "center", textDecoration: "none" }}>
           <svg xmlns="http://www.w3.org/2000/svg" width="125" height="125" viewBox="0 0 300 300" style={{ transition: "transform 0.6s cubic-bezier(0.4,0,0.2,1)", transform: logoRotated ? "rotate(180deg)" : "rotate(0deg)" }}>
             {/* Outer ring */}
@@ -86,11 +87,23 @@ export default function HndaHome() {
             ))}
           </svg>
         </a>
-        <div style={{ display: "flex", gap: "2rem", alignItems: "center" }}>
           <a href="#mission" style={navLink}>Mission</a>
           <a href="#products" style={navLink}>Products</a>
           <a href="#contact" style={navLink}>Contact</a>
-         <Link href="/fidelio" style={ctaLink}>Login</Link>
+        </div>
+        <div style={{ display: "flex", gap: "0.75rem", alignItems: "center" }}>
+          <Link href="/nodes" style={ctaLink}>HNDA Nodes</Link>
+          <Link href="/wallets" style={ctaLink}>
+             H-<span style={{
+              background: "linear-gradient(90deg, #fff 0%, #0ea5e9 40%, #fff 60%, #0ea5e9 100%)",
+              backgroundSize: "200% auto",
+              WebkitBackgroundClip: "text",
+              WebkitTextFillColor: "transparent",
+              backgroundClip: "text",
+              animation: "shimmerText 8s linear infinite",
+            }}>Wallets</span>
+          </Link>
+          <style>{`@keyframes shimmerText { 0% { background-position: 200% center; } 100% { background-position: -200% center; } }`}</style>
         </div>
       </nav>
 
@@ -230,7 +243,8 @@ export default function HndaHome() {
             HNDA is building Honduras's financial layer. There's a role for you.
           </p>
           <div style={{ display: "flex", gap: "1rem", justifyContent: "center", flexWrap: "wrap" }}>
-            <a href="mailto:rodriguez.cjrp@outlook.com" style={btnPrimary}>Contact HNDA</a>
+            <Link href="/register" style={btnPrimary}>Join Network</Link>
+            <a href="mailto:rodriguez.cjrp@outlook.com" style={btnOutline}>Contact HNDA</a>
             <Link href="/fidelio" style={btnOutline}>See FIDELIO</Link>
           </div>
         </div>

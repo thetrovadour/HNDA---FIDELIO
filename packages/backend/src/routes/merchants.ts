@@ -128,6 +128,28 @@ export function merchantsRouter(redemptionService: RedemptionService): Router {
     }
   });
 
+  // ── Merchant self-service profile update ────────────────────────────────────
+
+  const UpdateProfileSchema = z.object({
+    name: z.string().min(1).optional(),
+    category: z.string().min(1).optional(),
+    contact_email: z.string().email().optional(),
+  });
+
+  router.patch('/:id/profile', validate(UpdateProfileSchema), async (req: Request, res: Response) => {
+    const merchant = await db.merchant.findUnique({ where: { id: req.params.id } });
+    if (!merchant) {
+      res.status(404).json({ error: 'Merchant not found', code: 'NOT_FOUND' });
+      return;
+    }
+    try {
+      const updated = await db.merchant.update({ where: { id: req.params.id }, data: req.body });
+      res.status(200).json({ data: updated });
+    } catch (err: any) {
+      res.status(400).json({ error: err.message, code: 'BAD_REQUEST' });
+    }
+  });
+
   // ── Admin routes ─────────────────────────────────────────────────────────────
 
   router.get('/', adminAuth, async (_req: Request, res: Response) => {
