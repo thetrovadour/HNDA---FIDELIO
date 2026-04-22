@@ -102,7 +102,12 @@ export default function MerchantList({ merchants, token, onRefresh }: Props) {
           <tbody>
             {merchants.map((m) => (
               <tr key={m.id}>
-                <td style={{ ...tdStyle, color: C.white }}>{m.name}</td>
+                <td style={{ ...tdStyle, color: C.white }}>
+                  {m.name}
+                  <div style={{ fontFamily: 'monospace', fontSize: '0.62rem', color: C.slate, marginTop: '0.2rem', userSelect: 'all' as const }}>
+                    {m.id}
+                  </div>
+                </td>
                 <td style={tdStyle}>{m.category}</td>
                 <td style={tdStyle}>
                   <span style={{ color: m.active ? C.success : C.danger }}>

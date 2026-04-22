@@ -9,6 +9,8 @@ import {
   getUserTransactions,
   updateUser,
   setPassword,
+  forgotPassword,
+  resetPassword,
 } from '@/lib/api';
 import type { UserRecord, Transaction, Milestone, Merchant } from '@/lib/api';
 
@@ -195,12 +197,17 @@ interface LoginProps {
 }
 
 function LoginScreen({ onLogin, inactivity }: LoginProps) {
+  const [screen, setScreen] = useState<'login' | 'forgot1' | 'forgot2' | 'done'>('login');
   const [name, setName] = useState('');
   const [credential, setCredential] = useState('');
+  const [resetEmail, setResetEmail] = useState('');
+  const [resetCode, setResetCode] = useState('');
+  const [newPassword, setNewPassword] = useState('');
+  const [confirmPassword, setConfirmPassword] = useState('');
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
 
-  async function handleSubmit(e: React.FormEvent) {
+  async function handleLogin(e: React.FormEvent) {
     e.preventDefault();
     if (!name.trim() || !credential) return;
     setLoading(true);
@@ -220,79 +227,125 @@ function LoginScreen({ onLogin, inactivity }: LoginProps) {
     }
   }
 
+  async function handleForgot1(e: React.FormEvent) {
+    e.preventDefault();
+    setLoading(true);
+    setError('');
+    try {
+      await forgotPassword(resetEmail.trim());
+      setScreen('forgot2');
+    } catch {
+      setError('Error al procesar la solicitud.');
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  async function handleForgot2(e: React.FormEvent) {
+    e.preventDefault();
+    if (newPassword !== confirmPassword) { setError('Las contraseñas no coinciden.'); return; }
+    if (newPassword.length < 6) { setError('Mínimo 6 caracteres.'); return; }
+    setLoading(true);
+    setError('');
+    try {
+      await resetPassword({ email: resetEmail.trim(), code: resetCode.trim(), new_password: newPassword });
+      setScreen('done');
+    } catch {
+      setError('Código inválido o expirado.');
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  const Brand = () => (
+    <div className="mb-12 text-center">
+      <p className="uppercase tracking-widest mb-1" style={{ color: C.slate, fontSize: '0.65rem', fontWeight: 300, letterSpacing: '0.22em' }}>
+        Honduras Nativa Digital Answers
+      </p>
+      <h1 style={{ fontSize: 'clamp(2.5rem, 8vw, 3.5rem)', fontWeight: 200, letterSpacing: '0.18em', color: C.white, lineHeight: 1 }}>
+        FIDELIO
+      </h1>
+      <div className="mx-auto mt-3" style={{ width: 32, height: 1, background: `rgba(201,168,76,0.4)` }} />
+    </div>
+  );
+
   return (
-    <div
-      className="min-h-screen flex flex-col items-center justify-center px-6 relative"
-      style={{ background: C.bg, fontFamily: 'var(--font-body)' }}
-    >
-      {/* Brand */}
-      <div className="mb-12 text-center">
-        <p
-          className="uppercase tracking-widest mb-1"
-          style={{ color: C.slate, fontSize: '0.65rem', fontWeight: 300, letterSpacing: '0.22em' }}
-        >
-          Honduras Nativa Digital Answers
-        </p>
-        <h1
-          style={{
-            fontSize: 'clamp(2.5rem, 8vw, 3.5rem)',
-            fontWeight: 200,
-            letterSpacing: '0.18em',
-            color: C.white,
-            lineHeight: 1,
-          }}
-        >
-          FIDELIO
-        </h1>
-        <div
-          className="mx-auto mt-3"
-          style={{ width: 32, height: 1, background: `rgba(201,168,76,0.4)` }}
-        />
-      </div>
-
-      {/* Card */}
+    <div className="min-h-screen flex flex-col items-center justify-center px-6 relative" style={{ background: C.bg, fontFamily: 'var(--font-body)' }}>
+      <Brand />
       <div className="shimmer-border rounded-2xl p-px w-full max-w-sm">
-        <form
-          onSubmit={handleSubmit}
-          className="rounded-2xl px-6 py-7 flex flex-col gap-5"
-          style={{ background: C.surface }}
-        >
-          <Input
-            label="Nombre completo"
-            value={name}
-            onChange={(e) => setName(e.target.value)}
-            placeholder="María García"
-            autoComplete="name"
-          />
-          <Input
-            label="PIN o contraseña"
-            type="password"
-            value={credential}
-            onChange={(e) => setCredential(e.target.value)}
-            placeholder="••••"
-            autoComplete="current-password"
-          />
 
-          {inactivity && (
-            <StatusMsg type="error" msg="Sesión cerrada por inactividad." />
-          )}
+        {/* ── Login ── */}
+        {screen === 'login' && (
+          <form onSubmit={handleLogin} className="rounded-2xl px-6 py-7 flex flex-col gap-5" style={{ background: C.surface }}>
+            <Input label="Nombre completo" value={name} onChange={(e) => setName(e.target.value)} placeholder="María García" autoComplete="name" />
+            <Input label="PIN o contraseña" type="password" value={credential} onChange={(e) => setCredential(e.target.value)} placeholder="••••" autoComplete="current-password" />
+            {inactivity && <StatusMsg type="error" msg="Sesión cerrada por inactividad." />}
+            {error && <StatusMsg type="error" msg={error} />}
+            <PrimaryBtn type="submit" disabled={loading || !credential || !name.trim()}>{loading ? 'Verificando' : 'Acceder'}</PrimaryBtn>
+            <div className="flex justify-between items-center">
+              <p style={{ color: C.slate, fontSize: '0.7rem', fontWeight: 300 }}>
+                Comerciante —{' '}
+                <a href="/merchant" style={{ color: C.slateHi, textDecoration: 'underline', textUnderlineOffset: '3px' }}>accede aquí</a>
+              </p>
+              <button type="button" onClick={() => { setScreen('forgot1'); setError(''); }}
+                style={{ background: 'none', border: 'none', cursor: 'pointer', color: C.slate, fontSize: '0.7rem', fontWeight: 300, textDecoration: 'underline', textUnderlineOffset: '3px' }}>
+                ¿Olvidaste tu contraseña?
+              </button>
+            </div>
+            <p className="text-center" style={{ color: C.slate, fontSize: '0.7rem', fontWeight: 300 }}>
+              ¿No tienes cuenta?{' '}
+              <a href="/register" style={{ color: C.slateHi, textDecoration: 'underline', textUnderlineOffset: '3px' }}>Regístrate</a>
+            </p>
+          </form>
+        )}
 
-          {error && <StatusMsg type="error" msg={error} />}
+        {/* ── Forgot step 1: enter email ── */}
+        {screen === 'forgot1' && (
+          <form onSubmit={handleForgot1} className="rounded-2xl px-6 py-7 flex flex-col gap-5" style={{ background: C.surface }}>
+            <div>
+              <p style={{ color: C.white, fontSize: '0.9rem', fontWeight: 300, marginBottom: '0.25rem' }}>Restablecer contraseña</p>
+              <p style={{ color: C.slate, fontSize: '0.75rem' }}>Ingresa tu correo. HNDA te proporcionará un código de 6 dígitos.</p>
+            </div>
+            <Input label="Correo electrónico" type="email" value={resetEmail} onChange={(e) => setResetEmail(e.target.value)} placeholder="juan@email.com" autoComplete="email" />
+            {error && <StatusMsg type="error" msg={error} />}
+            <PrimaryBtn type="submit" disabled={loading || !resetEmail.trim()}>{loading ? 'Enviando...' : 'Continuar'}</PrimaryBtn>
+            <button type="button" onClick={() => { setScreen('login'); setError(''); }}
+              style={{ background: 'none', border: 'none', cursor: 'pointer', color: C.slate, fontSize: '0.7rem', textDecoration: 'underline', textUnderlineOffset: '3px' }}>
+              Volver al inicio de sesión
+            </button>
+          </form>
+        )}
 
-          <PrimaryBtn type="submit" disabled={loading || !credential || !name.trim()}>
-            {loading ? 'Verificando' : 'Acceder'}
-          </PrimaryBtn>
+        {/* ── Forgot step 2: enter code + new password ── */}
+        {screen === 'forgot2' && (
+          <form onSubmit={handleForgot2} className="rounded-2xl px-6 py-7 flex flex-col gap-5" style={{ background: C.surface }}>
+            <div>
+              <p style={{ color: C.white, fontSize: '0.9rem', fontWeight: 300, marginBottom: '0.25rem' }}>Ingresa el código</p>
+              <p style={{ color: C.slate, fontSize: '0.75rem' }}>Llama a HNDA para obtener tu código de 6 dígitos y establece tu nueva contraseña.</p>
+            </div>
+            <Input label="Código de 6 dígitos" value={resetCode} onChange={(e) => setResetCode(e.target.value)} placeholder="123456" autoComplete="one-time-code" />
+            <Input label="Nueva contraseña" type="password" value={newPassword} onChange={(e) => setNewPassword(e.target.value)} placeholder="Mínimo 6 caracteres" />
+            <Input label="Confirmar contraseña" type="password" value={confirmPassword} onChange={(e) => setConfirmPassword(e.target.value)} placeholder="Repite la contraseña" />
+            {error && <StatusMsg type="error" msg={error} />}
+            <PrimaryBtn type="submit" disabled={loading || !resetCode || !newPassword}>{loading ? 'Guardando...' : 'Restablecer contraseña'}</PrimaryBtn>
+            <button type="button" onClick={() => { setScreen('login'); setError(''); }}
+              style={{ background: 'none', border: 'none', cursor: 'pointer', color: C.slate, fontSize: '0.7rem', textDecoration: 'underline', textUnderlineOffset: '3px' }}>
+              Volver al inicio de sesión
+            </button>
+          </form>
+        )}
 
-          <p
-            className="text-center"
-            style={{ color: C.slate, fontSize: '0.7rem', fontWeight: 300, letterSpacing: '0.06em' }}
-          >
-            Comerciante —{' '}
-            <a href="/merchant" style={{ color: C.slateHi, textDecoration: 'underline', textUnderlineOffset: '3px' }}>
-              accede aquí
-            </a>
-          </p>
-        </form>
+        {/* ── Done ── */}
+        {screen === 'done' && (
+          <div className="rounded-2xl px-6 py-7 flex flex-col gap-5 text-center" style={{ background: C.surface }}>
+            <p style={{ color: C.white, fontSize: '0.9rem', fontWeight: 300 }}>¡Contraseña restablecida!</p>
+            <p style={{ color: C.slate, fontSize: '0.75rem' }}>Ya puedes iniciar sesión con tu nueva contraseña.</p>
+            <PrimaryBtn type="button" onClick={() => { setScreen('login'); setError(''); setResetCode(''); setNewPassword(''); setConfirmPassword(''); }}>
+              Iniciar sesión
+            </PrimaryBtn>
+          </div>
+        )}
+
       </div>
     </div>
   );

@@ -4,6 +4,7 @@ import jwt from 'jsonwebtoken';
 import bcrypt from 'bcrypt';
 import { validate } from '../middleware/validate';
 import db from '../db';
+import { generateWallet } from '../utils/wallet_crypto';
 
 const RegisterSchema = z.discriminatedUnion('role', [
   z.object({
@@ -25,6 +26,16 @@ const RegisterSchema = z.discriminatedUnion('role', [
 const PilotLoginSchema = z.object({
   full_name: z.string().min(1),
   credential: z.string().min(1),
+});
+
+const ForgotPasswordSchema = z.object({
+  email: z.string().email(),
+});
+
+const ResetPasswordSchema = z.object({
+  email: z.string().email(),
+  code: z.string().length(6),
+  new_password: z.string().min(6),
 });
 
 const SetPasswordSchema = z.object({
@@ -142,6 +153,41 @@ export function authRouter(): Router {
     res.status(200).json({ data: { ok: true } });
   });
 
+  router.post('/forgot-password', validate(ForgotPasswordSchema), async (req: Request, res: Response) => {
+    const { email } = req.body as { email: string };
+    const user = await db.user.findUnique({ where: { email } });
+    // Always return ok — never reveal if email exists
+    if (user) {
+      const code = String(Math.floor(100000 + Math.random() * 900000));
+      const expires = new Date(Date.now() + 60 * 60 * 1000); // 1 hour
+      await db.user.update({
+        where: { id: user.id },
+        data: { reset_code: code, reset_code_expires_at: expires },
+      });
+    }
+    res.status(200).json({ data: { ok: true } });
+  });
+
+  router.post('/reset-password', validate(ResetPasswordSchema), async (req: Request, res: Response) => {
+    const { email, code, new_password } = req.body as { email: string; code: string; new_password: string };
+    const user = await db.user.findUnique({ where: { email } });
+    if (
+      !user ||
+      user.reset_code !== code ||
+      !user.reset_code_expires_at ||
+      user.reset_code_expires_at < new Date()
+    ) {
+      res.status(400).json({ error: 'Código inválido o expirado', code: 'INVALID_RESET_CODE' });
+      return;
+    }
+    const password_hash = await bcrypt.hash(new_password, 10);
+    await db.user.update({
+      where: { id: user.id },
+      data: { password_hash, reset_code: null, reset_code_expires_at: null },
+    });
+    res.status(200).json({ data: { ok: true } });
+  });
+
   router.post('/register', validate(RegisterSchema), async (req: Request, res: Response) => {
     const body = req.body as z.infer<typeof RegisterSchema>;
 
@@ -157,24 +203,29 @@ export function authRouter(): Router {
       const user = await db.user.create({
         data: { full_name: body.full_name, email: body.email, password_hash },
       });
-      res.status(201).json({ data: { role: 'client', user_id: user.id } });
+      const { address, privateKeyEncrypted } = generateWallet();
+      await db.wallet.create({ data: { user_id: user.id, address, private_key_encrypted: privateKeyEncrypted } });
+      res.status(201).json({ data: { role: 'client', user_id: user.id, wallet_address: address } });
       return;
     }
 
-    // merchant: create owner user + pending merchant record (active: false, no wallet yet)
+    // merchant: create owner user + wallet + pending merchant record (active: false)
     const user = await db.user.create({
       data: { full_name: body.full_name, email: body.email, password_hash },
     });
-    await db.merchant.create({
+    const { address, privateKeyEncrypted } = generateWallet();
+    await db.wallet.create({ data: { user_id: user.id, address, private_key_encrypted: privateKeyEncrypted } });
+    const merchant = await db.merchant.create({
       data: {
         name: body.business_name,
         category: body.category,
         contact_email: body.email,
         active: false,
         owner_user_id: user.id,
+        wallet_address: address,
       },
     });
-    res.status(201).json({ data: { role: 'merchant', user_id: user.id } });
+    res.status(201).json({ data: { role: 'merchant', user_id: user.id, merchant_id: merchant.id, wallet_address: address } });
   });
 
   return router;

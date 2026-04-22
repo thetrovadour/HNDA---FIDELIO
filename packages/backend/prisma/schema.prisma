@@ -14,8 +14,10 @@ model User {
   phone           String?
   created_at      DateTime          @default(now())
   updated_at      DateTime          @updatedAt
-  pin             String?
-  password_hash   String?
+  pin                    String?
+  password_hash          String?
+  reset_code             String?
+  reset_code_expires_at  DateTime?
   owned_merchants Merchant[]        @relation("merchant_owner")
   merchant_visits MerchantVisit[]
   referrals_recv  Referral?         @relation("referred")
@@ -27,13 +29,14 @@ model User {
 }
 
 model Wallet {
-  id           String   @id @default(uuid())
-  user_id      String   @unique
-  address      String   @unique
-  catr_balance Decimal  @default(0) @db.Decimal(36, 18)
-  created_at   DateTime @default(now())
-  updated_at   DateTime @updatedAt
-  user         User     @relation(fields: [user_id], references: [id])
+  id                    String   @id @default(uuid())
+  user_id               String   @unique
+  address               String   @unique
+  catr_balance          Decimal  @default(0) @db.Decimal(36, 18)
+  private_key_encrypted String?
+  created_at            DateTime @default(now())
+  updated_at            DateTime @updatedAt
+  user                  User     @relation(fields: [user_id], references: [id])
 
   @@index([address])
 }

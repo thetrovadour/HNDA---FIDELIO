@@ -310,6 +310,15 @@ function LoginScreen({ onLogin, inactivity }: { onLogin: (merchant: Merchant) =>
               accede aquí
             </a>
           </p>
+          <p
+            className="text-center"
+            style={{ color: C.slate, fontSize: '0.7rem', fontWeight: 300, letterSpacing: '0.06em' }}
+          >
+            ¿No tienes cuenta?{' '}
+            <a href="/register" style={{ color: C.slateHi, textDecoration: 'underline', textUnderlineOffset: '3px' }}>
+              Regístrate
+            </a>
+          </p>
         </form>
       </div>
     </div>
@@ -982,6 +991,15 @@ export default function MerchantPage() {
     const interval = setInterval(() => {
       getMerchantBalance(merchant.id)
         .then((r) => setBalance(r.data))
+        .catch(() => {});
+      getMerchantPublic(merchant.id)
+        .then((r) => {
+          if (r.data.active !== merchant.active) {
+            const updated = { ...merchant, active: r.data.active };
+            setMerchant(updated);
+            localStorage.setItem(SESSION_KEY, JSON.stringify({ merchant: updated }));
+          }
+        })
         .catch(() => {});
     }, 15_000);
     return () => clearInterval(interval);

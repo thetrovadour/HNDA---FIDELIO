@@ -57,19 +57,18 @@ export default function FidelioPage() {
         animation: "fadeIn 0.6s ease-out both",
       }}>
         <style>{`@keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }`}</style>
-        <Link href="/" style={{ color: "var(--muted)", textDecoration: "none", fontSize: "0.9rem", fontWeight: 500 }}>← HNDA</Link>
-        <div style={{ display: "flex", gap: "1.75rem", alignItems: "center" }}>
-          <a href="#actors" style={navLink}>Network</a>
-          <a href="#how" style={navLink}>How it Works</a>
-          <a href="#token" style={navLink}>CATR</a>
-          <a href="#contact" style={{ ...navLink, background: "var(--accent)", color: "#fff", padding: "0.4rem 1rem", borderRadius: "999px", fontWeight: 600 }}>Join Network</a>
-          <a href="/client" style={{ ...navLink, background: "var(--text)", color: "#000000", padding: "0.4rem 1rem", borderRadius: "777px", fontWeight: 600 }}>Access</a>
+        <Link href="/" style={{ color: "var(--muted)", textDecoration: "none", fontSize: "0.85rem", fontWeight: 500 }}>← HNDA</Link>
+        <div style={{ display: "flex", gap: "1.25rem", alignItems: "center" }}>
+          <a href="#actors" style={navLink} className="hidden md:inline">Network</a>
+          <a href="#how" style={navLink} className="hidden md:inline">How it Works</a>
+          <a href="#token" style={navLink} className="hidden md:inline">CATR</a>
+          <a href="/register" style={{ ...navLink, background: "var(--accent)", color: "#fff", padding: "0.3rem 0.75rem", borderRadius: "999px", fontWeight: 600, fontSize: "0.78rem" }}>Join Network</a>
         </div>
       </nav>
 
       {/* ── Hero ── */}
       <section id="hero" style={{ minHeight: "100vh", display: "flex", alignItems: "center", padding: "100px 2rem 4rem", position: "relative", zIndex: 1 }}>
-        <div style={{ maxWidth: "1100px", margin: "0 auto", width: "100%", display: "grid", gridTemplateColumns: "1fr auto", alignItems: "center", gap: "4rem" }}>
+        <div style={{ maxWidth: "1100px", margin: "0 auto", width: "100%" }} className="grid grid-cols-1 lg:grid-cols-[1fr_auto] items-center gap-16">
 
           {/* Left — text */}
           <div style={{ textAlign: "left" }}>
@@ -118,50 +117,57 @@ export default function FidelioPage() {
           </div>
 
           {/* Right — Android phone mock */}
-          <div className="hero-seq-item" style={{ display: "flex", justifyContent: "center", alignItems: "center" }}>
+          <div className="hero-seq-item hidden lg:flex" style={{ justifyContent: "center", alignItems: "center" }}>
             <Android width={380} height={712} style={{ filter: "drop-shadow(0 32px 64px rgba(0,0,0,0.7)) drop-shadow(0 8px 24px rgba(14,165,233,0.15))" }}>
-              <div style={{ width: "100%", height: "100%", background: "#0a0f14", fontFamily: "system-ui, sans-serif", display: "flex", flexDirection: "column", fontSize: "13px", color: "#f1f5f9" }}>
+              <div style={{ width: "100%", height: "100%", background: "#06080D", fontFamily: "system-ui, sans-serif", display: "flex", flexDirection: "column", fontSize: "13px", color: "#F1F5F9", position: "relative" }}>
                 {/* Status bar */}
-                <div style={{ display: "flex", justifyContent: "space-between", padding: "10px 16px 4px", fontSize: "11px", color: "#94a3b8" }}>
-                  <span>9:41</span>
-                  <span>▲ ◼ 100%</span>
+                <div style={{ display: "flex", justifyContent: "space-between", padding: "10px 16px 4px", fontSize: "10px", color: "#64748B" }}>
+                  <span>9:41</span><span>▲ ◼ 100%</span>
                 </div>
-                {/* App top bar */}
-                <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "8px 16px 12px", borderBottom: "1px solid #1e293b" }}>
-                  <span style={{ fontWeight: 800, letterSpacing: "0.06em", fontSize: "15px", color: "#f1f5f9" }}>FIDELIO</span>
-                  <span style={{ fontSize: "11px", color: "#94a3b8", background: "#1e293b", padding: "3px 8px", borderRadius: "999px" }}>HNDA</span>
+                {/* Top bar */}
+                <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "6px 14px 10px", borderBottom: "1px solid rgba(255,255,255,0.07)" }}>
+                  <div>
+                    <div style={{ fontSize: "8px", color: "#64748B", letterSpacing: "0.2em", textTransform: "uppercase" }}>FIDELIO</div>
+                    <div style={{ fontSize: "13px", fontWeight: 300, color: "#F1F5F9", letterSpacing: "0.04em" }}>Bienvenido</div>
+                  </div>
+                  <div style={{ fontSize: "10px", color: "#C9A84C", background: "rgba(201,168,76,0.1)", border: "1px solid rgba(201,168,76,0.3)", padding: "2px 8px", borderRadius: "999px" }}>Usuario</div>
                 </div>
-                {/* Tab bar */}
-                <div style={{ display: "flex", borderBottom: "1px solid #1e293b" }}>
-                  <div style={{ flex: 1, textAlign: "center", padding: "8px 0", fontSize: "12px", color: "#64748b" }}>Client</div>
-                  <div style={{ flex: 1, textAlign: "center", padding: "8px 0", fontSize: "12px", color: "#0ea5e9", borderBottom: "2px solid #0ea5e9", fontWeight: 700 }}>Merchant</div>
-                </div>
-                {/* CATR balance card */}
-                <div style={{ margin: "16px 12px 0", background: "linear-gradient(135deg, #0f172a, #1e293b)", border: "1px solid #1e3a5f", borderRadius: "14px", padding: "16px" }}>
-                  <div style={{ fontSize: "10px", color: "#64748b", letterSpacing: "0.08em", textTransform: "uppercase", marginBottom: "6px" }}>CATR Balance</div>
-                  <div style={{ fontSize: "22px", fontWeight: 900, color: "#c8a84b", letterSpacing: "-0.02em" }}>464,129.92</div>
-                  <div style={{ fontSize: "10px", color: "#64748b", marginTop: "4px" }}>≈ L. 464,129.92 HNL</div>
-                </div>
-                {/* Redeem button */}
-                <div style={{ margin: "12px 12px 0" }}>
-                  <div style={{ background: "#0ea5e9", borderRadius: "10px", padding: "10px", textAlign: "center", fontWeight: 700, fontSize: "13px", color: "#fff" }}>
-                    Redeem CATR → HNL
+                {/* Balance card */}
+                <div style={{ margin: "12px 12px 0", background: "#0C1018", border: "1px solid rgba(201,168,76,0.2)", borderRadius: "12px", padding: "14px" }}>
+                  <div style={{ fontSize: "9px", color: "#64748B", letterSpacing: "0.1em", textTransform: "uppercase", marginBottom: "4px" }}>Balance CATR</div>
+                  <div style={{ fontSize: "26px", fontWeight: 700, color: "#C9A84C", letterSpacing: "-0.02em", lineHeight: 1 }}>56,203.19</div>
+                  <div style={{ fontSize: "9px", color: "#64748B", marginTop: "4px" }}>≈ L. 56,203.19HNL</div>
+                  <div style={{ marginTop: "10px", background: "rgba(201,168,76,0.08)", border: "1px solid rgba(201,168,76,0.2)", borderRadius: "8px", padding: "7px", textAlign: "center", fontSize: "10px", color: "#C9A84C", fontWeight: 500, letterSpacing: "0.06em" }}>
+                    VER REDES
                   </div>
                 </div>
-                {/* Recent transactions */}
-                <div style={{ margin: "16px 12px 0" }}>
-                  <div style={{ fontSize: "10px", color: "#64748b", letterSpacing: "0.08em", textTransform: "uppercase", marginBottom: "10px" }}>Recent Transactions</div>
+                {/* Transactions */}
+                <div style={{ margin: "12px 12px 0", flex: 1 }}>
+                  <div style={{ fontSize: "9px", color: "#64748B", letterSpacing: "0.1em", textTransform: "uppercase", marginBottom: "8px" }}>Actividad Reciente</div>
                   {[
-                    { wallet: "0xA3f1...9cB2", amount: "+120.00", time: "Today 14:32" },
-                    { wallet: "0xB8d4...2eA7", amount: "+85.50",  time: "Today 11:15" },
-                    { wallet: "0xC2e9...7fD1", amount: "+340.00", time: "Yesterday" },
+                    { name: "Usuario 1", amount: "-85.00", time: "Hoy 14:32", color: "#EF4444" },
+                    { name: "Bono CATR",  amount: "+500.00", time: "Hoy 11:15", color: "#10B981" },
+                    { name: "Usuario 2", amount: "-120.00", time: "Ayer",       color: "#EF4444" },
                   ].map((tx, i) => (
-                    <div key={i} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "8px 0", borderBottom: "1px solid #1e293b" }}>
+                    <div key={i} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "7px 0", borderBottom: "1px solid rgba(255,255,255,0.05)" }}>
                       <div>
-                        <div style={{ fontSize: "11px", color: "#e2e8f0" }}>{tx.wallet}</div>
-                        <div style={{ fontSize: "10px", color: "#64748b", marginTop: "2px" }}>{tx.time}</div>
+                        <div style={{ fontSize: "11px", color: "#F1F5F9" }}>{tx.name}</div>
+                        <div style={{ fontSize: "9px", color: "#64748B", marginTop: "1px" }}>{tx.time}</div>
                       </div>
-                      <div style={{ fontSize: "12px", fontWeight: 700, color: "#22c55e" }}>{tx.amount} CATR</div>
+                      <div style={{ fontSize: "11px", fontWeight: 600, color: tx.color }}>{tx.amount} CATR</div>
+                    </div>
+                  ))}
+                </div>
+                {/* Bottom tab bar */}
+                <div style={{ display: "flex", borderTop: "1px solid rgba(255,255,255,0.07)", background: "rgba(6,8,13,0.96)", padding: "6px 0" }}>
+                  {[
+                    { label: "Inicio", active: true },
+                    { label: "Red",    active: false },
+                    { label: "Actividad", active: false },
+                    { label: "Ajustes",   active: false },
+                  ].map((tab) => (
+                    <div key={tab.label} style={{ flex: 1, textAlign: "center", fontSize: "9px", fontWeight: tab.active ? 500 : 300, color: tab.active ? "#C9A84C" : "#64748B", letterSpacing: "0.06em", padding: "2px 0" }}>
+                      {tab.label}
                     </div>
                   ))}
                 </div>
@@ -314,8 +320,8 @@ export default function FidelioPage() {
             <h2 style={{ ...h2, textAlign: "center", marginBottom: "1rem" }}>Ready to join the network?</h2>
             <p style={{ color: "var(--muted)", marginBottom: "1.5rem" }}>Merchants, investors, developers — reach out.</p>
             <div style={{ display: "flex", gap: "1rem", justifyContent: "center", flexWrap: "wrap" }}>
-              <a href="mailto:rodriguez.cjrp@outlook.com" style={{ textDecoration: "none" }}>
-                <InteractiveHoverButton className="border-[var(--accent)] text-[var(--text)] bg-[var(--bg)]">Contact HNDA</InteractiveHoverButton>
+              <a href="/register" style={{ textDecoration: "none" }}>
+                <InteractiveHoverButton className="border-[var(--accent)] text-[var(--text)] bg-[var(--bg)]">Join Network</InteractiveHoverButton>
               </a>
               <Link href="/" style={{ textDecoration: "none" }}>
                 <InteractiveHoverButton className="border-[var(--border)] text-[var(--text)] bg-[var(--bg)]">Back to HNDA</InteractiveHoverButton>

@@ -50,10 +50,12 @@ export function merchantsRouter(redemptionService: RedemptionService): Router {
         where: { merchant_id: req.params.id, type: 'SPEND', status: 'CONFIRMED' },
         _sum: { amount_catr: true },
       }),
-      db.pendingMint.aggregate({
-        where: { client_wallet: merchant.wallet_address, status: 'MINTED' },
-        _sum: { amount_lempiras: true },
-      }),
+      merchant.wallet_address
+        ? db.pendingMint.aggregate({
+            where: { client_wallet: merchant.wallet_address, status: 'MINTED' },
+            _sum: { amount_lempiras: true },
+          })
+        : Promise.resolve({ _sum: { amount_lempiras: null } }),
       db.redemptionRequest.aggregate({
         where: { merchant_id: req.params.id, status: { in: ['BURNED', 'LEMPIRAS_SENT'] } },
         _sum: { amount_catr: true },
@@ -61,7 +63,7 @@ export function merchantsRouter(redemptionService: RedemptionService): Router {
     ]);
 
     const totalReceived = Number(received._sum.amount_catr ?? 0);
-    const totalMinted   = Number(minted._sum.amount_lempiras ?? 0);
+    const totalMinted   = Number(minted._sum?.amount_lempiras ?? 0);
     const totalRedeemed = Number(redeemed._sum.amount_catr ?? 0);
     const balance = totalReceived + totalMinted - totalRedeemed;
 
@@ -87,11 +89,13 @@ export function merchantsRouter(redemptionService: RedemptionService): Router {
         orderBy: { created_at: 'desc' },
         take: 100,
       }),
-      db.pendingMint.findMany({
-        where: { client_wallet: merchant.wallet_address, status: 'MINTED' },
-        orderBy: { resolved_at: 'desc' },
-        take: 100,
-      }),
+      merchant.wallet_address
+        ? db.pendingMint.findMany({
+            where: { client_wallet: merchant.wallet_address, status: 'MINTED' },
+            orderBy: { resolved_at: 'desc' },
+            take: 100,
+          })
+        : Promise.resolve([]),
     ]);
 
     const mintEntries = mints.map((m) => ({

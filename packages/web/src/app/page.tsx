@@ -56,16 +56,16 @@ export default function HndaHome() {
 
 
       {/* ── Nav ── */} 
-      <nav style={{
+      <nav className="justify-center md:justify-between" style={{
         position: "fixed", top: 0, left: 0, right: 0, zIndex: 100,
-        display: "flex", alignItems: "center", justifyContent: "space-between",
+        display: "flex", alignItems: "center",
         padding: "0 2rem", height: "64px",
         background: "rgba(10,15,20,0.55)", backdropFilter: "blur(12px)",
         borderBottom: "1px solid var(--border)",
         animation: "fadeIn 0.8s ease-out both",
       }}>
         <div style={{ display: "flex", alignItems: "center", gap: "2rem" }}>
-        <a href="#hero" style={{ display: "flex", alignItems: "center", textDecoration: "none" }}>
+        <a href="#hero" style={{ display: "flex", alignItems: "center", textDecoration: "none" }} className="shrink-0">
           <svg xmlns="http://www.w3.org/2000/svg" width="125" height="125" viewBox="0 0 300 300" style={{ transition: "transform 0.6s cubic-bezier(0.4,0,0.2,1)", transform: logoRotated ? "rotate(180deg)" : "rotate(0deg)" }}>
             {/* Outer ring */}
             <g transform="matrix(0.1115 0 0 0.1115 150 150)">
@@ -87,11 +87,11 @@ export default function HndaHome() {
             ))}
           </svg>
         </a>
-          <a href="#mission" style={navLink}>Mission</a>
-          <a href="#products" style={navLink}>Products</a>
-          <a href="#contact" style={navLink}>Contact</a>
+          <a href="#mission" style={navLink} className="hidden md:inline">Mission</a>
+          <a href="#products" style={navLink} className="hidden md:inline">Products</a>
+          <a href="#contact" style={navLink} className="hidden md:inline">Contact</a>
         </div>
-        <div style={{ display: "flex", gap: "0.75rem", alignItems: "center" }}>
+        <div style={{ gap: "0.75rem", alignItems: "center" }} className="hidden md:flex">
           <Link href="/nodes" style={ctaLink}>HNDA Nodes</Link>
           <Link href="/wallets" style={ctaLink}>
              H-<span style={{
@@ -300,7 +300,7 @@ export default function HndaHome() {
 }
 
 const navLink: React.CSSProperties = { color: "var(--muted)", textDecoration: "none", fontSize: "0.9rem", fontWeight: 500 }
-const ctaLink: React.CSSProperties = { background: "var(--accent)", color: "#fff", padding: "0.4rem 1rem", borderRadius: "999px", fontSize: "0.9rem", fontWeight: 600, textDecoration: "none" }
+const ctaLink: React.CSSProperties = { background: "var(--accent)", color: "#fff", padding: "0.3rem 0.75rem", borderRadius: "999px", fontSize: "0.75rem", fontWeight: 500, textDecoration: "none" }
 const btnPrimary: React.CSSProperties = { background: "var(--accent)", color: "#fff", padding: "0.75rem 1.75rem", borderRadius: "999px", fontWeight: 600, textDecoration: "none", fontSize: "1rem", display: "inline-block" }
 const btnOutline: React.CSSProperties = { border: "1.5px solid var(--border)", color: "var(--text)", padding: "0.75rem 1.75rem", borderRadius: "999px", fontWeight: 600, textDecoration: "none", fontSize: "1rem", display: "inline-block" }
 const section: React.CSSProperties = { padding: "5rem 2rem" }

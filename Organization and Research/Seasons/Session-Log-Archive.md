@@ -801,3 +801,46 @@ Both pages use the light theme isolated from the dark dashboard.
 #### Next
 - Full end-to-end test: mint → spend → redeem cycle with new seed data
 - Admin AI automation roadmap (automated merchant onboarding via email/HNL confirmation)
+
+
+---
+
+### Session — 2026-04-21
+**Focus:** FIDELIO Upgrades — hydration fix, registration page, forgot password flow
+
+#### What was done
+
+**Hydration fix (i18n)**
+- `t()` was calling `navigator.language` at module level, causing SSR/client mismatch ("Consola Admin" vs "Admin Console")
+- Fixed by making `t()` always return Spanish (SSR-safe), and adding `useLang()` hook in `src/hooks/useLang.ts` that starts with `'es'` and switches to browser language after hydration via `useEffect`
+- `admin/page.tsx`: moved TABS array inside `TabBar` component; all translated strings now use `useLang()`
+- `esHN` and `enUS` dictionaries exported from `i18n.ts` — no duplication
+
+**Registration page (`/register`)**
+- New public endpoint `POST /api/auth/register` — no auth required
+- Client path: creates `User` with `password_hash` (bcrypt), can log in immediately
+- Merchant path: creates `User` + `Merchant` with `active: false`, no wallet — admin activates after HNDA assigns wallet address
+- Prisma: `wallet_address` made optional (`String?`) on `Merchant` — migration applied
+- TypeScript fixes in `merchants.ts` and `admin.ts` for nullable `wallet_address`
+- Frontend: `/register` page with role toggle (Cliente / Comercio), adapts fields, success message, redirects to `/client` or `/merchant`
+- Linked from both "Join FIDELIO" buttons on main landing page
+
+**Forgot password flow**
+- Prisma: `reset_code String?` and `reset_code_expires_at DateTime?` added to `User` — migration applied
+- `POST /api/auth/forgot-password` — generates 6-digit code, stores with 1-hour expiry, always returns `ok: true`
+- `POST /api/auth/reset-password` — validates code + expiry, sets `password_hash`, clears code fields
+- Admin Clients tab: shows gold-highlighted reset code badge for users with a pending (unexpired) code
+- Client login: "¿Olvidaste tu contraseña?" link opens 2-step flow (enter email → call HNDA for code → enter code + new password)
+- Future: when transactional email is wired up, only one `sendEmail()` call needs to be added to `forgot-password`
+
+#### Key decisions
+- `useLang()` defaults to `'es'` on first render — matches SSR output exactly, switches to browser lang after hydration. Zero flicker.
+- Merchant registration creates `active: false` record — admin-gated activation is the right flow since HNDA must assign a wallet before the merchant can transact
+- Reset code flow is admin-mediated by design (pilot scale) — same backend works with email when service is available
+
+#### Remaining upgrades
+- GCA script CLI tool (status, vest, set-floor, list-redemptions)
+- Search bar in Red tab (client/page.tsx)
+- Merchant pop-up in Red tab (photo/icon, phone, owner, address with first 3 + last 3 chars in gold)
+- Merchant application page (`/apply`)
+- Passkey (WebAuthn) — deferred

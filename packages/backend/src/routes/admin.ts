@@ -57,6 +57,10 @@ export function adminRouter(mintService: MintService): Router {
         res.status(404).json({ error: 'Merchant not found', code: 'NOT_FOUND' });
         return;
       }
+      if (!merchant.wallet_address) {
+        res.status(400).json({ error: 'Merchant has no wallet assigned', code: 'NO_WALLET' });
+        return;
+      }
       walletAddress = merchant.wallet_address;
       targetId = body.merchant_id;
     } else {

@@ -107,6 +107,12 @@ function ClientsTab({ token }: { token: string }) {
                 <span style={{ ...font, fontSize: '0.75rem', color: C.gold }}>{u.wallet.catr_balance} CATR</span>
               </div>
             )}
+            {u.reset_code && u.reset_code_expires_at && new Date(u.reset_code_expires_at) > new Date() && (
+              <div style={{ marginTop: '0.5rem', background: 'rgba(201,168,76,0.08)', border: `1px solid rgba(201,168,76,0.25)`, borderRadius: '0.375rem', padding: '0.5rem 0.75rem', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                <Label>Código de reset</Label>
+                <span style={{ ...font, fontSize: '0.9rem', fontWeight: 600, color: C.gold, fontFamily: 'monospace', letterSpacing: '0.2em' }}>{u.reset_code}</span>
+              </div>
+            )}
           </div>
         </Section>
       ))}

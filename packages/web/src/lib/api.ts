@@ -36,11 +36,27 @@ export function pilotLogin(body: { full_name: string; credential: string }) {
   });
 }
 
+export function forgotPassword(email: string) {
+  return apiFetch<{ data: { ok: boolean } }>('/api/auth/forgot-password', {
+    method: 'POST',
+    headers: jsonHeaders(),
+    body: JSON.stringify({ email }),
+  });
+}
+
+export function resetPassword(body: { email: string; code: string; new_password: string }) {
+  return apiFetch<{ data: { ok: boolean } }>('/api/auth/reset-password', {
+    method: 'POST',
+    headers: jsonHeaders(),
+    body: JSON.stringify(body),
+  });
+}
+
 export function register(body:
   | { role: 'client'; full_name: string; email: string; password: string }
   | { role: 'merchant'; full_name: string; email: string; password: string; business_name: string; category: string }
 ) {
-  return apiFetch<{ data: { role: 'client' | 'merchant'; user_id: string } }>('/api/auth/register', {
+  return apiFetch<{ data: { role: 'client' | 'merchant'; user_id: string; merchant_id?: string } }>('/api/auth/register', {
     method: 'POST',
     headers: jsonHeaders(),
     body: JSON.stringify(body),
@@ -335,6 +351,8 @@ export interface AdminUser {
   full_name: string;
   email: string;
   wallet: { address: string; catr_balance: string } | null;
+  reset_code?: string | null;
+  reset_code_expires_at?: string | null;
 }
 
 // --- GCA ---
