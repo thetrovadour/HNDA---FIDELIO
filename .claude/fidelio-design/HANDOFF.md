@@ -27,33 +27,14 @@ Click the download card in the chat (or re-ask: "give me the download link again
 ### 2. Unzip and rename
 Unzip it. Rename the resulting folder to **`fidelio-design`** (lowercase, hyphenated — this becomes the skill name Claude Code invokes).
 
-### 3. Put it in one of two places
-
-**Option A — Project-scoped (recommended for team use)**
-Move the folder into your repo:
-```
-<your-repo>/.claude/skills/fidelio-design/
-```
-If `.claude/skills/` doesn't exist yet, create it:
-```bash
-mkdir -p .claude/skills
-mv ~/Downloads/fidelio-design .claude/skills/
-```
-
-**Option B — User-scoped (available in every repo on your machine)**
-```bash
-mkdir -p ~/.claude/skills
-mv ~/Downloads/fidelio-design ~/.claude/skills/
-```
-
-### 4. Verify the structure
+### 3. Verify the structure
 From your repo root:
 ```bash
 ls .claude/skills/fidelio-design/
 ```
 You should see `SKILL.md`, `README.md`, `colors_and_type.css`, `fonts/`, `ui_kits/`, etc.
 
-### 5. Commit it (Option A only)
+### 4. Commit it (Option A only)
 ```bash
 git add .claude/skills/fidelio-design
 git commit -m "Add FIDELIO design system skill"
