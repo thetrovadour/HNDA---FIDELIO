@@ -1,0 +1,41 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<title>FIDELIO · H-Wallet Mobile UI Kit</title>
+<link rel="stylesheet" href="../../colors_and_type.css">
+<style>
+  html, body { margin: 0; padding: 0; background: #0a0f14; font-family: var(--font-body); }
+  * { box-sizing: border-box; }
+</style>
+</head>
+<body>
+<div id="root"></div>
+
+<script src="https://unpkg.com/react@18.3.1/umd/react.development.js" integrity="sha384-hD6/rw4ppMLGNu3tX5cjIb+uRZ7UkRJ6BPkLpg4hAu/6onKUg4lLsHAs9EBPT82L" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.development.js" integrity="sha384-u6aeetuaXnQ38mYT8rp6sbXaQe3NL9t+IBXmnYxwkUI2Hw4bsp2Wvmx4yRQF1uAm" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/@babel/standalone@7.29.0/babel.min.js" integrity="sha384-m08KidiNqLdpJqLq95G/LEi8Qvjl/xUYll3QILypMoQ65QorJ9Lvtp2RXYGBFj1y" crossorigin="anonymous"></script>
+
+<script type="text/babel" src="PhoneFrame.jsx" data-presets="react"></script>
+<script type="text/babel" src="LoginScreen.jsx" data-presets="react"></script>
+<script type="text/babel" src="HomeScreen.jsx" data-presets="react"></script>
+<script type="text/babel" src="SendScreen.jsx" data-presets="react"></script>
+
+<script type="text/babel" data-presets="react">
+function App() {
+  const [screen, setScreen] = React.useState(() => localStorage.getItem('fidelio-screen') || 'login');
+  const go = (s) => { setScreen(s); localStorage.setItem('fidelio-screen', s); };
+  return (
+    <div data-screen-label={`FIDELIO Mobile — ${screen}`}>
+      <PhoneFrame>
+        {screen === 'login' && <LoginScreen onEnter={() => go('home')} />}
+        {screen === 'home' && <HomeScreen onSend={() => go('send')} onLogout={() => go('login')} />}
+        {screen === 'send' && <SendScreen onBack={() => go('home')} onConfirm={() => go('home')} />}
+      </PhoneFrame>
+    </div>
+  );
+}
+ReactDOM.createRoot(document.getElementById('root')).render(<App />);
+</script>
+</body>
+</html>

@@ -1,0 +1,292 @@
+/* ============================================================
+   FIDELIO / HNDA — Foundation Tokens
+   Colors + Type
+   Extracted from packages/web/src/app/globals.css + DESIGN.md
+   ============================================================ */
+
+/* ---------- Fonts (local — brand files provided by user) ---------- */
+/* Oxanium — variable + explicit weights */
+@font-face {
+  font-family: 'Oxanium';
+  src: url('fonts/Oxanium-VariableFont_wght.ttf') format('truetype-variations'),
+       url('fonts/Oxanium-VariableFont_wght.ttf') format('truetype');
+  font-weight: 200 800;
+  font-style: normal;
+  font-display: swap;
+}
+@font-face {
+  font-family: 'Oxanium';
+  src: url('fonts/Oxanium-Medium.ttf') format('truetype');
+  font-weight: 500;
+  font-style: normal;
+  font-display: swap;
+}
+@font-face {
+  font-family: 'Oxanium';
+  src: url('fonts/Oxanium-SemiBold.ttf') format('truetype');
+  font-weight: 600;
+  font-style: normal;
+  font-display: swap;
+}
+@font-face {
+  font-family: 'Oxanium';
+  src: url('fonts/Oxanium-Bold.ttf') format('truetype');
+  font-weight: 700;
+  font-style: normal;
+  font-display: swap;
+}
+
+/* SairaStencil — variable + common static cuts (default family = normal width) */
+@font-face {
+  font-family: 'SairaStencil';
+  src: url('fonts/SairaStencil-VariableFont_wdth_wght.ttf') format('truetype-variations'),
+       url('fonts/SairaStencil-VariableFont_wdth_wght.ttf') format('truetype');
+  font-weight: 100 900;
+  font-stretch: 50% 200%;
+  font-style: normal;
+  font-display: swap;
+}
+@font-face {
+  font-family: 'SairaStencil';
+  src: url('fonts/SairaStencil-Italic-VariableFont_wdth_wght.ttf') format('truetype-variations'),
+       url('fonts/SairaStencil-Italic-VariableFont_wdth_wght.ttf') format('truetype');
+  font-weight: 100 900;
+  font-stretch: 50% 200%;
+  font-style: italic;
+  font-display: swap;
+}
+@font-face {
+  font-family: 'SairaStencil';
+  src: url('fonts/SairaStencil-Regular.ttf') format('truetype');
+  font-weight: 400; font-style: normal; font-display: swap;
+}
+@font-face {
+  font-family: 'SairaStencil';
+  src: url('fonts/SairaStencil-Bold.ttf') format('truetype');
+  font-weight: 700; font-style: normal; font-display: swap;
+}
+@font-face {
+  font-family: 'SairaStencil';
+  src: url('fonts/SairaStencil-ExtraBold.ttf') format('truetype');
+  font-weight: 800; font-style: normal; font-display: swap;
+}
+@font-face {
+  font-family: 'SairaStencil';
+  src: url('fonts/SairaStencil-Black.ttf') format('truetype');
+  font-weight: 900; font-style: normal; font-display: swap;
+}
+
+:root {
+  /* =========================================================
+     COLOR — BASE
+     HNDA is dark-only. No light mode. Deep navy-black base.
+     ========================================================= */
+  --bg:            #0a0f14;  /* page background — deep navy black, never pure black */
+  --surface:       #0C1018;  /* card surface (mobile app) */
+  --surface-hi:    #111820;  /* elevated surface, input bg */
+  --card-bg:       rgba(255,255,255,0.04);
+  --border:        rgba(255,255,255,0.08);
+  --border-hi:     rgba(255,255,255,0.13);
+
+  /* =========================================================
+     COLOR — TEXT
+     ========================================================= */
+  --text:          #e2e8f0;  /* primary text */
+  --text-hi:       #F1F5F9;  /* mobile-app text (slightly brighter) */
+  --muted:         #64748b;  /* secondary, labels, timestamps */
+  --muted-hi:      #94A3B8;  /* tertiary label */
+
+  /* =========================================================
+     COLOR — BRAND
+     Accent BLUE is HNDA.
+     GOLD is FIDELIO / CATR financial.
+     Never swap them.
+     ========================================================= */
+  --accent:        #0ea5e9;  /* HNDA sky blue — CTAs, links, active */
+  --accent-soft:   rgba(14,165,233,0.12);
+  --gold:          #c8a84b;  /* FIDELIO gold — CATR amounts, token */
+  --gold-alt:      #C9A84C;  /* mobile app variant */
+  --gold-soft:     rgba(201,168,76,0.12);
+  --gold-border:   rgba(201,168,76,0.3);
+
+  /* =========================================================
+     COLOR — SEMANTIC
+     ========================================================= */
+  --success:       #22c55e;  /* web "Live" badge */
+  --success-mobile:#10B981;  /* mobile app */
+  --success-bg:    rgba(34,197,94,0.12);
+  --error:         #EF4444;
+  --error-bg:      rgba(239,68,68,0.08);
+  --coming-soon-bg:rgba(255,255,255,0.06);
+
+  /* Product-specific accents (FIDELIO actors page) */
+  --role-hnda:     #6366f1;  /* indigo — HNDA treasury role tag */
+
+  /* =========================================================
+     COLOR — LEGACY MARKETING PAGE (CATR orange / GCA blue)
+     Used only on the legacy website.html marketing site.
+     Kept for reference — prefer the dark palette above.
+     ========================================================= */
+  --catr-50:       #fff8e1;
+  --catr-100:      #ffecb3;
+  --catr-500:      #f5a623;
+  --catr-600:      #e8920d;
+  --catr-700:      #c77d00;
+  --gca-bg:        #0d1b3e;
+  --gca-blue:      #1a3a6b;
+  --gca-red:       #e74c3c;
+  --gca-green:     #2ecc71;
+
+  /* =========================================================
+     COLOR — SCROLLBAR
+     ========================================================= */
+  --scrollbar-track: #080C14;
+  --scrollbar-thumb: #1E2A40;
+
+  /* =========================================================
+     TYPE — FAMILIES
+     ========================================================= */
+  --font-body:    'Oxanium', system-ui, -apple-system, sans-serif;
+  --font-stencil: 'SairaStencil', 'Oxanium', sans-serif;
+
+  /* =========================================================
+     TYPE — SEMANTIC ROLES
+     ========================================================= */
+  /* Section heading — .h1 / h2 section title */
+  --h1-size: clamp(2.5rem, 6vw, 4.5rem);
+  --h1-weight: 900;
+  --h1-tracking: -0.04em;
+  --h1-leading: 1.1;
+
+  --h2-size: clamp(2rem, 5vw, 3rem);
+  --h2-weight: 900;
+  --h2-tracking: -0.03em;
+  --h2-leading: 1.1;
+
+  --h3-size: 1.25rem;     /* product card heading */
+  --h3-weight: 800;
+
+  --h4-size: 1.1rem;      /* mission card heading */
+  --h4-weight: 700;
+
+  --body-size: 0.95rem;
+  --body-leading: 1.7;
+
+  --subtitle-size: clamp(1rem, 2.5vw, 1.35rem);
+
+  /* Eyebrow / section label */
+  --label-size: 0.78rem;
+  --label-weight: 700;
+  --label-tracking: 0.12em;
+
+  --meta-size: 0.85rem;
+
+  --nav-size: 0.9rem;
+  --nav-weight: 500;
+
+  /* =========================================================
+     RADII  (buttons: pill · cards: 16 · inputs: 8)
+     ========================================================= */
+  --r-pill:   999px;
+  --r-card:   16px;
+  --r-input:  8px;
+  --r-mobile: 12px;  /* mobile-app internal cards */
+
+  /* =========================================================
+     SPACING — max widths, section padding, nav
+     ========================================================= */
+  --max-w:       960px;
+  --max-w-wide:  1100px;
+  --nav-h:       64px;
+  --sec-pad-y:   5rem;
+  --sec-pad-x:   2rem;
+}
+
+/* ============================================================
+   SEMANTIC ELEMENT STYLES
+   ============================================================ */
+
+body {
+  font-family: var(--font-body);
+  background: var(--bg);
+  color: var(--text);
+  line-height: 1.5;
+  -webkit-font-smoothing: antialiased;
+}
+
+h1, .h1 {
+  font-family: var(--font-body);
+  font-size: var(--h1-size);
+  font-weight: var(--h1-weight);
+  letter-spacing: var(--h1-tracking);
+  line-height: var(--h1-leading);
+  color: var(--text);
+  margin: 0;
+}
+
+h2, .h2 {
+  font-family: var(--font-body);
+  font-size: var(--h2-size);
+  font-weight: var(--h2-weight);
+  letter-spacing: var(--h2-tracking);
+  line-height: var(--h2-leading);
+  color: var(--text);
+  margin: 0;
+}
+
+h3, .h3 {
+  font-family: var(--font-body);
+  font-size: var(--h3-size);
+  font-weight: var(--h3-weight);
+  color: var(--text);
+  margin: 0;
+}
+
+h4, .h4 {
+  font-family: var(--font-body);
+  font-size: var(--h4-size);
+  font-weight: var(--h4-weight);
+  color: var(--text);
+  margin: 0;
+}
+
+p, .body { font-size: var(--body-size); line-height: var(--body-leading); color: var(--text); }
+
+.subtitle { font-size: var(--subtitle-size); color: var(--muted); line-height: 1.6; }
+
+/* Eyebrow label — always uppercase, spaced, accent-colored */
+.label, .eyebrow {
+  font-size: var(--label-size);
+  font-weight: var(--label-weight);
+  letter-spacing: var(--label-tracking);
+  text-transform: uppercase;
+  color: var(--accent);
+}
+
+.meta { font-size: var(--meta-size); color: var(--muted); }
+
+/* Brand-only stencil class */
+.stencil {
+  font-family: var(--font-stencil);
+  letter-spacing: 0.06em;
+}
+
+/* Gold shimmer for CATR amounts */
+.shimmer-text {
+  background: linear-gradient(90deg, #C9A84C 0%, #cccbca 40%, #C9A84C 60%, #C9A84C 100%);
+  background-size: 300% auto;
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  animation: shimmer 9s linear infinite;
+}
+
+@keyframes shimmer {
+  0%   { background-position: -100% center; }
+  100% { background-position:  100% center; }
+}
+
+code, .mono {
+  font-family: ui-monospace, 'SF Mono', Consolas, monospace;
+  font-size: 0.9em;
+}
