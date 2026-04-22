@@ -324,3 +324,5 @@ Every page follows this shell:
 - Section labels always: uppercase · spaced · accent color · `0.78rem` · weight 700
 - `data-reveal` on every section content block for scroll entrance
 - Do not add emojis to UI unless already established in the design (mission cards use emoji icons — that pattern is set)
+- User's experience is valuable.
+
