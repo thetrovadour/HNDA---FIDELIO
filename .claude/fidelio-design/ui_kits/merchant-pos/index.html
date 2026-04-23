@@ -1,0 +1,105 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>FIDELIO · Merchant POS UI Kit</title>
+<link rel="stylesheet" href="../../colors_and_type.css">
+<style>
+  html, body { margin: 0; padding: 0; background: #0a0f14; font-family: var(--font-body); }
+  * { box-sizing: border-box; }
+
+  .nav { position: fixed; top: 0; left: 0; right: 0; z-index: 100; display: flex; gap: 8px; padding: 12px 20px; background: rgba(10,15,20,0.9); backdrop-filter: blur(12px); border-bottom: 1px solid rgba(255,255,255,0.06); flex-wrap: wrap; }
+  .nav button { padding: 6px 14px; border-radius: 999px; border: 1px solid rgba(255,255,255,0.1); background: rgba(255,255,255,0.04); color: #94A3B8; font-family: var(--font-body); font-size: 0.78rem; font-weight: 600; cursor: pointer; letter-spacing: 0.06em; transition: all 0.15s; }
+  .nav button:hover { color: #e2e8f0; border-color: rgba(255,255,255,0.2); }
+  .nav button.active { background: rgba(201,168,76,0.12); border-color: rgba(201,168,76,0.4); color: #C9A84C; }
+  .nav .label { color: #64748b; font-size: 0.72rem; font-weight: 300; letter-spacing: 0.14em; text-transform: uppercase; display: flex; align-items: center; margin-right: 8px; }
+
+  .stage { padding-top: 56px; }
+</style>
+</head>
+<body>
+
+<nav class="nav">
+  <span class="label">MERCHANT POS</span>
+  <button id="btn-login"       onclick="go('login')">Login</button>
+  <button id="btn-home"        onclick="go('home')">Mi Negocio</button>
+  <button id="btn-canjear"     onclick="go('canjear')">Canjear</button>
+  <button id="btn-gca"         onclick="go('gca')">GCA</button>
+  <button id="btn-movimientos" onclick="go('movimientos')">Movimientos</button>
+  <button id="btn-ajustes"     onclick="go('ajustes')">Ajustes</button>
+</nav>
+
+<div class="stage">
+  <div id="root"></div>
+</div>
+
+<script src="https://unpkg.com/react@18.3.1/umd/react.development.js" integrity="sha384-hD6/rw4ppMLGNu3tX5cjIb+uRZ7UkRJ6BPkLpg4hAu/6onKUg4lLsHAs9EBPT82L" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.development.js" integrity="sha384-u6aeetuaXnQ38mYT8rp6sbXaQe3NL9t+IBXmnYxwkUI2Hw4bsp2Wvmx4yRQF1uAm" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/@babel/standalone@7.29.0/babel.min.js" integrity="sha384-m08KidiNqLdpJqLq95G/LEi8Qvjl/xUYll3QILypMoQ65QorJ9Lvtp2RXYGBFj1y" crossorigin="anonymous"></script>
+
+<!-- Design tokens exposed to all JSX files -->
+<script>
+window.C = {
+  bg:        '#06080D',
+  surface:   '#0C1018',
+  surfaceHi: '#111820',
+  border:    'rgba(255,255,255,0.07)',
+  borderHi:  'rgba(255,255,255,0.13)',
+  gold:      '#C9A84C',
+  goldDim:   'rgba(201,168,76,0.12)',
+  white:     '#F1F5F9',
+  slate:     '#64748B',
+  slateHi:   '#94A3B8',
+  success:   '#10B981',
+  successBg: 'rgba(16,185,129,0.08)',
+  error:     '#EF4444',
+  errorBg:   'rgba(239,68,68,0.08)',
+  warn:      '#F59E0B',
+  warnBg:    'rgba(245,158,11,0.08)',
+};
+</script>
+
+<script type="text/babel" src="PhoneFrame.jsx"      data-presets="react"></script>
+<script type="text/babel" src="LoginScreen.jsx"     data-presets="react"></script>
+<script type="text/babel" src="HomeScreen.jsx"      data-presets="react"></script>
+<script type="text/babel" src="CanjearScreen.jsx"   data-presets="react"></script>
+<script type="text/babel" src="GcaScreen.jsx"       data-presets="react"></script>
+<script type="text/babel" src="MovimientosScreen.jsx" data-presets="react"></script>
+<script type="text/babel" src="AjustesScreen.jsx"   data-presets="react"></script>
+
+<script type="text/babel" data-presets="react">
+const SCREENS = ['login','home','canjear','gca','movimientos','ajustes'];
+
+function App() {
+  const [screen, setScreen] = React.useState(() => localStorage.getItem('fidelio-merchant-screen') || 'login');
+
+  React.useEffect(() => {
+    SCREENS.forEach((s) => {
+      const btn = document.getElementById(`btn-${s}`);
+      if (btn) btn.classList.toggle('active', s === screen);
+    });
+  }, [screen]);
+
+  function go(s) {
+    setScreen(s);
+    localStorage.setItem('fidelio-merchant-screen', s);
+  }
+
+  return (
+    <PhoneFrame>
+      {screen === 'login'       && <LoginScreen       onEnter={() => go('home')} />}
+      {screen === 'home'        && <HomeScreen        onLogout={() => go('login')} onTab={(t) => go(t)} />}
+      {screen === 'canjear'     && <CanjearScreen />}
+      {screen === 'gca'         && <GcaScreen />}
+      {screen === 'movimientos' && <MovimientosScreen />}
+      {screen === 'ajustes'     && <AjustesScreen />}
+    </PhoneFrame>
+  );
+}
+
+ReactDOM.createRoot(document.getElementById('root')).render(<App />);
+</script>
+
+</body>
+</html>

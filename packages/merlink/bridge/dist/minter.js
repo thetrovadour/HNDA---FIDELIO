@@ -25,7 +25,7 @@ class Minter {
     async mint(event) {
         try {
             const amountCATR = ethers_1.ethers.parseUnits(event.amount_lempiras.toString(), 18);
-            const tx = await this.contract.mint(event.client_wallet, amountCATR);
+            const tx = await this.contract.mint(event.client_wallet, amountCATR, { gasLimit: 100000 });
             const receipt = await tx.wait();
             const tx_hash = tx.hash ?? receipt?.hash ?? '';
             return { success: true, tx_hash };
@@ -38,7 +38,7 @@ class Minter {
     async burn(walletAddress, amountCATR) {
         try {
             const amount = ethers_1.ethers.parseUnits(amountCATR.toString(), 18);
-            const tx = await this.contract.burn(walletAddress, amount);
+            const tx = await this.contract.burn(walletAddress, amount, { gasLimit: 100000 });
             const receipt = await tx.wait();
             const tx_hash = tx.hash ?? receipt?.hash ?? '';
             return { success: true, tx_hash };

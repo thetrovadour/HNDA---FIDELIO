@@ -112,6 +112,12 @@
   },
   "hotPaths": [
     {
+      "path": "src/app/merchant/page.tsx",
+      "accessCount": 32,
+      "lastAccessed": 1776982120379,
+      "type": "file"
+    },
+    {
       "path": "src/app/admin/page.tsx",
       "accessCount": 9,
       "lastAccessed": 1776816053700,

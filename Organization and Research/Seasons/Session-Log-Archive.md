@@ -844,3 +844,39 @@ Both pages use the light theme isolated from the dark dashboard.
 - Merchant pop-up in Red tab (photo/icon, phone, owner, address with first 3 + last 3 chars in gold)
 - Merchant application page (`/apply`)
 - Passkey (WebAuthn) — deferred
+
+---
+
+## Session 2026-04-23
+
+### What happened
+
+Continued from previous session (context limit). Completed the full Spanish i18n extraction for both `client/page.tsx` and `merchant/page.tsx`, wired brand fonts locally, extracted shared icons, and built the Merchant POS UI kit.
+
+**Completed this session:**
+
+1. **Local font wiring** — Removed Google Fonts CDN. Added `next/font/local` for Oxanium and SairaStencil variable fonts in `layout.tsx`. Extended Tailwind `fontFamily` with CSS variables.
+
+2. **Shared icon extraction** — Created `src/components/icons.tsx` with 9 exported icons (IconUser, IconActivity, IconNetwork, IconCopy, IconSettings, IconStore, IconSwap, IconGem, IconList). Removed ~100 lines of duplicated inline SVGs from client and merchant pages.
+
+3. **Merchant POS UI kit** — Built static click-through reference at `.claude/fidelio-design/ui_kits/merchant-pos/` (HTML + JSX + Babel CDN). Screens: Login, Mi Negocio, Canjear, GCA, Movimientos, Ajustes. Design reference only — not imported by production code.
+
+4. **Spanish translation — `client/page.tsx`** — All hardcoded strings replaced with `t()` calls from `@/lib/i18n`. Covered all tabs: login, forgot password, cuenta, actividad, ajustes, red (RedTab).
+
+5. **Spanish translation — `merchant/page.tsx`** — Added `t` import. All hardcoded strings replaced: login screen, top bar, tab bar labels, NegocioTab, CanjearTab (including TIER_LABELS and STATUS_LABELS), MovimientosTab, AjustesTab.
+
+6. **Build verification** — Both passes clean (13/13 static pages).
+
+### Key decisions
+
+- Admin console UI kit skipped — admin is for trusted operators, CLI is sufficient, UI will be revisited later.
+- Email templates deferred — not a current sprint item.
+- GCA-specific strings (Guacacoin descriptions, progress text) left as hardcoded Spanish — no i18n keys added for content-heavy explanatory copy.
+- WSL2 port forwarding needed for cross-machine testing — `netsh portproxy` to forward port 3000 from Windows IP to WSL2 IP.
+
+### Pending / next up
+
+- Configuration menu (UX upgrade 4)
+- GCA admin script (`npm run gca`)
+- Auth security upgrades (password+passkey, optional JWT for merchants)
+- Fix `RunwayWidget` and `GcaAdminPanel` to use dark system tokens

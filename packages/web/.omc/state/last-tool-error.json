@@ -1,7 +1,7 @@
 {
   "tool_name": "Bash",
-  "tool_input_preview": "{\"command\":\"cd /home/cristian-rodriguez/proyectos/HNDA---FIDELIO && npx tsc --noEmit 2>&1\",\"description\":\"TypeScript check across monorepo\"}",
-  "error": "Exit code 1\nVersion 5.9.3\ntsc: The TypeScript Compiler - Version 5.9.3\n\nCOMMON COMMANDS\n\n  tsc\n  Compiles the current project (tsconfig.json in the working directory.)\n\n  tsc app.ts util.ts\n  Ignoring tsconfig.json, compiles the specified files with default compiler options.\n\n  tsc -b\n  Build a composite project in the working directory.\n\n  tsc --init\n  Creates a tsconfig.json with the recommended settings in the working directory.\n\n  tsc -p ./path/to/tsconfig.json\n  Compiles the TypeScript proj...",
-  "timestamp": "2026-04-19T05:33:12.493Z",
+  "tool_input_preview": "{\"command\":\"cd packages/web && npm run build 2>&1 | tail -25\",\"timeout\":120000}",
+  "error": "Exit code 1\n/bin/bash: line 1: cd: packages/web: No such file or directory",
+  "timestamp": "2026-04-23T22:08:42.976Z",
   "retry_count": 1
 }

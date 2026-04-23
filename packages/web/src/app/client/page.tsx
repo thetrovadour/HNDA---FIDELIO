@@ -13,6 +13,7 @@ import {
   resetPassword,
 } from '@/lib/api';
 import type { UserRecord, Transaction, Milestone, Merchant } from '@/lib/api';
+import { t } from '@/lib/i18n';
 
 // ─── Design tokens ────────────────────────────────────────────────────────────
 
@@ -140,54 +141,7 @@ function AnimatedBalance({ value }: { value: string }) {
   return <>{display}</>;
 }
 
-// ─── Icons ────────────────────────────────────────────────────────────────────
-
-function IconUser() {
-  return (
-    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.5} className="w-5 h-5">
-      <circle cx="12" cy="8" r="4" />
-      <path d="M4 20c0-4 3.6-7 8-7s8 3 8 7" strokeLinecap="round" />
-    </svg>
-  );
-}
-
-function IconActivity() {
-  return (
-    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.5} className="w-5 h-5">
-      <polyline points="22 12 18 12 15 21 9 3 6 12 2 12" strokeLinecap="round" strokeLinejoin="round" />
-    </svg>
-  );
-}
-
-function IconNetwork() {
-  return (
-    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.5} className="w-5 h-5">
-      <circle cx="12" cy="5" r="2" />
-      <circle cx="5" cy="19" r="2" />
-      <circle cx="19" cy="19" r="2" />
-      <line x1="12" y1="7" x2="5" y2="17" strokeLinecap="round" />
-      <line x1="12" y1="7" x2="19" y2="17" strokeLinecap="round" />
-    </svg>
-  );
-}
-
-function IconCopy() {
-  return (
-    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.5} className="w-4 h-4">
-      <rect x="9" y="9" width="13" height="13" rx="2" />
-      <path d="M5 15H4a2 2 0 01-2-2V4a2 2 0 012-2h9a2 2 0 012 2v1" />
-    </svg>
-  );
-}
-
-function IconSettings() {
-  return (
-    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.5} className="w-5 h-5">
-      <circle cx="12" cy="12" r="3" />
-      <path d="M19.4 15a1.65 1.65 0 00.33 1.82l.06.06a2 2 0 010 2.83 2 2 0 01-2.83 0l-.06-.06a1.65 1.65 0 00-1.82-.33 1.65 1.65 0 00-1 1.51V21a2 2 0 01-4 0v-.09A1.65 1.65 0 009 19.4a1.65 1.65 0 00-1.82.33l-.06.06a2 2 0 01-2.83-2.83l.06-.06A1.65 1.65 0 004.68 15a1.65 1.65 0 00-1.51-1H3a2 2 0 010-4h.09A1.65 1.65 0 004.6 9a1.65 1.65 0 00-.33-1.82l-.06-.06a2 2 0 012.83-2.83l.06.06A1.65 1.65 0 009 4.68a1.65 1.65 0 001-1.51V3a2 2 0 014 0v.09a1.65 1.65 0 001 1.51 1.65 1.65 0 001.82-.33l.06-.06a2 2 0 012.83 2.83l-.06.06A1.65 1.65 0 0019.4 9a1.65 1.65 0 001.51 1H21a2 2 0 010 4h-.09a1.65 1.65 0 00-1.51 1z" strokeLinecap="round" strokeLinejoin="round" />
-    </svg>
-  );
-}
+import { IconUser, IconActivity, IconNetwork, IconCopy, IconSettings } from '../../components/icons';
 
 // ─── Login screen ─────────────────────────────────────────────────────────────
 
@@ -220,7 +174,7 @@ function LoginScreen({ onLogin, inactivity }: LoginProps) {
       setError(
         msg.includes('fetch') || msg.includes('network') || msg.includes('Failed')
           ? `Error de red: ${msg}`
-          : 'No encontramos tu cuenta. Verifica tu nombre y PIN.'
+          : t('client.error_login')
       );
     } finally {
       setLoading(false);
@@ -235,7 +189,7 @@ function LoginScreen({ onLogin, inactivity }: LoginProps) {
       await forgotPassword(resetEmail.trim());
       setScreen('forgot2');
     } catch {
-      setError('Error al procesar la solicitud.');
+      setError(t('common.error_request'));
     } finally {
       setLoading(false);
     }
@@ -243,15 +197,15 @@ function LoginScreen({ onLogin, inactivity }: LoginProps) {
 
   async function handleForgot2(e: React.FormEvent) {
     e.preventDefault();
-    if (newPassword !== confirmPassword) { setError('Las contraseñas no coinciden.'); return; }
-    if (newPassword.length < 6) { setError('Mínimo 6 caracteres.'); return; }
+    if (newPassword !== confirmPassword) { setError(t('client.error_passwords_mismatch')); return; }
+    if (newPassword.length < 6) { setError(t('client.error_password_length')); return; }
     setLoading(true);
     setError('');
     try {
       await resetPassword({ email: resetEmail.trim(), code: resetCode.trim(), new_password: newPassword });
       setScreen('done');
     } catch {
-      setError('Código inválido o expirado.');
+      setError(t('client.error_invalid_code'));
     } finally {
       setLoading(false);
     }
@@ -260,7 +214,7 @@ function LoginScreen({ onLogin, inactivity }: LoginProps) {
   const Brand = () => (
     <div className="mb-12 text-center">
       <p className="uppercase tracking-widest mb-1" style={{ color: C.slate, fontSize: '0.65rem', fontWeight: 300, letterSpacing: '0.22em' }}>
-        Honduras Nativa Digital Answers
+        {t('client.brand_subtitle')}
       </p>
       <h1 style={{ fontSize: 'clamp(2.5rem, 8vw, 3.5rem)', fontWeight: 200, letterSpacing: '0.18em', color: C.white, lineHeight: 1 }}>
         FIDELIO
@@ -277,24 +231,24 @@ function LoginScreen({ onLogin, inactivity }: LoginProps) {
         {/* ── Login ── */}
         {screen === 'login' && (
           <form onSubmit={handleLogin} className="rounded-2xl px-6 py-7 flex flex-col gap-5" style={{ background: C.surface }}>
-            <Input label="Nombre completo" value={name} onChange={(e) => setName(e.target.value)} placeholder="María García" autoComplete="name" />
-            <Input label="PIN o contraseña" type="password" value={credential} onChange={(e) => setCredential(e.target.value)} placeholder="••••" autoComplete="current-password" />
-            {inactivity && <StatusMsg type="error" msg="Sesión cerrada por inactividad." />}
+            <Input label={t('client.label_full_name')} value={name} onChange={(e) => setName(e.target.value)} placeholder="María García" autoComplete="name" />
+            <Input label={t('client.label_credential')} type="password" value={credential} onChange={(e) => setCredential(e.target.value)} placeholder="••••" autoComplete="current-password" />
+            {inactivity && <StatusMsg type="error" msg={t('common.inactivity')} />}
             {error && <StatusMsg type="error" msg={error} />}
-            <PrimaryBtn type="submit" disabled={loading || !credential || !name.trim()}>{loading ? 'Verificando' : 'Acceder'}</PrimaryBtn>
+            <PrimaryBtn type="submit" disabled={loading || !credential || !name.trim()}>{loading ? t('common.verifying') : t('common.access')}</PrimaryBtn>
             <div className="flex justify-between items-center">
               <p style={{ color: C.slate, fontSize: '0.7rem', fontWeight: 300 }}>
-                Comerciante —{' '}
-                <a href="/merchant" style={{ color: C.slateHi, textDecoration: 'underline', textUnderlineOffset: '3px' }}>accede aquí</a>
+                {t('client.merchant_link')}{' '}
+                <a href="/merchant" style={{ color: C.slateHi, textDecoration: 'underline', textUnderlineOffset: '3px' }}>{t('common.access_here')}</a>
               </p>
               <button type="button" onClick={() => { setScreen('forgot1'); setError(''); }}
                 style={{ background: 'none', border: 'none', cursor: 'pointer', color: C.slate, fontSize: '0.7rem', fontWeight: 300, textDecoration: 'underline', textUnderlineOffset: '3px' }}>
-                ¿Olvidaste tu contraseña?
+                {t('client.forgot_password')}
               </button>
             </div>
             <p className="text-center" style={{ color: C.slate, fontSize: '0.7rem', fontWeight: 300 }}>
-              ¿No tienes cuenta?{' '}
-              <a href="/register" style={{ color: C.slateHi, textDecoration: 'underline', textUnderlineOffset: '3px' }}>Regístrate</a>
+              {t('client.no_account')}{' '}
+              <a href="/register" style={{ color: C.slateHi, textDecoration: 'underline', textUnderlineOffset: '3px' }}>{t('common.register')}</a>
             </p>
           </form>
         )}
@@ -303,15 +257,15 @@ function LoginScreen({ onLogin, inactivity }: LoginProps) {
         {screen === 'forgot1' && (
           <form onSubmit={handleForgot1} className="rounded-2xl px-6 py-7 flex flex-col gap-5" style={{ background: C.surface }}>
             <div>
-              <p style={{ color: C.white, fontSize: '0.9rem', fontWeight: 300, marginBottom: '0.25rem' }}>Restablecer contraseña</p>
-              <p style={{ color: C.slate, fontSize: '0.75rem' }}>Ingresa tu correo. HNDA te proporcionará un código de 6 dígitos.</p>
+              <p style={{ color: C.white, fontSize: '0.9rem', fontWeight: 300, marginBottom: '0.25rem' }}>{t('client.reset_title')}</p>
+              <p style={{ color: C.slate, fontSize: '0.75rem' }}>{t('client.reset_desc')}</p>
             </div>
-            <Input label="Correo electrónico" type="email" value={resetEmail} onChange={(e) => setResetEmail(e.target.value)} placeholder="juan@email.com" autoComplete="email" />
+            <Input label={t('client.label_email')} type="email" value={resetEmail} onChange={(e) => setResetEmail(e.target.value)} placeholder="juan@email.com" autoComplete="email" />
             {error && <StatusMsg type="error" msg={error} />}
-            <PrimaryBtn type="submit" disabled={loading || !resetEmail.trim()}>{loading ? 'Enviando...' : 'Continuar'}</PrimaryBtn>
+            <PrimaryBtn type="submit" disabled={loading || !resetEmail.trim()}>{loading ? t('common.sending') : t('common.continue')}</PrimaryBtn>
             <button type="button" onClick={() => { setScreen('login'); setError(''); }}
               style={{ background: 'none', border: 'none', cursor: 'pointer', color: C.slate, fontSize: '0.7rem', textDecoration: 'underline', textUnderlineOffset: '3px' }}>
-              Volver al inicio de sesión
+              {t('client.back_to_login')}
             </button>
           </form>
         )}
@@ -320,17 +274,17 @@ function LoginScreen({ onLogin, inactivity }: LoginProps) {
         {screen === 'forgot2' && (
           <form onSubmit={handleForgot2} className="rounded-2xl px-6 py-7 flex flex-col gap-5" style={{ background: C.surface }}>
             <div>
-              <p style={{ color: C.white, fontSize: '0.9rem', fontWeight: 300, marginBottom: '0.25rem' }}>Ingresa el código</p>
-              <p style={{ color: C.slate, fontSize: '0.75rem' }}>Llama a HNDA para obtener tu código de 6 dígitos y establece tu nueva contraseña.</p>
+              <p style={{ color: C.white, fontSize: '0.9rem', fontWeight: 300, marginBottom: '0.25rem' }}>{t('client.enter_code_title')}</p>
+              <p style={{ color: C.slate, fontSize: '0.75rem' }}>{t('client.enter_code_desc')}</p>
             </div>
-            <Input label="Código de 6 dígitos" value={resetCode} onChange={(e) => setResetCode(e.target.value)} placeholder="123456" autoComplete="one-time-code" />
-            <Input label="Nueva contraseña" type="password" value={newPassword} onChange={(e) => setNewPassword(e.target.value)} placeholder="Mínimo 6 caracteres" />
-            <Input label="Confirmar contraseña" type="password" value={confirmPassword} onChange={(e) => setConfirmPassword(e.target.value)} placeholder="Repite la contraseña" />
+            <Input label={t('client.label_code')} value={resetCode} onChange={(e) => setResetCode(e.target.value)} placeholder="123456" autoComplete="one-time-code" />
+            <Input label={t('client.label_new_password')} type="password" value={newPassword} onChange={(e) => setNewPassword(e.target.value)} placeholder="Mínimo 6 caracteres" />
+            <Input label={t('client.label_confirm_password')} type="password" value={confirmPassword} onChange={(e) => setConfirmPassword(e.target.value)} placeholder="Repite la contraseña" />
             {error && <StatusMsg type="error" msg={error} />}
-            <PrimaryBtn type="submit" disabled={loading || !resetCode || !newPassword}>{loading ? 'Guardando...' : 'Restablecer contraseña'}</PrimaryBtn>
+            <PrimaryBtn type="submit" disabled={loading || !resetCode || !newPassword}>{loading ? t('common.saving') : t('client.btn_reset_password')}</PrimaryBtn>
             <button type="button" onClick={() => { setScreen('login'); setError(''); }}
               style={{ background: 'none', border: 'none', cursor: 'pointer', color: C.slate, fontSize: '0.7rem', textDecoration: 'underline', textUnderlineOffset: '3px' }}>
-              Volver al inicio de sesión
+              {t('client.back_to_login')}
             </button>
           </form>
         )}
@@ -338,10 +292,10 @@ function LoginScreen({ onLogin, inactivity }: LoginProps) {
         {/* ── Done ── */}
         {screen === 'done' && (
           <div className="rounded-2xl px-6 py-7 flex flex-col gap-5 text-center" style={{ background: C.surface }}>
-            <p style={{ color: C.white, fontSize: '0.9rem', fontWeight: 300 }}>¡Contraseña restablecida!</p>
-            <p style={{ color: C.slate, fontSize: '0.75rem' }}>Ya puedes iniciar sesión con tu nueva contraseña.</p>
+            <p style={{ color: C.white, fontSize: '0.9rem', fontWeight: 300 }}>{t('client.password_reset_done')}</p>
+            <p style={{ color: C.slate, fontSize: '0.75rem' }}>{t('client.password_reset_done_desc')}</p>
             <PrimaryBtn type="button" onClick={() => { setScreen('login'); setError(''); setResetCode(''); setNewPassword(''); setConfirmPassword(''); }}>
-              Iniciar sesión
+              {t('client.btn_login')}
             </PrimaryBtn>
           </div>
         )}
@@ -373,7 +327,7 @@ function TopBar({ user, onLogout }: { user: UserRecord; onLogout: () => void }) 
           className="text-xs font-semibold px-3 py-1.5 rounded-lg transition-all active:scale-95"
           style={{ background: C.surfaceHi, color: C.slate, border: `1px solid ${C.border}` }}
         >
-          Salir
+          {t('common.logout')}
         </button>
       </div>
 
@@ -388,10 +342,10 @@ function TopBar({ user, onLogout }: { user: UserRecord; onLogout: () => void }) 
         <span style={{ fontSize: '3.5rem', lineHeight: 1, color: C.white, fontFamily: 'var(--font-body)', fontWeight: 200 }}>
           <AnimatedBalance value={user.catr_balance} />
         </span>
-        <span style={{ fontSize: '1rem', fontFamily: 'var(--font-body)', fontWeight: 300, color: C.slateHi }}>pts</span>
+        <span style={{ fontSize: '1rem', fontFamily: 'var(--font-body)', fontWeight: 300, color: C.slateHi }}>{t('client.pts')}</span>
       </div>
       <p style={{ color: C.slate, fontFamily: 'var(--font-body)', fontSize: '0.65rem', fontWeight: 300, marginTop: '0.4rem', letterSpacing: '0.08em' }}>
-        Saldo disponible · 1 pt = 1 HNL
+        {t('client.balance_label')}
       </p>
     </div>
   );
@@ -403,10 +357,10 @@ type Tab = 'cuenta' | 'actividad' | 'red' | 'ajustes';
 
 function TabBar({ active, onChange }: { active: Tab; onChange: (t: Tab) => void }) {
   const tabs: { id: Tab; label: string; icon: React.ReactNode }[] = [
-    { id: 'cuenta',    label: 'Mi Cuenta',  icon: <IconUser /> },
-    { id: 'actividad', label: 'Actividad',  icon: <IconActivity /> },
-    { id: 'red',       label: 'Red',        icon: <IconNetwork /> },
-    { id: 'ajustes',   label: 'Ajustes',    icon: <IconSettings /> },
+    { id: 'cuenta',    label: t('tab.cuenta'),    icon: <IconUser /> },
+    { id: 'actividad', label: t('tab.actividad'), icon: <IconActivity /> },
+    { id: 'red',       label: t('tab.red'),       icon: <IconNetwork /> },
+    { id: 'ajustes',   label: t('tab.ajustes'),   icon: <IconSettings /> },
   ];
 
   return (
@@ -458,7 +412,7 @@ function CuentaTab({ user }: { user: UserRecord }) {
     <div className="flex flex-col gap-4">
 
       {/* Wallet */}
-      <Section title="Mi Wallet">
+      <Section title={t('client.section_wallet')}>
         <div className="flex flex-col gap-3">
           <div
             className="flex items-center justify-between rounded-xl px-4 py-3"
@@ -466,12 +420,12 @@ function CuentaTab({ user }: { user: UserRecord }) {
           >
             <div>
               <p className="text-xs font-bold uppercase tracking-widest mb-0.5" style={{ color: C.slate }}>
-                Dirección
+                {t('client.label_address')}
               </p>
               <p className="text-sm font-mono font-semibold" style={{ color: C.white }}>
                 {user.wallet_address
                   ? `${user.wallet_address.slice(0, 8)}…${user.wallet_address.slice(-6)}`
-                  : 'Sin wallet asignada'}
+                  : t('client.no_wallet')}
               </p>
             </div>
             {user.wallet_address && (
@@ -479,7 +433,7 @@ function CuentaTab({ user }: { user: UserRecord }) {
                 onClick={copyAddress}
                 className="p-2 rounded-lg transition-all active:scale-95"
                 style={{ background: C.surface, color: copied ? C.success : C.slate }}
-                title="Copiar dirección"
+                title={t('client.copy_address')}
               >
                 <IconCopy />
               </button>
@@ -488,11 +442,11 @@ function CuentaTab({ user }: { user: UserRecord }) {
 
           <div className="grid grid-cols-2 gap-2">
             <div className="rounded-xl px-4 py-3" style={{ background: C.surfaceHi, border: `1px solid ${C.border}` }}>
-              <p className="text-xs font-bold uppercase tracking-widest mb-0.5" style={{ color: C.slate }}>Red</p>
+              <p className="text-xs font-bold uppercase tracking-widest mb-0.5" style={{ color: C.slate }}>{t('common.network_label')}</p>
               <p className="text-sm font-semibold" style={{ color: C.slateHi }}>Base (L2)</p>
             </div>
             <div className="rounded-xl px-4 py-3" style={{ background: C.surfaceHi, border: `1px solid ${C.border}` }}>
-              <p className="text-xs font-bold uppercase tracking-widest mb-0.5" style={{ color: C.slate }}>Token</p>
+              <p className="text-xs font-bold uppercase tracking-widest mb-0.5" style={{ color: C.slate }}>{t('common.token_label')}</p>
               <p className="text-sm font-semibold" style={{ color: C.gold }}>CATR</p>
             </div>
           </div>
@@ -500,12 +454,12 @@ function CuentaTab({ user }: { user: UserRecord }) {
       </Section>
 
       {/* Profile */}
-      <Section title="Mi Perfil">
+      <Section title={t('client.section_profile')}>
         <div className="flex flex-col gap-2">
           {[
-            { label: 'Nombre', value: user.full_name },
-            { label: 'Correo', value: user.email },
-            { label: 'Miembro desde', value: memberSince },
+            { label: t('client.label_name'), value: user.full_name },
+            { label: t('client.label_email_short'), value: user.email },
+            { label: t('client.label_member_since'), value: memberSince },
           ].map(({ label, value }) => (
             <div
               key={label}
@@ -526,11 +480,11 @@ function CuentaTab({ user }: { user: UserRecord }) {
 // ─── Tab: Actividad ───────────────────────────────────────────────────────────
 
 const MILESTONE_LABELS: Record<string, string> = {
-  TX_5:          '5 transacciones',
-  TX_10:         '10 transacciones',
-  TX_25:         '25 transacciones',
-  CROSS_MERCHANT: 'Bonus multi-comercio',
-  REFERRAL:      'Bono de referido',
+  TX_5:           t('client.milestone_tx5'),
+  TX_10:          t('client.milestone_tx10'),
+  TX_25:          t('client.milestone_tx25'),
+  CROSS_MERCHANT: t('client.milestone_cross'),
+  REFERRAL:       t('client.milestone_referral'),
 };
 
 function ActividadTab({ transactions, milestones }: { transactions: Transaction[]; milestones: Milestone[] }) {
@@ -539,7 +493,7 @@ function ActividadTab({ transactions, milestones }: { transactions: Transaction[
 
       {/* Milestones */}
       {milestones.length > 0 && (
-        <Section title="Recompensas desbloqueadas">
+        <Section title={t('client.section_rewards')}>
           <div className="flex flex-col gap-2">
             {milestones.map((m) => (
               <div
@@ -568,10 +522,10 @@ function ActividadTab({ transactions, milestones }: { transactions: Transaction[
       )}
 
       {/* Transactions */}
-      <Section title="Historial de transacciones">
+      <Section title={t('client.section_tx_history')}>
         {transactions.length === 0 ? (
           <p className="text-sm py-4 text-center" style={{ color: C.slate }}>
-            Sin transacciones aún.
+            {t('client.no_transactions')}
           </p>
         ) : (
           <div className="flex flex-col gap-2">
@@ -595,7 +549,7 @@ function ActividadTab({ transactions, milestones }: { transactions: Transaction[
                     </div>
                     <div>
                       <p className="text-sm font-semibold" style={{ color: C.white }}>
-                        {isMint ? 'Puntos acumulados' : 'Puntos enviados'}
+                        {isMint ? t('client.tx_earned') : t('client.tx_sent')}
                       </p>
                       <p className="text-xs" style={{ color: C.slate }}>
                         {new Date(tx.created_at).toLocaleDateString('es-HN', { day: 'numeric', month: 'short' })}
@@ -639,10 +593,10 @@ function AjustesTab({ user, token, onUpdate }: { user: UserRecord; token: string
       const res = await updateUser(user.id, { full_name: fullName, email, phone: phone || undefined }, token);
       onUpdate({ ...user, ...res.data });
       setProfileState('success');
-      setProfileMsg('Información actualizada.');
+      setProfileMsg(t('client.profile_updated'));
     } catch (err) {
       setProfileState('error');
-      setProfileMsg(err instanceof Error ? err.message : 'Error al guardar.');
+      setProfileMsg(err instanceof Error ? err.message : t('common.error_save'));
     }
   }
 
@@ -650,12 +604,12 @@ function AjustesTab({ user, token, onUpdate }: { user: UserRecord; token: string
     e.preventDefault();
     if (newPassword !== confirmPassword) {
       setPassState('error');
-      setPassMsg('Las contraseñas no coinciden.');
+      setPassMsg(t('client.error_passwords_mismatch'));
       return;
     }
     if (newPassword.length < 6) {
       setPassState('error');
-      setPassMsg('La contraseña debe tener al menos 6 caracteres.');
+      setPassMsg(t('client.error_password_min'));
       return;
     }
     setPassState('loading');
@@ -663,25 +617,25 @@ function AjustesTab({ user, token, onUpdate }: { user: UserRecord; token: string
     try {
       await setPassword({ user_id: user.id, current_credential: currentCred, new_password: newPassword });
       setPassState('success');
-      setPassMsg('Contraseña actualizada.');
+      setPassMsg(t('client.password_updated'));
       setCurrentCred(''); setNewPassword(''); setConfirmPassword('');
     } catch (err) {
       setPassState('error');
-      setPassMsg(err instanceof Error ? err.message : 'Error al cambiar contraseña.');
+      setPassMsg(err instanceof Error ? err.message : t('client.error_change_password'));
     }
   }
 
   return (
     <div className="flex flex-col gap-4">
-      <Section title="Información personal">
+      <Section title={t('client.section_personal')}>
         <form onSubmit={handleProfileSave} className="flex flex-col gap-3">
-          <Input label="Nombre completo" value={fullName} onChange={(e) => setFullName(e.target.value)} />
-          <Input label="Correo electrónico" type="email" value={email} onChange={(e) => setEmail(e.target.value)} />
-          <Input label="Teléfono (opcional)" type="tel" value={phone} onChange={(e) => setPhone(e.target.value)} placeholder="+504 0000-0000" />
+          <Input label={t('client.label_full_name')} value={fullName} onChange={(e) => setFullName(e.target.value)} />
+          <Input label={t('client.label_email')} type="email" value={email} onChange={(e) => setEmail(e.target.value)} />
+          <Input label={t('client.label_phone')} type="tel" value={phone} onChange={(e) => setPhone(e.target.value)} placeholder="+504 0000-0000" />
           {profileState === 'success' && <StatusMsg type="success" msg={profileMsg} />}
           {profileState === 'error'   && <StatusMsg type="error"   msg={profileMsg} />}
           <PrimaryBtn type="submit" disabled={profileState === 'loading'}>
-            {profileState === 'loading' ? 'Guardando' : 'Guardar cambios'}
+            {profileState === 'loading' ? t('common.saving') : t('common.save')}
           </PrimaryBtn>
         </form>
       </Section>
@@ -693,21 +647,21 @@ function AjustesTab({ user, token, onUpdate }: { user: UserRecord; token: string
           style={{ background: C.goldDim, border: `1px solid rgba(201,168,76,0.35)`, textDecoration: 'none' }}
         >
           <span style={{ color: C.gold, fontFamily: 'var(--font-body)', fontSize: '0.85rem', fontWeight: 600, letterSpacing: '0.06em' }}>
-            Aplicar para Comercio
+            {t('client.apply_merchant')}
           </span>
           <span style={{ color: C.gold, fontSize: '0.85rem' }}>→</span>
         </a>
       </Section>
 
-      <Section title="Cambiar contraseña">
+      <Section title={t('client.section_password')}>
         <form onSubmit={handlePasswordSave} className="flex flex-col gap-3">
-          <Input label="PIN o contraseña actual" type="password" value={currentCred} onChange={(e) => setCurrentCred(e.target.value)} placeholder="••••" autoComplete="current-password" />
-          <Input label="Nueva contraseña" type="password" value={newPassword} onChange={(e) => setNewPassword(e.target.value)} placeholder="Mínimo 6 caracteres" autoComplete="new-password" />
-          <Input label="Confirmar contraseña" type="password" value={confirmPassword} onChange={(e) => setConfirmPassword(e.target.value)} placeholder="••••" autoComplete="new-password" />
+          <Input label={t('client.label_current_credential')} type="password" value={currentCred} onChange={(e) => setCurrentCred(e.target.value)} placeholder="••••" autoComplete="current-password" />
+          <Input label={t('client.label_new_password')} type="password" value={newPassword} onChange={(e) => setNewPassword(e.target.value)} placeholder="Mínimo 6 caracteres" autoComplete="new-password" />
+          <Input label={t('client.label_confirm_password')} type="password" value={confirmPassword} onChange={(e) => setConfirmPassword(e.target.value)} placeholder="••••" autoComplete="new-password" />
           {passState === 'success' && <StatusMsg type="success" msg={passMsg} />}
           {passState === 'error'   && <StatusMsg type="error"   msg={passMsg} />}
           <PrimaryBtn type="submit" disabled={passState === 'loading' || !currentCred || !newPassword || !confirmPassword}>
-            {passState === 'loading' ? 'Guardando' : 'Cambiar contraseña'}
+            {passState === 'loading' ? t('common.saving') : t('client.btn_change_password')}
           </PrimaryBtn>
         </form>
       </Section>
@@ -737,7 +691,7 @@ function RedTab({ merchants, user, token, onSpend }: { merchants: Merchant[]; us
       onSpend();
     } catch (err) {
       setState('error');
-      setMsg(err instanceof Error ? err.message : 'Error al procesar la transacción.');
+      setMsg(err instanceof Error ? err.message : t('client.error_transaction'));
     }
   }
 
@@ -748,7 +702,7 @@ function RedTab({ merchants, user, token, onSpend }: { merchants: Merchant[]; us
           onClick={() => { setSelected(null); setState('idle'); setMsg(''); setAmount(''); }}
           style={{ color: C.slate, fontFamily: 'var(--font-body)', fontSize: '0.75rem', fontWeight: 300, letterSpacing: '0.06em', background: 'none', border: 'none', cursor: 'pointer', textAlign: 'left', padding: 0 }}
         >
-          ← Volver a la red
+          {t('client.back_to_network')}
         </button>
 
         {state === 'success' ? (
@@ -765,7 +719,7 @@ function RedTab({ merchants, user, token, onSpend }: { merchants: Merchant[]; us
                 onClick={() => { setState('idle'); setMsg(''); }}
                 style={{ color: C.slate, fontFamily: 'var(--font-body)', fontSize: '0.75rem', fontWeight: 300, letterSpacing: '0.06em', background: 'none', border: 'none', cursor: 'pointer' }}
               >
-                Nueva transacción
+                {t('client.new_transaction')}
               </button>
             </div>
           </Section>
@@ -774,7 +728,7 @@ function RedTab({ merchants, user, token, onSpend }: { merchants: Merchant[]; us
             <form onSubmit={handleSpend} className="rounded-2xl px-5 py-6 flex flex-col gap-5" style={{ background: C.surface }}>
               <div>
                 <p style={{ color: C.slate, fontFamily: 'var(--font-body)', fontSize: '0.65rem', fontWeight: 300, letterSpacing: '0.12em', textTransform: 'uppercase', marginBottom: '0.5rem' }}>
-                  Comercio
+                  {t('client.label_merchant')}
                 </p>
                 <p style={{ color: C.white, fontFamily: 'var(--font-body)', fontWeight: 400, fontSize: '1rem' }}>
                   {selected.name}
@@ -785,7 +739,7 @@ function RedTab({ merchants, user, token, onSpend }: { merchants: Merchant[]; us
               </div>
 
               <Input
-                label="Puntos a enviar"
+                label={t('client.label_points_send')}
                 type="number"
                 min="0.01"
                 step="0.01"
@@ -797,7 +751,7 @@ function RedTab({ merchants, user, token, onSpend }: { merchants: Merchant[]; us
               {state === 'error' && <StatusMsg type="error" msg={msg} />}
 
               <PrimaryBtn type="submit" disabled={state === 'loading' || !amount}>
-                {state === 'loading' ? 'Procesando' : 'Enviar puntos'}
+                {state === 'loading' ? t('common.processing') : t('client.btn_send_points')}
               </PrimaryBtn>
             </form>
           </div>
@@ -811,7 +765,7 @@ function RedTab({ merchants, user, token, onSpend }: { merchants: Merchant[]; us
       <Section title={`${active.length} establecimiento${active.length !== 1 ? 's' : ''} en la red`}>
         {active.length === 0 ? (
           <p className="text-sm py-4 text-center" style={{ color: C.slate }}>
-            No hay comercios activos aún.
+            {t('client.no_merchants')}
           </p>
         ) : (
           <div className="flex flex-col gap-2">
@@ -844,9 +798,9 @@ function RedTab({ merchants, user, token, onSpend }: { merchants: Merchant[]; us
         style={{ background: C.surfaceHi, border: `1px solid ${C.border}` }}
       >
         <p style={{ color: C.slate, fontFamily: 'var(--font-body)', fontSize: '0.65rem', fontWeight: 300, letterSpacing: '0.06em' }}>
-          Selecciona un comercio para enviar puntos.
+          {t('client.network_hint')}
           <br />
-          1 punto = 1 Lempira.
+          {t('client.network_rate')}
         </p>
       </div>
     </div>

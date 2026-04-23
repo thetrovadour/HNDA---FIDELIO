@@ -2,6 +2,7 @@
 
 import { FidelioIntro } from '@/components/FidelioIntro';
 import { useState, useEffect } from 'react';
+import { t } from '@/lib/i18n';
 import { useInactivityLogout } from '@/hooks/useInactivityLogout';
 import {
   getMerchantPublic,
@@ -160,68 +161,7 @@ function InfoRow({ label, value, mono = false }: { label: string; value: React.R
   );
 }
 
-// ─── Icons ────────────────────────────────────────────────────────────────────
-
-function IconStore() {
-  return (
-    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.5} className="w-5 h-5">
-      <path d="M3 9l1-5h16l1 5" strokeLinecap="round" />
-      <path d="M3 9h18v11a1 1 0 01-1 1H4a1 1 0 01-1-1V9z" />
-      <path d="M9 21V12h6v9" strokeLinecap="round" />
-    </svg>
-  );
-}
-
-function IconSwap() {
-  return (
-    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.5} className="w-5 h-5">
-      <path d="M7 16V4m0 0L3 8m4-4l4 4" strokeLinecap="round" strokeLinejoin="round" />
-      <path d="M17 8v12m0 0l4-4m-4 4l-4-4" strokeLinecap="round" strokeLinejoin="round" />
-    </svg>
-  );
-}
-
-function IconGem() {
-  return (
-    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.5} className="w-5 h-5">
-      <polygon points="12 2 22 9 18 20 6 20 2 9" strokeLinejoin="round" />
-      <line x1="2" y1="9" x2="22" y2="9" />
-      <line x1="12" y1="2" x2="6" y2="20" />
-      <line x1="12" y1="2" x2="18" y2="20" />
-    </svg>
-  );
-}
-
-function IconList() {
-  return (
-    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.5} className="w-5 h-5">
-      <line x1="8" y1="6" x2="21" y2="6" strokeLinecap="round" />
-      <line x1="8" y1="12" x2="21" y2="12" strokeLinecap="round" />
-      <line x1="8" y1="18" x2="21" y2="18" strokeLinecap="round" />
-      <circle cx="3" cy="6" r="1" fill="currentColor" stroke="none" />
-      <circle cx="3" cy="12" r="1" fill="currentColor" stroke="none" />
-      <circle cx="3" cy="18" r="1" fill="currentColor" stroke="none" />
-    </svg>
-  );
-}
-
-function IconCopy() {
-  return (
-    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.5} className="w-4 h-4">
-      <rect x="9" y="9" width="13" height="13" rx="2" />
-      <path d="M5 15H4a2 2 0 01-2-2V4a2 2 0 012-2h9a2 2 0 012 2v1" />
-    </svg>
-  );
-}
-
-function IconSettings() {
-  return (
-    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.5} className="w-5 h-5">
-      <circle cx="12" cy="12" r="3" />
-      <path d="M19.4 15a1.65 1.65 0 00.33 1.82l.06.06a2 2 0 010 2.83 2 2 0 01-2.83 0l-.06-.06a1.65 1.65 0 00-1.82-.33 1.65 1.65 0 00-1 1.51V21a2 2 0 01-4 0v-.09A1.65 1.65 0 009 19.4a1.65 1.65 0 00-1.82.33l-.06.06a2 2 0 01-2.83-2.83l.06-.06A1.65 1.65 0 004.68 15a1.65 1.65 0 00-1.51-1H3a2 2 0 010-4h.09A1.65 1.65 0 004.6 9a1.65 1.65 0 00-.33-1.82l-.06-.06a2 2 0 012.83-2.83l.06.06A1.65 1.65 0 009 4.68a1.65 1.65 0 001-1.51V3a2 2 0 014 0v.09a1.65 1.65 0 001 1.51 1.65 1.65 0 001.82-.33l.06-.06a2 2 0 012.83 2.83l-.06.06A1.65 1.65 0 0019.4 9a1.65 1.65 0 001.51 1H21a2 2 0 010 4h-.09a1.65 1.65 0 00-1.51 1z" strokeLinecap="round" strokeLinejoin="round" />
-    </svg>
-  );
-}
+import { IconStore, IconSwap, IconGem, IconList, IconCopy, IconSettings } from '../../components/icons';
 
 // ─── Login screen ─────────────────────────────────────────────────────────────
 
@@ -239,7 +179,7 @@ function LoginScreen({ onLogin, inactivity }: { onLogin: (merchant: Merchant) =>
       const res = await getMerchantPublic(merchantId.trim());
       onLogin(res.data);
     } catch {
-      setError('Comercio no encontrado. Verifica tu ID.');
+      setError(t('merchant.error_not_found'));
     } finally {
       setLoading(false);
     }
@@ -273,7 +213,7 @@ function LoginScreen({ onLogin, inactivity }: { onLogin: (merchant: Merchant) =>
           className="mt-3 uppercase tracking-widest"
           style={{ color: C.slate, fontSize: '0.6rem', fontWeight: 300, letterSpacing: '0.18em' }}
         >
-          Portal de Comercios
+          {t('merchant.portal_label')}
         </p>
       </div>
 
@@ -284,7 +224,7 @@ function LoginScreen({ onLogin, inactivity }: { onLogin: (merchant: Merchant) =>
           style={{ background: C.surface }}
         >
           <Input
-            label="ID de comercio"
+            label={t('merchant.label_merchant_id')}
             value={merchantId}
             onChange={(e) => setMerchantId(e.target.value)}
             placeholder="xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx"
@@ -292,31 +232,31 @@ function LoginScreen({ onLogin, inactivity }: { onLogin: (merchant: Merchant) =>
           />
 
           {inactivity && (
-            <StatusMsg type="error" msg="Sesión cerrada por inactividad." />
+            <StatusMsg type="error" msg={t('common.inactivity')} />
           )}
 
           {error && <StatusMsg type="error" msg={error} />}
 
           <PrimaryBtn type="submit" disabled={loading || !merchantId.trim()}>
-            {loading ? 'Verificando' : 'Acceder'}
+            {loading ? t('common.verifying') : t('common.access')}
           </PrimaryBtn>
 
           <p
             className="text-center"
             style={{ color: C.slate, fontSize: '0.7rem', fontWeight: 300, letterSpacing: '0.06em' }}
           >
-            Cliente —{' '}
+            {t('merchant.client_link')}{' '}
             <a href="/client" style={{ color: C.slateHi, textDecoration: 'underline', textUnderlineOffset: '3px' }}>
-              accede aquí
+              {t('common.access_here')}
             </a>
           </p>
           <p
             className="text-center"
             style={{ color: C.slate, fontSize: '0.7rem', fontWeight: 300, letterSpacing: '0.06em' }}
           >
-            ¿No tienes cuenta?{' '}
+            {t('client.no_account')}{' '}
             <a href="/register" style={{ color: C.slateHi, textDecoration: 'underline', textUnderlineOffset: '3px' }}>
-              Regístrate
+              {t('common.register')}
             </a>
           </p>
         </form>
@@ -345,7 +285,7 @@ function TopBar({ merchant, balance, onLogout }: { merchant: Merchant; balance: 
           className="text-xs font-semibold px-3 py-1.5 rounded-lg transition-all active:scale-95"
           style={{ background: C.surfaceHi, color: C.slate, border: `1px solid ${C.border}` }}
         >
-          Salir
+          {t('common.logout')}
         </button>
       </div>
 
@@ -367,7 +307,7 @@ function TopBar({ merchant, balance, onLogout }: { merchant: Merchant; balance: 
             border: `1px solid ${merchant.active ? 'rgba(16,185,129,0.3)' : 'rgba(239,68,68,0.3)'}`,
           }}
         >
-          {merchant.active ? 'Activo' : 'Inactivo'}
+          {merchant.active ? t('common.active') : t('common.inactive')}
         </span>
       </div>
 
@@ -378,7 +318,7 @@ function TopBar({ merchant, balance, onLogout }: { merchant: Merchant; balance: 
         <span style={{ fontSize: '1rem', fontFamily: 'var(--font-body)', fontWeight: 300, color: C.slateHi }}>pts</span>
       </div>
       <p style={{ color: C.slate, fontFamily: 'var(--font-body)', fontSize: '0.65rem', fontWeight: 300, marginTop: '0.4rem', letterSpacing: '0.08em' }}>
-        Balance disponible · 1 pt = 1 HNL
+        {t('merchant.balance_label')}
       </p>
     </div>
   );
@@ -390,11 +330,11 @@ type Tab = 'negocio' | 'canjear' | 'gca' | 'movimientos' | 'ajustes';
 
 function TabBar({ active, onChange }: { active: Tab; onChange: (t: Tab) => void }) {
   const tabs: { id: Tab; label: string; icon: React.ReactNode }[] = [
-    { id: 'negocio',     label: 'Mi Negocio',  icon: <IconStore /> },
-    { id: 'canjear',     label: 'Canjear',     icon: <IconSwap /> },
-    { id: 'gca',         label: 'GCA',         icon: <IconGem /> },
-    { id: 'movimientos', label: 'Movimientos', icon: <IconList /> },
-    { id: 'ajustes',     label: 'Ajustes',     icon: <IconSettings /> },
+    { id: 'negocio',     label: t('tab.negocio'),     icon: <IconStore /> },
+    { id: 'canjear',     label: t('tab.canjear'),     icon: <IconSwap /> },
+    { id: 'gca',         label: t('tab.gca'),         icon: <IconGem /> },
+    { id: 'movimientos', label: t('tab.movimientos'), icon: <IconList /> },
+    { id: 'ajustes',     label: t('tab.ajustes'),     icon: <IconSettings /> },
   ];
 
   return (
@@ -439,7 +379,7 @@ function NegocioTab({ merchant }: { merchant: Merchant }) {
 
   return (
     <div className="flex flex-col gap-4">
-      <Section title="Wallet">
+      <Section title={t('merchant.section_wallet')}>
         <div className="flex flex-col gap-3">
           <div
             className="flex items-center justify-between rounded-xl px-4 py-3"
@@ -447,7 +387,7 @@ function NegocioTab({ merchant }: { merchant: Merchant }) {
           >
             <div>
               <p className="text-xs font-bold uppercase tracking-widest mb-0.5" style={{ color: C.slate }}>
-                Dirección
+                {t('merchant.label_address')}
               </p>
               <p className="text-sm font-mono font-semibold" style={{ color: C.white }}>
                 {`${merchant.wallet_address.slice(0, 8)}…${merchant.wallet_address.slice(-6)}`}
@@ -457,7 +397,7 @@ function NegocioTab({ merchant }: { merchant: Merchant }) {
               onClick={copyAddress}
               className="p-2 rounded-lg transition-all active:scale-95"
               style={{ background: C.surface, color: copied ? C.success : C.slate }}
-              title="Copiar dirección"
+              title={t('client.copy_address')}
             >
               <IconCopy />
             </button>
@@ -465,25 +405,25 @@ function NegocioTab({ merchant }: { merchant: Merchant }) {
 
           <div className="grid grid-cols-2 gap-2">
             <div className="rounded-xl px-4 py-3" style={{ background: C.surfaceHi, border: `1px solid ${C.border}` }}>
-              <p className="text-xs font-bold uppercase tracking-widest mb-0.5" style={{ color: C.slate }}>Red</p>
+              <p className="text-xs font-bold uppercase tracking-widest mb-0.5" style={{ color: C.slate }}>{t('merchant.label_network')}</p>
               <p className="text-sm font-semibold" style={{ color: C.slateHi }}>Base (L2)</p>
             </div>
             <div className="rounded-xl px-4 py-3" style={{ background: C.surfaceHi, border: `1px solid ${C.border}` }}>
-              <p className="text-xs font-bold uppercase tracking-widest mb-0.5" style={{ color: C.slate }}>Token</p>
+              <p className="text-xs font-bold uppercase tracking-widest mb-0.5" style={{ color: C.slate }}>{t('merchant.label_token')}</p>
               <p className="text-sm font-semibold" style={{ color: C.gold }}>CATR + GCA</p>
             </div>
           </div>
         </div>
       </Section>
 
-      <Section title="Información">
+      <Section title={t('merchant.section_info')}>
         <div className="flex flex-col gap-2">
-          <InfoRow label="Nombre"   value={merchant.name} />
-          <InfoRow label="Categoría" value={merchant.category} />
-          <InfoRow label="Contacto" value={merchant.contact_email} />
-          <InfoRow label="Estado"   value={
+          <InfoRow label={t('merchant.label_name')}    value={merchant.name} />
+          <InfoRow label={t('merchant.label_category')} value={merchant.category} />
+          <InfoRow label={t('merchant.label_contact')} value={merchant.contact_email} />
+          <InfoRow label={t('merchant.label_status')}  value={
             <span style={{ color: merchant.active ? C.success : C.error }}>
-              {merchant.active ? 'Activo' : 'Inactivo'}
+              {merchant.active ? t('common.active') : t('common.inactive')}
             </span>
           } />
         </div>
@@ -495,17 +435,17 @@ function NegocioTab({ merchant }: { merchant: Merchant }) {
 // ─── Tab: Canjear ─────────────────────────────────────────────────────────────
 
 const TIER_LABELS: Record<string, string> = {
-  AUTO:             'Automático',
-  ADMIN_APPROVAL:   'Aprobación admin',
-  VAULT_OP:         'VaultOp (2-de-2)',
+  AUTO:           t('merchant.tier_auto'),
+  ADMIN_APPROVAL: t('merchant.tier_admin'),
+  VAULT_OP:       t('merchant.tier_vault'),
 };
 
 const STATUS_LABELS: Record<string, string> = {
-  PENDING_BURN:  'Pendiente',
-  BURN_SUBMITTED: 'En proceso',
-  BURNED:         'Quemado',
-  LEMPIRAS_SENT:  'Completado',
-  FAILED:         'Fallido',
+  PENDING_BURN:   t('merchant.status_pending'),
+  BURN_SUBMITTED: t('merchant.status_processing'),
+  BURNED:         t('merchant.status_burned'),
+  LEMPIRAS_SENT:  t('merchant.status_completed'),
+  FAILED:         t('merchant.status_failed'),
 };
 
 function statusColor(status: string): string {
@@ -547,7 +487,7 @@ function CanjearTab({ merchant }: { merchant: Merchant }) {
       setAmount('');
     } catch (err) {
       setState('error');
-      setMsg(err instanceof Error ? err.message : 'Error al procesar la solicitud.');
+      setMsg(err instanceof Error ? err.message : t('common.error_request'));
     }
   }
 
@@ -562,7 +502,7 @@ function CanjearTab({ merchant }: { merchant: Merchant }) {
       <div className="shimmer-border rounded-2xl p-px">
         <form onSubmit={handleSubmit} className="rounded-2xl px-5 py-6 flex flex-col gap-5" style={{ background: C.surface }}>
           <Input
-            label="Monto a canjear (CATR)"
+            label={t('merchant.label_amount_catr')}
             type="number"
             min="0.01"
             step="0.01"
@@ -576,7 +516,7 @@ function CanjearTab({ merchant }: { merchant: Merchant }) {
               className="flex items-center gap-2 rounded-xl px-4 py-2.5"
               style={{ background: C.surfaceHi, border: `1px solid ${C.border}` }}
             >
-              <span className="text-xs font-bold uppercase tracking-widest" style={{ color: C.slate }}>Tipo</span>
+              <span className="text-xs font-bold uppercase tracking-widest" style={{ color: C.slate }}>{t('merchant.label_type')}</span>
               <span className="text-xs font-semibold ml-auto" style={{ color: C.slateHi }}>
                 {TIER_LABELS[tier]}
               </span>
@@ -587,16 +527,16 @@ function CanjearTab({ merchant }: { merchant: Merchant }) {
           {state === 'error'   && <StatusMsg type="error"   msg={msg} />}
 
           <PrimaryBtn type="submit" disabled={state === 'loading' || !amount}>
-            {state === 'loading' ? 'Enviando' : 'Solicitar canje'}
+            {state === 'loading' ? t('common.sending') : t('merchant.btn_request')}
           </PrimaryBtn>
         </form>
       </div>
 
-      <Section title="Historial de canjes">
+      <Section title={t('merchant.section_history')}>
         {loadingHistory ? (
-          <p className="text-sm py-4 text-center" style={{ color: C.slate }}>Cargando…</p>
+          <p className="text-sm py-4 text-center" style={{ color: C.slate }}>{t('common.loading_short')}</p>
         ) : redemptions.length === 0 ? (
-          <p className="text-sm py-4 text-center" style={{ color: C.slate }}>Sin solicitudes aún.</p>
+          <p className="text-sm py-4 text-center" style={{ color: C.slate }}>{t('merchant.no_redemptions')}</p>
         ) : (
           <div className="flex flex-col gap-2">
             {redemptions.map((r) => (
@@ -627,12 +567,12 @@ function CanjearTab({ merchant }: { merchant: Merchant }) {
         className="rounded-2xl px-5 py-4"
         style={{ background: C.surfaceHi, border: `1px solid ${C.border}` }}
       >
-        <p className="text-xs font-bold uppercase tracking-widest mb-3" style={{ color: C.slate }}>Niveles de aprobación</p>
+        <p className="text-xs font-bold uppercase tracking-widest mb-3" style={{ color: C.slate }}>{t('merchant.section_tiers')}</p>
         <div className="flex flex-col gap-1.5">
           {[
-            { range: '< 50 CATR',      tier: 'Automático' },
-            { range: '50 – 500 CATR',  tier: 'Aprobación admin' },
-            { range: '> 500 CATR',     tier: 'VaultOp (Gnosis Safe 2-de-2)' },
+            { range: '< 50 CATR',      tier: t('merchant.tier_auto') },
+            { range: '50 – 500 CATR',  tier: t('merchant.tier_admin') },
+            { range: '> 500 CATR',     tier: t('merchant.tier_vault') },
           ].map(({ range, tier: t }) => (
             <div key={range} className="flex justify-between">
               <span style={{ color: C.slate, fontSize: '0.75rem' }}>{range}</span>
@@ -872,13 +812,13 @@ function MovimientosTab({ merchant }: { merchant: Merchant }) {
 
   return (
     <div className="flex flex-col gap-4">
-      <Section title="Historial de movimientos">
+      <Section title={t('merchant.section_movements')}>
         {loading ? (
-          <p className="text-sm py-4 text-center" style={{ color: C.slate }}>Cargando…</p>
+          <p className="text-sm py-4 text-center" style={{ color: C.slate }}>{t('common.loading_short')}</p>
         ) : error ? (
           <StatusMsg type="error" msg={error} />
         ) : transactions.length === 0 ? (
-          <p className="text-sm py-4 text-center" style={{ color: C.slate }}>Sin movimientos aún.</p>
+          <p className="text-sm py-4 text-center" style={{ color: C.slate }}>{t('merchant.no_movements')}</p>
         ) : (
           <div className="flex flex-col gap-2">
             {transactions.map((tx) => (
@@ -897,7 +837,7 @@ function MovimientosTab({ merchant }: { merchant: Merchant }) {
                   <div>
                     <p className="text-sm font-semibold" style={{ color: C.white }}>
                       {tx.type === 'MINT'
-                        ? tx.source === 'ADMIN' ? 'Acreditación admin' : `Acreditación (${tx.source ?? 'sistema'})`
+                        ? tx.source === 'ADMIN' ? t('merchant.tx_admin') : `Acreditación (${tx.source ?? 'sistema'})`
                         : 'Puntos recibidos'}
                     </p>
                     <p className="text-xs" style={{ color: C.slate }}>
@@ -934,24 +874,24 @@ function AjustesTab({ merchant, onUpdate }: { merchant: Merchant; onUpdate: (m: 
       const res = await updateMerchantProfile(merchant.id, { name, category, contact_email: contactEmail });
       onUpdate(res.data);
       setProfileState('success');
-      setProfileMsg('Información actualizada.');
+      setProfileMsg(t('merchant.profile_updated'));
     } catch (err) {
       setProfileState('error');
-      setProfileMsg(err instanceof Error ? err.message : 'Error al guardar.');
+      setProfileMsg(err instanceof Error ? err.message : t('common.error_save'));
     }
   }
 
   return (
     <div className="flex flex-col gap-4">
-      <Section title="Información del negocio">
+      <Section title={t('merchant.section_business')}>
         <form onSubmit={handleSave} className="flex flex-col gap-3">
-          <Input label="Nombre del negocio" value={name} onChange={(e) => setName(e.target.value)} />
-          <Input label="Categoría" value={category} onChange={(e) => setCategory(e.target.value)} />
-          <Input label="Correo de contacto" type="email" value={contactEmail} onChange={(e) => setContactEmail(e.target.value)} />
+          <Input label={t('merchant.label_business_name')} value={name} onChange={(e) => setName(e.target.value)} />
+          <Input label={t('merchant.label_category')} value={category} onChange={(e) => setCategory(e.target.value)} />
+          <Input label={t('merchant.label_contact_email')} type="email" value={contactEmail} onChange={(e) => setContactEmail(e.target.value)} />
           {profileState === 'success' && <StatusMsg type="success" msg={profileMsg} />}
           {profileState === 'error'   && <StatusMsg type="error"   msg={profileMsg} />}
           <PrimaryBtn type="submit" disabled={profileState === 'loading'}>
-            {profileState === 'loading' ? 'Guardando' : 'Guardar cambios'}
+            {profileState === 'loading' ? t('common.saving') : t('common.save')}
           </PrimaryBtn>
         </form>
       </Section>
