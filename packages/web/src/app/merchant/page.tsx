@@ -932,7 +932,7 @@ function AjustesTab({ merchant, token, onUpdate }: { merchant: Merchant; token: 
     setProfileState('loading');
     setProfileMsg('');
     try {
-      const res = await updateMerchantProfile(merchant.id, { name, category, contact_email: contactEmail });
+      const res = await updateMerchantProfile(merchant.id, { name, category, contact_email: contactEmail }, token);
       onUpdate(res.data);
       setProfileState('success');
       setProfileMsg(t('merchant.profile_updated'));

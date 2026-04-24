@@ -212,11 +212,12 @@ export function updateMerchantPayout(
 
 export function updateMerchantProfile(
   id: string,
-  body: { name?: string; category?: string; contact_email?: string }
+  body: { name?: string; category?: string; contact_email?: string },
+  token: string,
 ) {
   return apiFetch<{ data: Merchant }>(`/api/merchants/${id}/profile`, {
     method: 'PATCH',
-    headers: jsonHeaders(),
+    headers: authHeaders(token),
     body: JSON.stringify(body),
   });
 }
