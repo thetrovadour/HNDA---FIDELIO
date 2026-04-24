@@ -1,7 +1,7 @@
 import { Router, Request, Response } from 'express';
 import { z } from 'zod';
 import { validate } from '../middleware/validate';
-import { adminAuth } from '../middleware/auth';
+import { adminAuth, merchantAuth } from '../middleware/auth';
 import db from '../db';
 import { initGcaAllocation } from '../services/gca_service';
 import { RedemptionService } from '../services/redemption_service';
@@ -38,7 +38,7 @@ export function merchantsRouter(redemptionService: RedemptionService): Router {
     res.status(200).json({ data: merchant });
   });
 
-  router.get('/:id/balance', async (req: Request, res: Response) => {
+  router.get('/:id/balance', merchantAuth, async (req: Request, res: Response) => {
     const merchant = await db.merchant.findUnique({ where: { id: req.params.id } });
     if (!merchant) {
       res.status(404).json({ error: 'Merchant not found', code: 'NOT_FOUND' });
@@ -76,7 +76,7 @@ export function merchantsRouter(redemptionService: RedemptionService): Router {
     });
   });
 
-  router.get('/:id/transactions', async (req: Request, res: Response) => {
+  router.get('/:id/transactions', merchantAuth, async (req: Request, res: Response) => {
     const merchant = await db.merchant.findUnique({ where: { id: req.params.id } });
     if (!merchant) {
       res.status(404).json({ error: 'Merchant not found', code: 'NOT_FOUND' });
@@ -115,7 +115,7 @@ export function merchantsRouter(redemptionService: RedemptionService): Router {
     res.status(200).json({ data: all });
   });
 
-  router.get('/:id/redemptions', async (req: Request, res: Response) => {
+  router.get('/:id/redemptions', merchantAuth, async (req: Request, res: Response) => {
     const redemptions = await db.redemptionRequest.findMany({
       where: { merchant_id: req.params.id },
       orderBy: { created_at: 'desc' },
@@ -123,7 +123,7 @@ export function merchantsRouter(redemptionService: RedemptionService): Router {
     res.status(200).json({ data: redemptions });
   });
 
-  router.post('/:id/redemptions', validate(MerchantRedemptionSchema), async (req: Request, res: Response) => {
+  router.post('/:id/redemptions', merchantAuth, validate(MerchantRedemptionSchema), async (req: Request, res: Response) => {
     try {
       const result = await redemptionService.createRequest(req.params.id, req.body.amount_catr);
       res.status(201).json({ data: result });
@@ -140,7 +140,7 @@ export function merchantsRouter(redemptionService: RedemptionService): Router {
     contact_email: z.string().email().optional(),
   });
 
-  router.patch('/:id/profile', validate(UpdateProfileSchema), async (req: Request, res: Response) => {
+  router.patch('/:id/profile', merchantAuth, validate(UpdateProfileSchema), async (req: Request, res: Response) => {
     const merchant = await db.merchant.findUnique({ where: { id: req.params.id } });
     if (!merchant) {
       res.status(404).json({ error: 'Merchant not found', code: 'NOT_FOUND' });
@@ -160,7 +160,7 @@ export function merchantsRouter(redemptionService: RedemptionService): Router {
     notify_redemption_update: z.boolean().optional(),
   });
 
-  router.patch('/:id/notifications', validate(UpdateMerchantNotificationsSchema), async (req: Request, res: Response) => {
+  router.patch('/:id/notifications', merchantAuth, validate(UpdateMerchantNotificationsSchema), async (req: Request, res: Response) => {
     const merchant = await db.merchant.findUnique({ where: { id: req.params.id } });
     if (!merchant) {
       res.status(404).json({ error: 'Merchant not found', code: 'NOT_FOUND' });
@@ -179,7 +179,7 @@ export function merchantsRouter(redemptionService: RedemptionService): Router {
     payout_crypto_address: z.string().optional(),
   });
 
-  router.patch('/:id/payout', validate(UpdateMerchantPayoutSchema), async (req: Request, res: Response) => {
+  router.patch('/:id/payout', merchantAuth, validate(UpdateMerchantPayoutSchema), async (req: Request, res: Response) => {
     const merchant = await db.merchant.findUnique({ where: { id: req.params.id } });
     if (!merchant) {
       res.status(404).json({ error: 'Merchant not found', code: 'NOT_FOUND' });
