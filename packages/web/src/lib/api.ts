@@ -44,7 +44,7 @@ export function merchantLogin(body: { full_name: string; credential: string }) {
     };
   }>('/api/auth/merchant-login', {
     method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
+    headers: jsonHeaders(),
     body: JSON.stringify(body),
   });
 }
@@ -162,10 +162,10 @@ export function getMerchantRedemptions(id: string, token: string) {
   });
 }
 
-export function createMerchantRedemption(merchantId: string, amount_catr: number, token: string) {
+export function createMerchantRedemption(merchantId: string, amount_catr: string, token: string) {
   return apiFetch<{ data: RedemptionRequest }>(`/api/merchants/${merchantId}/redemptions`, {
     method: 'POST',
-    headers: { ...authHeaders(token), 'Content-Type': 'application/json' },
+    headers: authHeaders(token),
     body: JSON.stringify({ amount_catr }),
   });
 }
@@ -188,7 +188,7 @@ export function updateMerchantNotifications(
 ) {
   return apiFetch<{ data: { notify_redemption_update: boolean } }>(`/api/merchants/${id}/notifications`, {
     method: 'PATCH',
-    headers: { ...authHeaders(token), 'Content-Type': 'application/json' },
+    headers: authHeaders(token),
     body: JSON.stringify(body),
   });
 }
@@ -205,7 +205,7 @@ export function updateMerchantPayout(
 ) {
   return apiFetch<{ data: Merchant }>(`/api/merchants/${id}/payout`, {
     method: 'PATCH',
-    headers: { ...authHeaders(token), 'Content-Type': 'application/json' },
+    headers: authHeaders(token),
     body: JSON.stringify(body),
   });
 }
