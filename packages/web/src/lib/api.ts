@@ -36,6 +36,19 @@ export function pilotLogin(body: { full_name: string; credential: string }) {
   });
 }
 
+export function merchantLogin(body: { full_name: string; credential: string }) {
+  return apiFetch<{
+    data: {
+      token: string;
+      merchant: Merchant;
+    };
+  }>('/api/auth/merchant-login', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(body),
+  });
+}
+
 export function forgotPassword(email: string) {
   return apiFetch<{ data: { ok: boolean } }>('/api/auth/forgot-password', {
     method: 'POST',
@@ -131,22 +144,28 @@ export function getMerchantPublic(id: string) {
   return apiFetch<{ data: Merchant }>(`/api/merchants/${id}/public`);
 }
 
-export function getMerchantBalance(id: string) {
-  return apiFetch<{ data: MerchantBalance }>(`/api/merchants/${id}/balance`);
+export function getMerchantBalance(id: string, token: string) {
+  return apiFetch<{ data: MerchantBalance }>(`/api/merchants/${id}/balance`, {
+    headers: authHeaders(token),
+  });
 }
 
-export function getMerchantTransactions(id: string) {
-  return apiFetch<{ data: MerchantTransaction[] }>(`/api/merchants/${id}/transactions`);
+export function getMerchantTransactions(id: string, token: string) {
+  return apiFetch<{ data: MerchantTransaction[] }>(`/api/merchants/${id}/transactions`, {
+    headers: authHeaders(token),
+  });
 }
 
-export function getMerchantRedemptions(id: string) {
-  return apiFetch<{ data: RedemptionRequest[] }>(`/api/merchants/${id}/redemptions`);
+export function getMerchantRedemptions(id: string, token: string) {
+  return apiFetch<{ data: RedemptionRequest[] }>(`/api/merchants/${id}/redemptions`, {
+    headers: authHeaders(token),
+  });
 }
 
-export function createMerchantRedemption(merchantId: string, amount_catr: string) {
+export function createMerchantRedemption(merchantId: string, amount_catr: number, token: string) {
   return apiFetch<{ data: RedemptionRequest }>(`/api/merchants/${merchantId}/redemptions`, {
     method: 'POST',
-    headers: jsonHeaders(),
+    headers: { ...authHeaders(token), 'Content-Type': 'application/json' },
     body: JSON.stringify({ amount_catr }),
   });
 }
@@ -162,10 +181,14 @@ export function createMerchant(
   });
 }
 
-export function updateMerchantNotifications(id: string, body: { notify_redemption_update?: boolean }) {
+export function updateMerchantNotifications(
+  id: string,
+  body: { notify_redemption_update?: boolean },
+  token: string,
+) {
   return apiFetch<{ data: { notify_redemption_update: boolean } }>(`/api/merchants/${id}/notifications`, {
     method: 'PATCH',
-    headers: jsonHeaders(),
+    headers: { ...authHeaders(token), 'Content-Type': 'application/json' },
     body: JSON.stringify(body),
   });
 }
@@ -177,11 +200,12 @@ export function updateMerchantPayout(
     payout_account_number?: string;
     payout_account_type?: 'SAVINGS' | 'CHECKING';
     payout_crypto_address?: string;
-  }
+  },
+  token: string,
 ) {
   return apiFetch<{ data: Merchant }>(`/api/merchants/${id}/payout`, {
     method: 'PATCH',
-    headers: jsonHeaders(),
+    headers: { ...authHeaders(token), 'Content-Type': 'application/json' },
     body: JSON.stringify(body),
   });
 }
