@@ -103,6 +103,8 @@ export function authRouter(): Router {
           catr_balance: user.wallet?.catr_balance?.toString() ?? '0',
           wallet_address: user.wallet?.address,
           created_at: user.created_at,
+          notify_points_received: user.notify_points_received,
+          notify_milestone_near:  user.notify_milestone_near,
         },
         transactions: transactions.map((tx) => ({
           id: tx.id,

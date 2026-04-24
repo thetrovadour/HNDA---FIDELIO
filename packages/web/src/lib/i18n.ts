@@ -116,6 +116,19 @@ export const esHN = {
   'client.apply_merchant':    'Aplicar para Comercio',
   'client.section_password':  'Cambiar contraseña',
 
+  // Client — biometric
+  'client.section_biometric':     'Autenticación biométrica',
+  'client.biometric_soon':        'Próximamente',
+  'client.biometric_desc':        'Activa tu huella o reconocimiento facial para acceder sin contraseña.',
+
+  // Client — notifications
+  'client.section_notifications':       'Notificaciones',
+  'client.notif_points_received_label': 'Puntos recibidos',
+  'client.notif_points_received_desc':  'Notifícame cuando reciba puntos CATR.',
+  'client.notif_milestone_label':       'Cerca de un hito',
+  'client.notif_milestone_desc':        'Notifícame cuando esté próximo a desbloquear una recompensa.',
+  'client.notifications_updated':       'Preferencias guardadas.',
+
   // Client — red tab
   'client.back_to_network':   '← Volver a la red',
   'client.new_transaction':   'Nueva transacción',
@@ -173,6 +186,26 @@ export const esHN = {
   'merchant.label_business_name': 'Nombre del negocio',
   'merchant.label_contact_email': 'Correo de contacto',
   'merchant.profile_updated':     'Información actualizada.',
+
+  // Merchant — biometric
+  'merchant.section_biometric': 'Autenticación biométrica',
+
+  // Merchant — notifications
+  'merchant.section_notifications':        'Notificaciones',
+  'merchant.notif_redemption_label':       'Actualizaciones de canje',
+  'merchant.notif_redemption_desc':        'Notifícame cuando el estado de una solicitud de canje cambie.',
+  'merchant.notifications_updated':        'Preferencias guardadas.',
+
+  // Merchant — payout
+  'merchant.section_payout':           'Datos de pago',
+  'merchant.payout_desc':              'HNDA usará estos datos para transferirte Lempiras al canjear CATR.',
+  'merchant.label_payout_bank':        'Banco',
+  'merchant.label_payout_account':     'Número de cuenta',
+  'merchant.label_payout_type':        'Tipo de cuenta',
+  'merchant.payout_savings':           'Ahorro',
+  'merchant.payout_checking':          'Corriente',
+  'merchant.label_crypto_address':     'Dirección cripto (opcional)',
+  'merchant.payout_updated':           'Datos de pago actualizados.',
 } as const;
 
 export const enUS: Record<keyof typeof esHN, string> = {
@@ -293,6 +326,19 @@ export const enUS: Record<keyof typeof esHN, string> = {
   'client.apply_merchant':    'Apply as Merchant',
   'client.section_password':  'Change password',
 
+  // Client — biometric
+  'client.section_biometric': 'Biometric authentication',
+  'client.biometric_soon':    'Coming soon',
+  'client.biometric_desc':    'Activate fingerprint or facial recognition to sign in without a password.',
+
+  // Client — notifications
+  'client.section_notifications':       'Notifications',
+  'client.notif_points_received_label': 'Points received',
+  'client.notif_points_received_desc':  'Notify me when I receive CATR points.',
+  'client.notif_milestone_label':       'Near a milestone',
+  'client.notif_milestone_desc':        'Notify me when I am close to unlocking a reward.',
+  'client.notifications_updated':       'Preferences saved.',
+
   // Client — red tab
   'client.back_to_network':   '← Back to network',
   'client.new_transaction':   'New transaction',
@@ -350,6 +396,26 @@ export const enUS: Record<keyof typeof esHN, string> = {
   'merchant.label_business_name': 'Business name',
   'merchant.label_contact_email': 'Contact email',
   'merchant.profile_updated':     'Information updated.',
+
+  // Merchant — biometric
+  'merchant.section_biometric': 'Biometric authentication',
+
+  // Merchant — notifications
+  'merchant.section_notifications':        'Notifications',
+  'merchant.notif_redemption_label':       'Redemption updates',
+  'merchant.notif_redemption_desc':        'Notify me when a redemption request status changes.',
+  'merchant.notifications_updated':        'Preferences saved.',
+
+  // Merchant — payout
+  'merchant.section_payout':           'Payment details',
+  'merchant.payout_desc':              'HNDA will use these details to transfer Lempiras when you redeem CATR.',
+  'merchant.label_payout_bank':        'Bank',
+  'merchant.label_payout_account':     'Account number',
+  'merchant.label_payout_type':        'Account type',
+  'merchant.payout_savings':           'Savings',
+  'merchant.payout_checking':          'Checking',
+  'merchant.label_crypto_address':     'Crypto address (optional)',
+  'merchant.payout_updated':           'Payment details updated.',
 };
 
 export type Key = keyof typeof esHN;

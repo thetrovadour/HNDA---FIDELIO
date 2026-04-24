@@ -48,7 +48,7 @@ For additional project context, see `Organization and Research/Fidelio-Architect
 | `webhook_receiver.cpp` | ✅ Complete — 12/12 tests passing |
 | `nfc_reader.cpp` | ✅ Complete — 14/14 tests passing |
 | `vault_monitor.cpp` | ✅ Complete — 10/10 tests passing (stub backend, Phase A wires the real one) |
-| Node.js Bridge (`packages/merlink/bridge/`) | ⬜ Next |
+| Node.js Bridge (`packages/merlink/bridge/`) | ⬜ Node |
 
 **Total tests passing: 87/87**
 

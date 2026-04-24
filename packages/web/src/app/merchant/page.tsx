@@ -13,6 +13,8 @@ import {
   getGcaBalance,
   redeemGca,
   updateMerchantProfile,
+  updateMerchantNotifications,
+  updateMerchantPayout,
   type Merchant,
   type MerchantBalance,
   type MerchantTransaction,
@@ -857,6 +859,44 @@ function MovimientosTab({ merchant }: { merchant: Merchant }) {
   );
 }
 
+// ─── Toggle ───────────────────────────────────────────────────────────────────
+
+function Toggle({ value, onChange, disabled }: { value: boolean; onChange: (v: boolean) => void; disabled?: boolean }) {
+  return (
+    <button
+      type="button"
+      onClick={() => !disabled && onChange(!value)}
+      className="relative rounded-full flex-shrink-0 transition-all"
+      style={{
+        width: 44, height: 24,
+        background: value ? C.gold : 'rgba(255,255,255,0.1)',
+        border: `1px solid ${value ? 'rgba(201,168,76,0.5)' : C.border}`,
+        opacity: disabled ? 0.4 : 1,
+        cursor: disabled ? 'not-allowed' : 'pointer',
+      }}
+    >
+      <span
+        className="absolute top-0.5 rounded-full transition-all"
+        style={{ width: 18, height: 18, background: C.white, left: value ? 22 : 3 }}
+      />
+    </button>
+  );
+}
+
+function NotifRow({ label, desc, value, onChange, disabled }: {
+  label: string; desc: string; value: boolean; onChange: (v: boolean) => void; disabled?: boolean;
+}) {
+  return (
+    <div className="flex items-center justify-between gap-4 rounded-xl px-4 py-3" style={{ background: C.surfaceHi, border: `1px solid ${C.border}` }}>
+      <div>
+        <p className="text-sm font-semibold" style={{ color: C.white }}>{label}</p>
+        <p className="text-xs mt-0.5" style={{ color: C.slate }}>{desc}</p>
+      </div>
+      <Toggle value={value} onChange={onChange} disabled={disabled} />
+    </div>
+  );
+}
+
 // ─── Tab: Ajustes ─────────────────────────────────────────────────────────────
 
 function AjustesTab({ merchant, onUpdate }: { merchant: Merchant; onUpdate: (m: Merchant) => void }) {
@@ -865,6 +905,17 @@ function AjustesTab({ merchant, onUpdate }: { merchant: Merchant; onUpdate: (m: 
   const [contactEmail, setContactEmail] = useState(merchant.contact_email);
   const [profileState, setProfileState] = useState<'idle' | 'loading' | 'success' | 'error'>('idle');
   const [profileMsg, setProfileMsg] = useState('');
+
+  const [notifRedemption, setNotifRedemption] = useState(merchant.notify_redemption_update ?? true);
+  const [notifSaving, setNotifSaving] = useState(false);
+  const [notifMsg, setNotifMsg] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
+
+  const [payoutBank, setPayoutBank] = useState(merchant.payout_bank ?? '');
+  const [payoutAccount, setPayoutAccount] = useState(merchant.payout_account_number ?? '');
+  const [payoutType, setPayoutType] = useState<'SAVINGS' | 'CHECKING'>(merchant.payout_account_type ?? 'SAVINGS');
+  const [payoutCrypto, setPayoutCrypto] = useState(merchant.payout_crypto_address ?? '');
+  const [payoutState, setPayoutState] = useState<'idle' | 'loading' | 'success' | 'error'>('idle');
+  const [payoutMsg, setPayoutMsg] = useState('');
 
   async function handleSave(e: React.FormEvent) {
     e.preventDefault();
@@ -881,6 +932,42 @@ function AjustesTab({ merchant, onUpdate }: { merchant: Merchant; onUpdate: (m: 
     }
   }
 
+  async function handleNotifToggle(value: boolean) {
+    setNotifRedemption(value);
+    setNotifSaving(true);
+    setNotifMsg(null);
+    try {
+      await updateMerchantNotifications(merchant.id, { notify_redemption_update: value });
+      onUpdate({ ...merchant, notify_redemption_update: value });
+      setNotifMsg({ type: 'success', text: t('merchant.notifications_updated') });
+    } catch {
+      setNotifRedemption(!value);
+      setNotifMsg({ type: 'error', text: t('common.error_save') });
+    } finally {
+      setNotifSaving(false);
+    }
+  }
+
+  async function handlePayoutSave(e: React.FormEvent) {
+    e.preventDefault();
+    setPayoutState('loading');
+    setPayoutMsg('');
+    try {
+      const res = await updateMerchantPayout(merchant.id, {
+        payout_bank: payoutBank || undefined,
+        payout_account_number: payoutAccount || undefined,
+        payout_account_type: payoutType,
+        payout_crypto_address: payoutCrypto || undefined,
+      });
+      onUpdate(res.data);
+      setPayoutState('success');
+      setPayoutMsg(t('merchant.payout_updated'));
+    } catch (err) {
+      setPayoutState('error');
+      setPayoutMsg(err instanceof Error ? err.message : t('common.error_save'));
+    }
+  }
+
   return (
     <div className="flex flex-col gap-4">
       <Section title={t('merchant.section_business')}>
@@ -892,6 +979,77 @@ function AjustesTab({ merchant, onUpdate }: { merchant: Merchant; onUpdate: (m: 
           {profileState === 'error'   && <StatusMsg type="error"   msg={profileMsg} />}
           <PrimaryBtn type="submit" disabled={profileState === 'loading'}>
             {profileState === 'loading' ? t('common.saving') : t('common.save')}
+          </PrimaryBtn>
+        </form>
+      </Section>
+
+      <Section title={t('merchant.section_biometric')}>
+        <div
+          className="flex items-center gap-4 rounded-xl px-4 py-4"
+          style={{ background: C.surfaceHi, border: `1px solid ${C.border}`, opacity: 0.6 }}
+        >
+          <div className="flex-1">
+            <p className="text-sm font-semibold" style={{ color: C.white }}>
+              Activa tu huella o reconocimiento facial para acceder sin contraseña.
+            </p>
+          </div>
+          <span
+            className="text-xs font-bold px-2 py-1 rounded-lg"
+            style={{ background: 'rgba(255,255,255,0.06)', color: C.slate, border: `1px solid ${C.border}`, whiteSpace: 'nowrap' }}
+          >
+            Próximamente
+          </span>
+        </div>
+      </Section>
+
+      <Section title={t('merchant.section_notifications')}>
+        <div className="flex flex-col gap-2">
+          <NotifRow
+            label={t('merchant.notif_redemption_label')}
+            desc={t('merchant.notif_redemption_desc')}
+            value={notifRedemption}
+            onChange={handleNotifToggle}
+            disabled={notifSaving}
+          />
+          {notifMsg && <StatusMsg type={notifMsg.type} msg={notifMsg.text} />}
+        </div>
+      </Section>
+
+      <Section title={t('merchant.section_payout')}>
+        <form onSubmit={handlePayoutSave} className="flex flex-col gap-3">
+          <p className="text-xs mb-1" style={{ color: C.slate }}>{t('merchant.payout_desc')}</p>
+          <Input label={t('merchant.label_payout_bank')} value={payoutBank} onChange={(e) => setPayoutBank(e.target.value)} placeholder="Banco Atlántida" />
+          <Input label={t('merchant.label_payout_account')} value={payoutAccount} onChange={(e) => setPayoutAccount(e.target.value)} placeholder="0000000000" />
+
+          <div className="flex flex-col gap-1.5">
+            <label className="uppercase tracking-widest" style={{ color: C.slate, fontFamily: 'var(--font-body)', fontSize: '0.65rem', fontWeight: 300 }}>
+              {t('merchant.label_payout_type')}
+            </label>
+            <div className="flex gap-3">
+              {(['SAVINGS', 'CHECKING'] as const).map((type) => (
+                <button
+                  key={type}
+                  type="button"
+                  onClick={() => setPayoutType(type)}
+                  className="flex-1 py-2.5 rounded-xl text-sm font-semibold transition-all"
+                  style={{
+                    background: payoutType === type ? C.goldDim : C.surfaceHi,
+                    border: `1px solid ${payoutType === type ? 'rgba(201,168,76,0.35)' : C.border}`,
+                    color: payoutType === type ? C.gold : C.slateHi,
+                  }}
+                >
+                  {type === 'SAVINGS' ? t('merchant.payout_savings') : t('merchant.payout_checking')}
+                </button>
+              ))}
+            </div>
+          </div>
+
+          <Input label={t('merchant.label_crypto_address')} value={payoutCrypto} onChange={(e) => setPayoutCrypto(e.target.value)} placeholder="0x..." />
+
+          {payoutState === 'success' && <StatusMsg type="success" msg={payoutMsg} />}
+          {payoutState === 'error'   && <StatusMsg type="error"   msg={payoutMsg} />}
+          <PrimaryBtn type="submit" disabled={payoutState === 'loading'}>
+            {payoutState === 'loading' ? t('common.saving') : t('common.save')}
           </PrimaryBtn>
         </form>
       </Section>

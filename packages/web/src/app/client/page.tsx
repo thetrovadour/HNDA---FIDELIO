@@ -8,6 +8,7 @@ import {
   getUser,
   getUserTransactions,
   updateUser,
+  updateUserNotifications,
   setPassword,
   forgotPassword,
   resetPassword,
@@ -570,6 +571,44 @@ function ActividadTab({ transactions, milestones }: { transactions: Transaction[
   );
 }
 
+// ─── Toggle ───────────────────────────────────────────────────────────────────
+
+function Toggle({ value, onChange, disabled }: { value: boolean; onChange: (v: boolean) => void; disabled?: boolean }) {
+  return (
+    <button
+      type="button"
+      onClick={() => !disabled && onChange(!value)}
+      className="relative rounded-full flex-shrink-0 transition-all"
+      style={{
+        width: 44, height: 24,
+        background: value ? C.gold : 'rgba(255,255,255,0.1)',
+        border: `1px solid ${value ? 'rgba(201,168,76,0.5)' : C.border}`,
+        opacity: disabled ? 0.4 : 1,
+        cursor: disabled ? 'not-allowed' : 'pointer',
+      }}
+    >
+      <span
+        className="absolute top-0.5 rounded-full transition-all"
+        style={{ width: 18, height: 18, background: C.white, left: value ? 22 : 3 }}
+      />
+    </button>
+  );
+}
+
+function NotifRow({ label, desc, value, onChange, disabled }: {
+  label: string; desc: string; value: boolean; onChange: (v: boolean) => void; disabled?: boolean;
+}) {
+  return (
+    <div className="flex items-center justify-between gap-4 rounded-xl px-4 py-3" style={{ background: C.surfaceHi, border: `1px solid ${C.border}` }}>
+      <div>
+        <p className="text-sm font-semibold" style={{ color: C.white }}>{label}</p>
+        <p className="text-xs mt-0.5" style={{ color: C.slate }}>{desc}</p>
+      </div>
+      <Toggle value={value} onChange={onChange} disabled={disabled} />
+    </div>
+  );
+}
+
 // ─── Tab: Ajustes ─────────────────────────────────────────────────────────────
 
 function AjustesTab({ user, token, onUpdate }: { user: UserRecord; token: string; onUpdate: (u: UserRecord) => void }) {
@@ -584,6 +623,11 @@ function AjustesTab({ user, token, onUpdate }: { user: UserRecord; token: string
   const [confirmPassword, setConfirmPassword] = useState('');
   const [passState, setPassState] = useState<'idle' | 'loading' | 'success' | 'error'>('idle');
   const [passMsg, setPassMsg] = useState('');
+
+  const [notifPoints, setNotifPoints] = useState(user.notify_points_received ?? true);
+  const [notifMilestone, setNotifMilestone] = useState(user.notify_milestone_near ?? true);
+  const [notifSaving, setNotifSaving] = useState(false);
+  const [notifMsg, setNotifMsg] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
 
   async function handleProfileSave(e: React.FormEvent) {
     e.preventDefault();
@@ -622,6 +666,29 @@ function AjustesTab({ user, token, onUpdate }: { user: UserRecord; token: string
     } catch (err) {
       setPassState('error');
       setPassMsg(err instanceof Error ? err.message : t('client.error_change_password'));
+    }
+  }
+
+  async function handleNotifToggle(field: 'points' | 'milestone', value: boolean) {
+    const update = field === 'points'
+      ? { notify_points_received: value }
+      : { notify_milestone_near: value };
+
+    if (field === 'points') setNotifPoints(value);
+    else setNotifMilestone(value);
+
+    setNotifSaving(true);
+    setNotifMsg(null);
+    try {
+      await updateUserNotifications(user.id, update, token);
+      onUpdate({ ...user, notify_points_received: field === 'points' ? value : notifPoints, notify_milestone_near: field === 'milestone' ? value : notifMilestone });
+      setNotifMsg({ type: 'success', text: t('client.notifications_updated') });
+    } catch {
+      if (field === 'points') setNotifPoints(!value);
+      else setNotifMilestone(!value);
+      setNotifMsg({ type: 'error', text: t('common.error_save') });
+    } finally {
+      setNotifSaving(false);
     }
   }
 
@@ -664,6 +731,43 @@ function AjustesTab({ user, token, onUpdate }: { user: UserRecord; token: string
             {passState === 'loading' ? t('common.saving') : t('client.btn_change_password')}
           </PrimaryBtn>
         </form>
+      </Section>
+
+      <Section title={t('client.section_biometric')}>
+        <div
+          className="flex items-center gap-4 rounded-xl px-4 py-4"
+          style={{ background: C.surfaceHi, border: `1px solid ${C.border}`, opacity: 0.6 }}
+        >
+          <div className="flex-1">
+            <p className="text-sm font-semibold" style={{ color: C.white }}>{t('client.biometric_desc')}</p>
+          </div>
+          <span
+            className="text-xs font-bold px-2 py-1 rounded-lg"
+            style={{ background: 'rgba(255,255,255,0.06)', color: C.slate, border: `1px solid ${C.border}`, whiteSpace: 'nowrap' }}
+          >
+            {t('client.biometric_soon')}
+          </span>
+        </div>
+      </Section>
+
+      <Section title={t('client.section_notifications')}>
+        <div className="flex flex-col gap-2">
+          <NotifRow
+            label={t('client.notif_points_received_label')}
+            desc={t('client.notif_points_received_desc')}
+            value={notifPoints}
+            onChange={(v) => handleNotifToggle('points', v)}
+            disabled={notifSaving}
+          />
+          <NotifRow
+            label={t('client.notif_milestone_label')}
+            desc={t('client.notif_milestone_desc')}
+            value={notifMilestone}
+            onChange={(v) => handleNotifToggle('milestone', v)}
+            disabled={notifSaving}
+          />
+          {notifMsg && <StatusMsg type={notifMsg.type} msg={notifMsg.text} />}
+        </div>
       </Section>
     </div>
   );

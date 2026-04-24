@@ -154,6 +154,45 @@ export function merchantsRouter(redemptionService: RedemptionService): Router {
     }
   });
 
+  // ── Merchant self-service notifications ────────────────────────────────────
+
+  const UpdateMerchantNotificationsSchema = z.object({
+    notify_redemption_update: z.boolean().optional(),
+  });
+
+  router.patch('/:id/notifications', validate(UpdateMerchantNotificationsSchema), async (req: Request, res: Response) => {
+    const merchant = await db.merchant.findUnique({ where: { id: req.params.id } });
+    if (!merchant) {
+      res.status(404).json({ error: 'Merchant not found', code: 'NOT_FOUND' });
+      return;
+    }
+    const updated = await db.merchant.update({ where: { id: req.params.id }, data: req.body });
+    res.status(200).json({ data: { notify_redemption_update: updated.notify_redemption_update } });
+  });
+
+  // ── Merchant self-service payout preferences ────────────────────────────────
+
+  const UpdateMerchantPayoutSchema = z.object({
+    payout_bank:           z.string().optional(),
+    payout_account_number: z.string().optional(),
+    payout_account_type:   z.enum(['SAVINGS', 'CHECKING']).optional(),
+    payout_crypto_address: z.string().optional(),
+  });
+
+  router.patch('/:id/payout', validate(UpdateMerchantPayoutSchema), async (req: Request, res: Response) => {
+    const merchant = await db.merchant.findUnique({ where: { id: req.params.id } });
+    if (!merchant) {
+      res.status(404).json({ error: 'Merchant not found', code: 'NOT_FOUND' });
+      return;
+    }
+    try {
+      const updated = await db.merchant.update({ where: { id: req.params.id }, data: req.body });
+      res.status(200).json({ data: updated });
+    } catch (err: any) {
+      res.status(400).json({ error: err.message, code: 'BAD_REQUEST' });
+    }
+  });
+
   // ── Admin routes ─────────────────────────────────────────────────────────────
 
   router.get('/', adminAuth, async (_req: Request, res: Response) => {

@@ -4,7 +4,7 @@ import { Decimal } from '@prisma/client/runtime/library';
 import { PrismaClient } from '@prisma/client';
 import { adminAuth } from '../middleware/auth';
 import { validate } from '../middleware/validate';
-import { currentPriceFloor } from '../services/gca_service';
+import { currentPriceFloor, evaluateGcaVesting } from '../services/gca_service';
 
 const TradeSchema = z.object({
   from_merchant_id: z.string().uuid(),
@@ -143,6 +143,42 @@ export function gcaRouter(db: PrismaClient): Router {
   });
 
   // ── Admin endpoints ──────────────────────────────────────────────────────────
+
+  // GET /api/gca/admin/merchants — all merchants' GCA allocations
+  router.get('/admin/merchants', adminAuth, async (_req: Request, res: Response) => {
+    const allocations = await db.merchantGcaAllocation.findMany({
+      include: { merchant: { select: { id: true, name: true } } },
+      orderBy: { gca_balance: 'desc' },
+    });
+    const priceFloor = await currentPriceFloor(db);
+    const data = allocations.map((a) => ({
+      merchant_id:             a.merchant_id,
+      merchant_name:           a.merchant.name,
+      gca_balance:             a.gca_balance,
+      milestones_claimed:      a.milestones_claimed,
+      lifetime_effective_catr: a.lifetime_effective_catr,
+      next_milestone_at:       new Decimal((a.milestones_claimed + 1) * 25000).toFixed(2),
+      estimated_hnl_value:     new Decimal(a.gca_balance).mul(priceFloor).toFixed(2),
+      price_floor_hnl:         priceFloor.toFixed(4),
+    }));
+    res.status(200).json({ data });
+  });
+
+  // POST /api/gca/admin/vest/:merchant_id — manually trigger vesting evaluation
+  router.post('/admin/vest/:merchant_id', adminAuth, async (req: Request, res: Response) => {
+    const allocation = await db.merchantGcaAllocation.findUnique({
+      where: { merchant_id: req.params.merchant_id },
+    });
+    if (!allocation) {
+      res.status(404).json({ error: 'No GCA allocation found', code: 'NOT_FOUND' });
+      return;
+    }
+    await evaluateGcaVesting(db, req.params.merchant_id);
+    const updated = await db.merchantGcaAllocation.findUnique({
+      where: { merchant_id: req.params.merchant_id },
+    });
+    res.status(200).json({ data: { ok: true, new_balance: updated?.gca_balance, milestones_claimed: updated?.milestones_claimed } });
+  });
 
   // GET /api/gca/admin/redemptions — pending redemption queue
   router.get('/admin/redemptions', adminAuth, async (_req: Request, res: Response) => {

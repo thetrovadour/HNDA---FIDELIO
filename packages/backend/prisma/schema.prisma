@@ -18,6 +18,8 @@ model User {
   password_hash          String?
   reset_code             String?
   reset_code_expires_at  DateTime?
+  notify_points_received Boolean   @default(true)
+  notify_milestone_near  Boolean   @default(true)
   owned_merchants Merchant[]        @relation("merchant_owner")
   merchant_visits MerchantVisit[]
   referrals_recv  Referral?         @relation("referred")
@@ -50,8 +52,13 @@ model Merchant {
   active              Boolean                @default(true)
   created_at          DateTime               @default(now())
   updated_at          DateTime               @updatedAt
-  owner_user_id       String?
-  gca_redemptions     GcaRedemptionRequest[]
+  owner_user_id            String?
+  notify_redemption_update Boolean          @default(true)
+  payout_bank              String?
+  payout_account_number    String?
+  payout_account_type      BankAccountType?
+  payout_crypto_address    String?
+  gca_redemptions          GcaRedemptionRequest[]
   gca_transactions    GcaTransaction[]
   owner               User?                  @relation("merchant_owner", fields: [owner_user_id], references: [id])
   gca_allocation      MerchantGcaAllocation?
@@ -352,4 +359,9 @@ enum GcaRedemptionStatus {
   PENDING
   APPROVED
   REJECTED
+}
+
+enum BankAccountType {
+  SAVINGS
+  CHECKING
 }

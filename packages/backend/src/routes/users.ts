@@ -4,6 +4,7 @@ import { validate } from '../middleware/validate';
 import { adminAuth, selfOrAdmin } from '../middleware/auth';
 import { UserService } from '../services/user_service';
 import { TransactionService } from '../services/transaction_service';
+import db from '../db';
 
 const CreateUserSchema = z.object({
   full_name: z.string().min(1),
@@ -15,6 +16,11 @@ const UpdateUserSchema = z.object({
   full_name: z.string().min(1).optional(),
   email: z.string().email().optional(),
   phone: z.string().optional(),
+});
+
+const UpdateNotificationsSchema = z.object({
+  notify_points_received: z.boolean().optional(),
+  notify_milestone_near:  z.boolean().optional(),
 });
 
 export function usersRouter(userService: UserService, transactionService: TransactionService): Router {
@@ -43,8 +49,24 @@ export function usersRouter(userService: UserService, transactionService: Transa
         catr_balance: user.wallet?.catr_balance?.toString() ?? '0',
         wallet_address: user.wallet?.address,
         created_at: user.created_at,
+        notify_points_received: user.notify_points_received,
+        notify_milestone_near:  user.notify_milestone_near,
       },
     });
+  });
+
+  router.patch('/:id/notifications', selfOrAdmin, validate(UpdateNotificationsSchema), async (req: Request, res: Response) => {
+    try {
+      const user = await db.user.update({ where: { id: req.params.id }, data: req.body });
+      res.status(200).json({
+        data: {
+          notify_points_received: user.notify_points_received,
+          notify_milestone_near:  user.notify_milestone_near,
+        },
+      });
+    } catch (err: any) {
+      res.status(400).json({ error: err.message, code: 'BAD_REQUEST' });
+    }
   });
 
   router.patch('/:id', selfOrAdmin, validate(UpdateUserSchema), async (req: Request, res: Response) => {

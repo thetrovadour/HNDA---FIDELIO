@@ -73,6 +73,17 @@ export function setPassword(body: { user_id: string; current_credential: string;
 
 // --- User ---
 
+export function updateUserNotifications(
+  id: string,
+  body: { notify_points_received?: boolean; notify_milestone_near?: boolean },
+  token: string
+) {
+  return apiFetch<{ data: { notify_points_received: boolean; notify_milestone_near: boolean } }>(
+    `/api/users/${id}/notifications`,
+    { method: 'PATCH', headers: authHeaders(token), body: JSON.stringify(body) }
+  );
+}
+
 export function updateUser(id: string, body: { full_name?: string; email?: string; phone?: string }, token: string) {
   return apiFetch<{ data: UserRecord }>(`/api/users/${id}`, {
     method: 'PATCH',
@@ -147,6 +158,30 @@ export function createMerchant(
   return apiFetch<{ data: Merchant }>('/api/merchants', {
     method: 'POST',
     headers: authHeaders(token),
+    body: JSON.stringify(body),
+  });
+}
+
+export function updateMerchantNotifications(id: string, body: { notify_redemption_update?: boolean }) {
+  return apiFetch<{ data: { notify_redemption_update: boolean } }>(`/api/merchants/${id}/notifications`, {
+    method: 'PATCH',
+    headers: jsonHeaders(),
+    body: JSON.stringify(body),
+  });
+}
+
+export function updateMerchantPayout(
+  id: string,
+  body: {
+    payout_bank?: string;
+    payout_account_number?: string;
+    payout_account_type?: 'SAVINGS' | 'CHECKING';
+    payout_crypto_address?: string;
+  }
+) {
+  return apiFetch<{ data: Merchant }>(`/api/merchants/${id}/payout`, {
+    method: 'PATCH',
+    headers: jsonHeaders(),
     body: JSON.stringify(body),
   });
 }
@@ -288,6 +323,8 @@ export interface UserRecord {
   catr_balance: string;
   wallet_address?: string;
   created_at: string;
+  notify_points_received: boolean;
+  notify_milestone_near: boolean;
 }
 
 export interface Transaction {
@@ -311,6 +348,11 @@ export interface Merchant {
   wallet_address: string;
   contact_email: string;
   active: boolean;
+  notify_redemption_update: boolean;
+  payout_bank?: string | null;
+  payout_account_number?: string | null;
+  payout_account_type?: 'SAVINGS' | 'CHECKING' | null;
+  payout_crypto_address?: string | null;
 }
 
 export interface RedemptionRequest {
@@ -376,6 +418,43 @@ export interface GcaRedemptionRequest {
   status: string;
   created_at: string;
   merchant?: { id: string; name: string; wallet_address: string };
+}
+
+export interface GcaMerchantAllocation {
+  merchant_id: string;
+  merchant_name: string;
+  gca_balance: string;
+  milestones_claimed: number;
+  lifetime_effective_catr: string;
+  next_milestone_at: string;
+  estimated_hnl_value: string;
+  price_floor_hnl: string;
+}
+
+export interface GcaHistoryEntry {
+  id: string;
+  merchant_id: string;
+  type: string;
+  amount_gca: string;
+  notes?: string | null;
+  created_at: string;
+}
+
+export function getAdminGcaMerchants(token: string) {
+  return apiFetch<{ data: GcaMerchantAllocation[] }>('/api/gca/admin/merchants', {
+    headers: authHeaders(token),
+  });
+}
+
+export function adminVestMerchant(merchantId: string, token: string) {
+  return apiFetch<{ data: { ok: boolean; new_balance: string; milestones_claimed: number } }>(
+    `/api/gca/admin/vest/${merchantId}`,
+    { method: 'POST', headers: authHeaders(token) }
+  );
+}
+
+export function getGcaHistory(merchantId: string) {
+  return apiFetch<{ data: GcaHistoryEntry[] }>(`/api/gca/${merchantId}/history`);
 }
 
 export function getGcaBalance(merchantId: string) {

@@ -1,0 +1,1 @@
+This is Cristian speaking. As I am the only one that's been testing FIDELIO, I'll be talking in first person addressing the issues I've been seening.

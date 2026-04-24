@@ -880,3 +880,46 @@ Continued from previous session (context limit). Completed the full Spanish i18n
 - GCA admin script (`npm run gca`)
 - Auth security upgrades (password+passkey, optional JWT for merchants)
 - Fix `RunwayWidget` and `GcaAdminPanel` to use dark system tokens
+
+---
+
+### Session — 2026-04-24
+**Focus:** Configuration menu + GCA admin console
+
+### What happened
+
+1. **Configuration menu — client (`AjustesTab`)** — Expanded with two new sections:
+   - **Biometric stub** — grayed entry point card ("Próximamente") wired to no backend. Activates when WebAuthn auth upgrade lands.
+   - **Notifications** — two toggles (Puntos recibidos / Cerca de un hito), persisted per-toggle via `PATCH /api/users/:id/notifications`.
+
+2. **Configuration menu — merchant (`AjustesTab`)** — Expanded with three new sections:
+   - **Biometric stub** — same as client.
+   - **Notifications** — one toggle (Actualizaciones de canje), persisted via `PATCH /api/merchants/:id/notifications`.
+   - **Datos de pago** — bank name, account number, account type (Ahorro/Corriente selector), optional crypto address. Persisted via `PATCH /api/merchants/:id/payout`.
+
+3. **DB migration** — `20260424040859_add_notifications_and_payout_prefs`. Added to `User`: `notify_points_received`, `notify_milestone_near`. Added to `Merchant`: `notify_redemption_update`, `payout_bank`, `payout_account_number`, `payout_account_type` (`BankAccountType` enum: SAVINGS/CHECKING), `payout_crypto_address`.
+
+4. **Backend** — 3 new routes: `PATCH /users/:id/notifications`, `PATCH /merchants/:id/notifications`, `PATCH /merchants/:id/payout`. Login response updated to include notification prefs.
+
+5. **GCA admin console — `GcaAdminPanel.tsx` full rewrite** — Component rebuilt from scratch in FIDELIO dark design system:
+   - **Price floor section** — view active floor + set new one (existing, restyled).
+   - **Merchant GCA status** — all merchants ranked by balance. Each row: name, GCA balance, estimated HNL, milestones progress bar, lifetime CATR, next milestone threshold. Per-merchant **Vest button** (manually triggers `evaluateGcaVesting`) and **expand/collapse** for full transaction history (GIFT/VEST/TRADE/REDEEM with color-coded pills).
+   - **Pending GCA redemptions** — approve/reject queue (existing, restyled).
+
+6. **Backend** — 2 new GCA admin endpoints: `GET /api/gca/admin/merchants` and `POST /api/gca/admin/vest/:merchant_id`.
+
+7. **Build** — 4/4 packages passing, zero TypeScript errors.
+
+### Key decisions
+
+- Biometric entry point placed now (UI stub) so the config menu is complete as a structure. WebAuthn backend wired when auth upgrade sprint starts.
+- Notification prefs stored in DB per toggle tap — no batch save, immediate persistence.
+- Merchant payout type is a two-button selector (Ahorro/Corriente) rather than a dropdown — cleaner on mobile.
+- GCA admin script (CLI) replaced by the web console — all operations are now accessible from the admin panel without touching the DB.
+
+### Pending / next up
+
+- Passkey/biometric (WebAuthn) — backend challenge/credential storage
+- JWT sessions for merchants
+- In-app security reminder banner
+- LEMPIRAS_SENT auto-confirmation (BAC Credomatic API, Etapa 2)
