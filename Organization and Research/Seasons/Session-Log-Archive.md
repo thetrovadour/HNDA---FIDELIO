@@ -923,3 +923,50 @@ Continued from previous session (context limit). Completed the full Spanish i18n
 - JWT sessions for merchants
 - In-app security reminder banner
 - LEMPIRAS_SENT auto-confirmation (BAC Credomatic API, Etapa 2)
+
+---
+
+### Session — 2026-04-24
+**Focus:** Sprint 1 — Merchant Authentication
+
+#### What happened
+
+**Reviewed all pending work** — pulled `bugs-to-solve.md`, session log, and wiki (3 upgrade docs). Identified two remaining sprints: Sprint 1 (auth/security) and Sprint 2 (BAC Credomatic, Etapa 2).
+
+**Discovered inactivity logout already implemented** — `useInactivityLogout.ts` hook existed and was already wired into both client (5 min) and merchant (15 min) pages. Nothing to build.
+
+**Discovered merchant portal had no authentication** — The merchant `LoginScreen` was calling `getMerchantPublic(merchantId)` — just a public endpoint by UUID, no credentials, no JWT. All 7 merchant-specific backend routes had zero auth middleware. This was a larger security gap than the sprint originally scoped.
+
+**Built merchant auth from scratch — 8 commits (bb3f67a → b031899):**
+
+1. `merchantAuth` middleware — allows admin pass-through or merchant tokens scoped to `req.params.id`
+2. `POST /auth/merchant-login` — `full_name` + credential (bcrypt or PIN fallback) → merchant-scoped JWT `{ id, user_id, merchant_id, role: 'merchant' }` + full merchant record
+3. 7 merchant routes protected: `balance`, `transactions`, `redemptions`, `profile`, `notifications`, `payout` — all now require Bearer token
+4. `merchantLogin()` added to `api.ts`; `token` param added to all 6 merchant API functions
+5. `LoginScreen` rewritten — credential form replaces UUID lookup
+6. `MerchantPage` — `token` state, session restore, `handleLogin(m, t)`, `handleLogout`, polling effect all updated
+7. `CanjearTab`, `MovimientosTab`, `AjustesTab` — all accept and thread `token`
+8. Fixes from review: stale-closure polling deps, null-token session restore guard, `updateMerchantProfile` missing token (CRITICAL regression caught by final reviewer)
+
+**Build:** 4/4 packages passing, zero TypeScript errors.
+
+#### Key decisions
+
+1. **Merchant login uses `full_name` + credential** — same auth contract as client pilot login. Merchants with `password_hash` use bcrypt; PIN fallback for pilot users.
+2. **JWT payload: `{ id, user_id, merchant_id, role: 'merchant' }`** — `merchant_id` is the identity; `id`/`user_id` retained for middleware compatibility.
+3. **`getMerchantPublic` left public** — used by the client Red tab to display merchants for spending. Only self-service mutation routes are protected.
+4. **Security banner deferred** — no opt-in features to point to yet. Revisit when passkey lands.
+5. **Passkey (WebAuthn) deferred** — requires HTTPS; lands with `hnda.io` domain.
+
+#### Security debt noted (not blocking pilot)
+
+- JWT in `localStorage` — XSS-exfiltratable. Plan migration to HttpOnly cookie post-pilot.
+- No rate limiting on `/auth/merchant-login` — PIN brute-force possible. Add express-rate-limit before public launch.
+- Silent `.catch(() => {})` on polling — 401 on token expiry leaves UI silently stale. Wire logout-on-401 post-pilot.
+
+#### Pending / next up
+
+- Testing the merchant auth flow (Cristian testing locally)
+- Passkey / WebAuthn — lands when `hnda.io` is live on HTTPS
+- LEMPIRAS_SENT auto-confirmation (BAC Credomatic API, Etapa 2)
+- Fix pre-existing test failures: `bridge_events.test.ts` (missing `redemptionService` arg), `transaction_service.test.ts` (wallet mock)
