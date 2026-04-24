@@ -5,6 +5,7 @@ import { useState, useEffect } from 'react';
 import { t } from '@/lib/i18n';
 import { useInactivityLogout } from '@/hooks/useInactivityLogout';
 import {
+  merchantLogin,
   getMerchantPublic,
   getMerchantBalance,
   getMerchantTransactions,
@@ -167,19 +168,20 @@ import { IconStore, IconSwap, IconGem, IconList, IconCopy, IconSettings } from '
 
 // ─── Login screen ─────────────────────────────────────────────────────────────
 
-function LoginScreen({ onLogin, inactivity }: { onLogin: (merchant: Merchant) => void; inactivity?: boolean }) {
-  const [merchantId, setMerchantId] = useState('');
+function LoginScreen({ onLogin, inactivity }: { onLogin: (merchant: Merchant, token: string) => void; inactivity?: boolean }) {
+  const [fullName, setFullName] = useState('');
+  const [credential, setCredential] = useState('');
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
-    if (!merchantId.trim()) return;
+    if (!fullName.trim() || !credential.trim()) return;
     setLoading(true);
     setError('');
     try {
-      const res = await getMerchantPublic(merchantId.trim());
-      onLogin(res.data);
+      const res = await merchantLogin({ full_name: fullName.trim(), credential: credential.trim() });
+      onLogin(res.data.merchant, res.data.token);
     } catch {
       setError(t('merchant.error_not_found'));
     } finally {
@@ -226,20 +228,28 @@ function LoginScreen({ onLogin, inactivity }: { onLogin: (merchant: Merchant) =>
           style={{ background: C.surface }}
         >
           <Input
-            label={t('merchant.label_merchant_id')}
-            value={merchantId}
-            onChange={(e) => setMerchantId(e.target.value)}
-            placeholder="xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx"
-            autoComplete="off"
+            label="Nombre completo"
+            value={fullName}
+            onChange={(e) => setFullName(e.target.value)}
+            placeholder="Tu nombre completo"
+            autoComplete="name"
+          />
+          <Input
+            label="PIN o contraseña"
+            type="password"
+            value={credential}
+            onChange={(e) => setCredential(e.target.value)}
+            placeholder="PIN o contraseña"
+            autoComplete="current-password"
           />
 
           {inactivity && (
-            <StatusMsg type="error" msg={t('common.inactivity')} />
+            <StatusMsg type="error" msg="Sesión cerrada por inactividad." />
           )}
 
           {error && <StatusMsg type="error" msg={error} />}
 
-          <PrimaryBtn type="submit" disabled={loading || !merchantId.trim()}>
+          <PrimaryBtn type="submit" disabled={loading || !fullName.trim() || !credential.trim()}>
             {loading ? t('common.verifying') : t('common.access')}
           </PrimaryBtn>
 
@@ -457,7 +467,7 @@ function statusColor(status: string): string {
   return C.slateHi;
 }
 
-function CanjearTab({ merchant }: { merchant: Merchant }) {
+function CanjearTab({ merchant, token }: { merchant: Merchant; token: string }) {
   const [amount, setAmount] = useState('');
   const [state, setState] = useState<'idle' | 'loading' | 'success' | 'error'>('idle');
   const [msg, setMsg] = useState('');
@@ -465,13 +475,13 @@ function CanjearTab({ merchant }: { merchant: Merchant }) {
   const [loadingHistory, setLoadingHistory] = useState(true);
 
   useEffect(() => {
-    getMerchantRedemptions(merchant.id)
+    getMerchantRedemptions(merchant.id, token)
       .then((r) => setRedemptions(r.data))
       .catch(() => {})
       .finally(() => setLoadingHistory(false));
 
     const interval = setInterval(() => {
-      getMerchantRedemptions(merchant.id).then((r) => setRedemptions(r.data)).catch(() => {});
+      getMerchantRedemptions(merchant.id, token).then((r) => setRedemptions(r.data)).catch(() => {});
     }, 15_000);
     return () => clearInterval(interval);
   }, [merchant.id]);
@@ -482,7 +492,7 @@ function CanjearTab({ merchant }: { merchant: Merchant }) {
     setState('loading');
     setMsg('');
     try {
-      const res = await createMerchantRedemption(merchant.id, amount);
+      const res = await createMerchantRedemption(merchant.id, amount, token);
       setRedemptions((prev) => [res.data, ...prev]);
       setState('success');
       setMsg(`Solicitud enviada: ${parseFloat(amount).toFixed(2)} CATR → HNL`);
@@ -795,19 +805,19 @@ function GcaTab({ merchant }: { merchant: Merchant }) {
 
 // ─── Tab: Movimientos ─────────────────────────────────────────────────────────
 
-function MovimientosTab({ merchant }: { merchant: Merchant }) {
+function MovimientosTab({ merchant, token }: { merchant: Merchant; token: string }) {
   const [transactions, setTransactions] = useState<MerchantTransaction[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
 
   useEffect(() => {
-    getMerchantTransactions(merchant.id)
+    getMerchantTransactions(merchant.id, token)
       .then((r) => setTransactions(r.data))
       .catch((err) => setError(err instanceof Error ? err.message : 'Error al cargar movimientos.'))
       .finally(() => setLoading(false));
 
     const interval = setInterval(() => {
-      getMerchantTransactions(merchant.id).then((r) => setTransactions(r.data)).catch(() => {});
+      getMerchantTransactions(merchant.id, token).then((r) => setTransactions(r.data)).catch(() => {});
     }, 15_000);
     return () => clearInterval(interval);
   }, [merchant.id]);
@@ -899,7 +909,7 @@ function NotifRow({ label, desc, value, onChange, disabled }: {
 
 // ─── Tab: Ajustes ─────────────────────────────────────────────────────────────
 
-function AjustesTab({ merchant, onUpdate }: { merchant: Merchant; onUpdate: (m: Merchant) => void }) {
+function AjustesTab({ merchant, token, onUpdate }: { merchant: Merchant; token: string; onUpdate: (m: Merchant) => void }) {
   const [name, setName] = useState(merchant.name);
   const [category, setCategory] = useState(merchant.category);
   const [contactEmail, setContactEmail] = useState(merchant.contact_email);
@@ -937,7 +947,7 @@ function AjustesTab({ merchant, onUpdate }: { merchant: Merchant; onUpdate: (m: 
     setNotifSaving(true);
     setNotifMsg(null);
     try {
-      await updateMerchantNotifications(merchant.id, { notify_redemption_update: value });
+      await updateMerchantNotifications(merchant.id, { notify_redemption_update: value }, token);
       onUpdate({ ...merchant, notify_redemption_update: value });
       setNotifMsg({ type: 'success', text: t('merchant.notifications_updated') });
     } catch {
@@ -958,7 +968,7 @@ function AjustesTab({ merchant, onUpdate }: { merchant: Merchant; onUpdate: (m: 
         payout_account_number: payoutAccount || undefined,
         payout_account_type: payoutType,
         payout_crypto_address: payoutCrypto || undefined,
-      });
+      }, token);
       onUpdate(res.data);
       setPayoutState('success');
       setPayoutMsg(t('merchant.payout_updated'));
@@ -1064,6 +1074,7 @@ const SESSION_KEY = 'fidelio_merchant_session';
 export default function MerchantPage() {
   const [introComplete, setIntroComplete] = useState(false);
   const [merchant, setMerchant] = useState<Merchant | null>(null);
+  const [token, setToken] = useState<string | null>(null);
   const [balance, setBalance] = useState<MerchantBalance | null>(null);
   const [activeTab, setActiveTab] = useState<Tab>('negocio');
   const [inactivity, setInactivity] = useState(false);
@@ -1074,6 +1085,7 @@ export default function MerchantPage() {
     try {
       const session = JSON.parse(raw);
       setMerchant(session.merchant);
+      setToken(session.token ?? null);
       setIntroComplete(true);
     } catch {
       localStorage.removeItem(SESSION_KEY);
@@ -1081,13 +1093,13 @@ export default function MerchantPage() {
   }, []);
 
   useEffect(() => {
-    if (!merchant) return;
-    getMerchantBalance(merchant.id)
+    if (!merchant || !token) return;
+    getMerchantBalance(merchant.id, token)
       .then((r) => setBalance(r.data))
       .catch(() => {});
 
     const interval = setInterval(() => {
-      getMerchantBalance(merchant.id)
+      getMerchantBalance(merchant.id, token)
         .then((r) => setBalance(r.data))
         .catch(() => {});
       getMerchantPublic(merchant.id)
@@ -1095,22 +1107,28 @@ export default function MerchantPage() {
           if (r.data.active !== merchant.active) {
             const updated = { ...merchant, active: r.data.active };
             setMerchant(updated);
-            localStorage.setItem(SESSION_KEY, JSON.stringify({ merchant: updated }));
+            const raw = localStorage.getItem(SESSION_KEY);
+            if (raw) {
+              const s = JSON.parse(raw);
+              localStorage.setItem(SESSION_KEY, JSON.stringify({ ...s, merchant: updated }));
+            }
           }
         })
         .catch(() => {});
     }, 15_000);
     return () => clearInterval(interval);
-  }, [merchant?.id]);
+  }, [merchant?.id, token]);
 
-  function handleLogin(m: Merchant) {
+  function handleLogin(m: Merchant, t: string) {
     setMerchant(m);
-    localStorage.setItem(SESSION_KEY, JSON.stringify({ merchant: m }));
+    setToken(t);
+    localStorage.setItem(SESSION_KEY, JSON.stringify({ merchant: m, token: t }));
   }
 
   function handleLogout(reason?: 'inactivity') {
     localStorage.removeItem(SESSION_KEY);
     setMerchant(null);
+    setToken(null);
     setBalance(null);
     setActiveTab('negocio');
     setInactivity(reason === 'inactivity');
@@ -1119,17 +1137,24 @@ export default function MerchantPage() {
   useInactivityLogout(15 * 60 * 1000, () => handleLogout('inactivity'), !!merchant);
 
   if (!introComplete) return <FidelioIntro onComplete={() => setIntroComplete(true)} />;
-  if (!merchant)      return <LoginScreen onLogin={(m) => { setInactivity(false); handleLogin(m); }} inactivity={inactivity} />;
+  if (!merchant)      return <LoginScreen onLogin={(m, t) => { setInactivity(false); handleLogin(m, t); }} inactivity={inactivity} />;
 
   return (
     <div className="min-h-screen" style={{ background: C.bg }}>
       <TopBar merchant={merchant} balance={balance} onLogout={handleLogout} />
       <main className="px-4 pt-5 pb-28 flex flex-col gap-4">
         {activeTab === 'negocio'     && <NegocioTab     merchant={merchant} />}
-        {activeTab === 'canjear'     && <CanjearTab     merchant={merchant} />}
+        {activeTab === 'canjear'     && <CanjearTab     merchant={merchant} token={token!} />}
         {activeTab === 'gca'         && <GcaTab         merchant={merchant} />}
-        {activeTab === 'movimientos' && <MovimientosTab merchant={merchant} />}
-        {activeTab === 'ajustes'     && <AjustesTab     merchant={merchant} onUpdate={(m) => { setMerchant(m); localStorage.setItem(SESSION_KEY, JSON.stringify({ merchant: m })); }} />}
+        {activeTab === 'movimientos' && <MovimientosTab merchant={merchant} token={token!} />}
+        {activeTab === 'ajustes'     && <AjustesTab     merchant={merchant} token={token!} onUpdate={(m) => {
+          setMerchant(m);
+          const raw = localStorage.getItem(SESSION_KEY);
+          if (raw) {
+            const s = JSON.parse(raw);
+            localStorage.setItem(SESSION_KEY, JSON.stringify({ ...s, merchant: m }));
+          }
+        }} />}
       </main>
       <TabBar active={activeTab} onChange={setActiveTab} />
     </div>
