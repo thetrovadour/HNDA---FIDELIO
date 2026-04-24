@@ -28,6 +28,11 @@ const PilotLoginSchema = z.object({
   credential: z.string().min(1),
 });
 
+const MerchantLoginSchema = z.object({
+  full_name: z.string().min(1),
+  credential: z.string().min(1),
+});
+
 const ForgotPasswordSchema = z.object({
   email: z.string().email(),
 });
@@ -126,6 +131,62 @@ export function authRouter(): Router {
           contact_email: m.contact_email,
           active: m.active,
         })),
+      },
+    });
+  });
+
+  router.post('/merchant-login', validate(MerchantLoginSchema), async (req: Request, res: Response) => {
+    const { full_name, credential } = req.body as { full_name: string; credential: string };
+
+    const user = await db.user.findFirst({ where: { full_name } });
+    if (!user) {
+      res.status(401).json({ error: 'No encontramos tu cuenta', code: 'INVALID_CREDENTIALS' });
+      return;
+    }
+
+    const valid = user.password_hash
+      ? await bcrypt.compare(credential, user.password_hash)
+      : user.pin === credential;
+
+    if (!valid) {
+      res.status(401).json({ error: 'No encontramos tu cuenta', code: 'INVALID_CREDENTIALS' });
+      return;
+    }
+
+    const merchant = await db.merchant.findFirst({ where: { owner_user_id: user.id } });
+    if (!merchant) {
+      res.status(403).json({ error: 'Esta cuenta no tiene un negocio asociado', code: 'NOT_A_MERCHANT' });
+      return;
+    }
+
+    const jwtSecret = process.env.JWT_SECRET;
+    if (!jwtSecret) {
+      res.status(500).json({ error: 'Auth not configured', code: 'JWT_NOT_CONFIGURED' });
+      return;
+    }
+
+    const token = jwt.sign(
+      { id: user.id, user_id: user.id, merchant_id: merchant.id, role: 'merchant' },
+      jwtSecret,
+      { algorithm: 'HS256', expiresIn: '7d' }
+    );
+
+    res.status(200).json({
+      data: {
+        token,
+        merchant: {
+          id: merchant.id,
+          name: merchant.name,
+          category: merchant.category,
+          contact_email: merchant.contact_email,
+          wallet_address: merchant.wallet_address,
+          active: merchant.active,
+          notify_redemption_update: merchant.notify_redemption_update,
+          payout_bank: merchant.payout_bank,
+          payout_account_number: merchant.payout_account_number,
+          payout_account_type: merchant.payout_account_type,
+          payout_crypto_address: merchant.payout_crypto_address,
+        },
       },
     });
   });
