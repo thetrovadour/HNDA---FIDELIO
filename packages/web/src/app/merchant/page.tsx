@@ -484,7 +484,7 @@ function CanjearTab({ merchant, token }: { merchant: Merchant; token: string }) 
       getMerchantRedemptions(merchant.id, token).then((r) => setRedemptions(r.data)).catch(() => {});
     }, 15_000);
     return () => clearInterval(interval);
-  }, [merchant.id]);
+  }, [merchant.id, token]);
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -820,7 +820,7 @@ function MovimientosTab({ merchant, token }: { merchant: Merchant; token: string
       getMerchantTransactions(merchant.id, token).then((r) => setTransactions(r.data)).catch(() => {});
     }, 15_000);
     return () => clearInterval(interval);
-  }, [merchant.id]);
+  }, [merchant.id, token]);
 
   return (
     <div className="flex flex-col gap-4">
@@ -1084,8 +1084,12 @@ export default function MerchantPage() {
     if (!raw) return;
     try {
       const session = JSON.parse(raw);
+      if (!session.merchant || !session.token) {
+        localStorage.removeItem(SESSION_KEY);
+        return;
+      }
       setMerchant(session.merchant);
-      setToken(session.token ?? null);
+      setToken(session.token);
       setIntroComplete(true);
     } catch {
       localStorage.removeItem(SESSION_KEY);
