@@ -22,7 +22,7 @@ describe('Minter', () => {
   beforeEach(() => {
     waitMock = jest.fn().mockResolvedValue(undefined);
     mintMock = jest.fn().mockResolvedValue({ wait: waitMock });
-    contract = { mint: mintMock };
+    contract = { mint: mintMock, burn: jest.fn() };
     minter = new Minter(contract);
   });
 
@@ -31,7 +31,8 @@ describe('Minter', () => {
     const expectedAmount = ethers.parseUnits('500', 18);
     expect(mintMock).toHaveBeenCalledWith(
       '0xABCD1234ABCD1234ABCD1234ABCD1234ABCD1234',
-      expectedAmount
+      expectedAmount,
+      { gasLimit: 100_000 }
     );
   });
 
@@ -43,7 +44,7 @@ describe('Minter', () => {
 
   it('returns success:true when mint resolves', async () => {
     const result = await minter.mint(makeEvent());
-    expect(result).toEqual({ success: true });
+    expect(result.success).toBe(true);
   });
 
   it('returns success:false with reason when mint rejects', async () => {

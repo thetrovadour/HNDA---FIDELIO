@@ -52,6 +52,7 @@ describe('SocketServer', () => {
     // Create a Minter with a stub contract; we'll spy on minter.mint directly
     const contract: ContractLike = {
       mint: jest.fn(),
+      burn: jest.fn(),
     };
     minter = new Minter(contract);
     server = new SocketServer(minter, TEST_SOCKET);
@@ -67,7 +68,7 @@ describe('SocketServer', () => {
   });
 
   it('responds with ACK for a valid PaymentEvent', async () => {
-    jest.spyOn(minter, 'mint').mockResolvedValueOnce({ success: true });
+    jest.spyOn(minter, 'mint').mockResolvedValueOnce({ success: true, tx_hash: '0xabc' });
     const event = makeEvent();
     const response = await sendAndReceive(JSON.stringify(event));
     expect(response.status).toBe('ACK');
