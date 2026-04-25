@@ -10,11 +10,15 @@ const mockMintService = {
   confirmMint: jest.fn(),
 };
 
+const mockRedemptionService = {
+  processRedemption: jest.fn(),
+};
+
 function createTestApp() {
   const app = express();
   app.use(express.json());
   process.env.BRIDGE_SECRET = BRIDGE_SECRET;
-  app.use('/internal/bridge', bridgeAuth, bridgeEventsRouter(mockMintService as any));
+  app.use('/internal/bridge', bridgeAuth, bridgeEventsRouter(mockMintService as any, mockRedemptionService as any));
   return app;
 }
 

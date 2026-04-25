@@ -18,3 +18,6 @@ packages/web/next-env.d.ts
 
 # OMC runtime state
 .omc/
+
+# Windows metadata (ASCII and Unicode colon variants)
+*Zone.Identifier

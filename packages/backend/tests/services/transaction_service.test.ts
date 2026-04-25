@@ -9,6 +9,7 @@ describe('TransactionService.recordSpend', () => {
   it('creates Transaction and MerchantVisit atomically', async () => {
     mockDb.user.findUnique.mockResolvedValue({ id: 'u1' });
     mockDb.merchant.findUnique.mockResolvedValue({ id: 'm1' });
+    mockDb.wallet.findUnique.mockResolvedValue({ user_id: 'u1', catr_balance: { lessThan: () => false } });
     mockDb.transaction.create.mockResolvedValue({ id: 'tx1', type: 'SPEND', status: 'CONFIRMED' });
     mockDb.merchantVisit.create.mockResolvedValue({});
 
