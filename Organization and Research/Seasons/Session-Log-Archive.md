@@ -970,3 +970,36 @@ Continued from previous session (context limit). Completed the full Spanish i18n
 - Passkey / WebAuthn — lands when `hnda.io` is live on HTTPS
 - LEMPIRAS_SENT auto-confirmation (BAC Credomatic API, Etapa 2)
 - Fix pre-existing test failures: `bridge_events.test.ts` (missing `redemptionService` arg), `transaction_service.test.ts` (wallet mock)
+
+---
+
+### Session — 2026-04-24 (2)
+**Focus:** Ubuntu migration cleanup — git housekeeping
+
+#### What happened
+
+First session in VS Code on the new Ubuntu machine. GitHub was signaling 827 changed files — all noise from the Windows→Ubuntu migration.
+
+**Diagnosed and resolved three categories of git pollution:**
+
+1. **477 phantom fileMode diffs** — Windows and Ubuntu disagree on file permission bits. Fixed by setting `core.fileMode=false` in local git config. No files were actually modified.
+
+2. **165 `Zone.Identifier` files removed from tracking** — Windows creates these metadata files when downloading anything. They were committed previously and now showed as deleted on Ubuntu (where they don't exist). Removed from git index with `git rm --cached`. Added `*Zone.Identifier` to `.gitignore` to cover both ASCII-colon and Unicode-colon variants (Ubuntu renamed them during migration).
+
+3. **6 Season log files committed as renames** — Ubuntu's filesystem replaced the ASCII colon (`:`) in filenames with a Unicode fullwidth colon (`：`). Git detected these correctly as renames (R, 100% similarity). History preserved.
+
+**Also committed:** Two test file fixes from the merchant auth sprint (`bridge_events.test.ts`, `transaction_service.test.ts`) that were sitting as unstaged changes.
+
+**Result:** Clean working tree, zero pending changes.
+
+#### Key decisions
+
+- `core.fileMode=false` is a local config change only — does not affect other contributors or CI.
+- `.gitignore` pattern is `*Zone.Identifier` (no colon prefix) to catch both filename variants.
+
+#### Pending / next up
+
+- Test merchant auth flow locally (carried from previous session)
+- Passkey / WebAuthn — lands when `hnda.io` is live on HTTPS
+- LEMPIRAS_SENT auto-confirmation (BAC Credomatic API, Etapa 2)
+- Security debt: HttpOnly cookie migration, rate limiting on `/auth/merchant-login`, logout-on-401
