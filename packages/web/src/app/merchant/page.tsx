@@ -16,6 +16,8 @@ import {
   updateMerchantProfile,
   updateMerchantNotifications,
   updateMerchantPayout,
+  logout,
+  AuthError,
   type Merchant,
   type MerchantBalance,
   type MerchantTransaction,
@@ -168,7 +170,7 @@ import { IconStore, IconSwap, IconGem, IconList, IconCopy, IconSettings } from '
 
 // ─── Login screen ─────────────────────────────────────────────────────────────
 
-function LoginScreen({ onLogin, inactivity }: { onLogin: (merchant: Merchant, token: string) => void; inactivity?: boolean }) {
+function LoginScreen({ onLogin, inactivity }: { onLogin: (merchant: Merchant) => void; inactivity?: boolean }) {
   const [fullName, setFullName] = useState('');
   const [credential, setCredential] = useState('');
   const [error, setError] = useState('');
@@ -181,7 +183,7 @@ function LoginScreen({ onLogin, inactivity }: { onLogin: (merchant: Merchant, to
     setError('');
     try {
       const res = await merchantLogin({ full_name: fullName.trim(), credential: credential.trim() });
-      onLogin(res.data.merchant, res.data.token);
+      onLogin(res.data.merchant);
     } catch {
       setError(t('merchant.error_not_found'));
     } finally {
@@ -467,7 +469,7 @@ function statusColor(status: string): string {
   return C.slateHi;
 }
 
-function CanjearTab({ merchant, token }: { merchant: Merchant; token: string }) {
+function CanjearTab({ merchant }: { merchant: Merchant }) {
   const [amount, setAmount] = useState('');
   const [state, setState] = useState<'idle' | 'loading' | 'success' | 'error'>('idle');
   const [msg, setMsg] = useState('');
@@ -475,16 +477,16 @@ function CanjearTab({ merchant, token }: { merchant: Merchant; token: string }) 
   const [loadingHistory, setLoadingHistory] = useState(true);
 
   useEffect(() => {
-    getMerchantRedemptions(merchant.id, token)
+    getMerchantRedemptions(merchant.id)
       .then((r) => setRedemptions(r.data))
       .catch(() => {})
       .finally(() => setLoadingHistory(false));
 
     const interval = setInterval(() => {
-      getMerchantRedemptions(merchant.id, token).then((r) => setRedemptions(r.data)).catch(() => {});
+      getMerchantRedemptions(merchant.id).then((r) => setRedemptions(r.data)).catch(() => {});
     }, 15_000);
     return () => clearInterval(interval);
-  }, [merchant.id, token]);
+  }, [merchant.id]);
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -492,7 +494,7 @@ function CanjearTab({ merchant, token }: { merchant: Merchant; token: string }) 
     setState('loading');
     setMsg('');
     try {
-      const res = await createMerchantRedemption(merchant.id, amount, token);
+      const res = await createMerchantRedemption(merchant.id, amount);
       setRedemptions((prev) => [res.data, ...prev]);
       setState('success');
       setMsg(`Solicitud enviada: ${parseFloat(amount).toFixed(2)} CATR → HNL`);
@@ -805,22 +807,22 @@ function GcaTab({ merchant }: { merchant: Merchant }) {
 
 // ─── Tab: Movimientos ─────────────────────────────────────────────────────────
 
-function MovimientosTab({ merchant, token }: { merchant: Merchant; token: string }) {
+function MovimientosTab({ merchant }: { merchant: Merchant }) {
   const [transactions, setTransactions] = useState<MerchantTransaction[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
 
   useEffect(() => {
-    getMerchantTransactions(merchant.id, token)
+    getMerchantTransactions(merchant.id)
       .then((r) => setTransactions(r.data))
       .catch((err) => setError(err instanceof Error ? err.message : 'Error al cargar movimientos.'))
       .finally(() => setLoading(false));
 
     const interval = setInterval(() => {
-      getMerchantTransactions(merchant.id, token).then((r) => setTransactions(r.data)).catch(() => {});
+      getMerchantTransactions(merchant.id).then((r) => setTransactions(r.data)).catch(() => {});
     }, 15_000);
     return () => clearInterval(interval);
-  }, [merchant.id, token]);
+  }, [merchant.id]);
 
   return (
     <div className="flex flex-col gap-4">
@@ -909,7 +911,7 @@ function NotifRow({ label, desc, value, onChange, disabled }: {
 
 // ─── Tab: Ajustes ─────────────────────────────────────────────────────────────
 
-function AjustesTab({ merchant, token, onUpdate }: { merchant: Merchant; token: string; onUpdate: (m: Merchant) => void }) {
+function AjustesTab({ merchant, onUpdate }: { merchant: Merchant; onUpdate: (m: Merchant) => void }) {
   const [name, setName] = useState(merchant.name);
   const [category, setCategory] = useState(merchant.category);
   const [contactEmail, setContactEmail] = useState(merchant.contact_email);
@@ -932,7 +934,7 @@ function AjustesTab({ merchant, token, onUpdate }: { merchant: Merchant; token: 
     setProfileState('loading');
     setProfileMsg('');
     try {
-      const res = await updateMerchantProfile(merchant.id, { name, category, contact_email: contactEmail }, token);
+      const res = await updateMerchantProfile(merchant.id, { name, category, contact_email: contactEmail });
       onUpdate(res.data);
       setProfileState('success');
       setProfileMsg(t('merchant.profile_updated'));
@@ -947,7 +949,7 @@ function AjustesTab({ merchant, token, onUpdate }: { merchant: Merchant; token: 
     setNotifSaving(true);
     setNotifMsg(null);
     try {
-      await updateMerchantNotifications(merchant.id, { notify_redemption_update: value }, token);
+      await updateMerchantNotifications(merchant.id, { notify_redemption_update: value });
       onUpdate({ ...merchant, notify_redemption_update: value });
       setNotifMsg({ type: 'success', text: t('merchant.notifications_updated') });
     } catch {
@@ -968,7 +970,7 @@ function AjustesTab({ merchant, token, onUpdate }: { merchant: Merchant; token: 
         payout_account_number: payoutAccount || undefined,
         payout_account_type: payoutType,
         payout_crypto_address: payoutCrypto || undefined,
-      }, token);
+      });
       onUpdate(res.data);
       setPayoutState('success');
       setPayoutMsg(t('merchant.payout_updated'));
@@ -1074,7 +1076,6 @@ const SESSION_KEY = 'fidelio_merchant_session';
 export default function MerchantPage() {
   const [introComplete, setIntroComplete] = useState(false);
   const [merchant, setMerchant] = useState<Merchant | null>(null);
-  const [token, setToken] = useState<string | null>(null);
   const [balance, setBalance] = useState<MerchantBalance | null>(null);
   const [activeTab, setActiveTab] = useState<Tab>('negocio');
   const [inactivity, setInactivity] = useState(false);
@@ -1084,12 +1085,8 @@ export default function MerchantPage() {
     if (!raw) return;
     try {
       const session = JSON.parse(raw);
-      if (!session.merchant || !session.token) {
-        localStorage.removeItem(SESSION_KEY);
-        return;
-      }
+      if (!session.merchant) { localStorage.removeItem(SESSION_KEY); return; }
       setMerchant(session.merchant);
-      setToken(session.token);
       setIntroComplete(true);
     } catch {
       localStorage.removeItem(SESSION_KEY);
@@ -1097,15 +1094,15 @@ export default function MerchantPage() {
   }, []);
 
   useEffect(() => {
-    if (!merchant || !token) return;
-    getMerchantBalance(merchant.id, token)
+    if (!merchant) return;
+    getMerchantBalance(merchant.id)
       .then((r) => setBalance(r.data))
-      .catch(() => {});
+      .catch((err) => { if (err instanceof AuthError) handleLogout(); });
 
     const interval = setInterval(() => {
-      getMerchantBalance(merchant.id, token)
+      getMerchantBalance(merchant.id)
         .then((r) => setBalance(r.data))
-        .catch(() => {});
+        .catch((err) => { if (err instanceof AuthError) handleLogout(); });
       getMerchantPublic(merchant.id)
         .then((r) => {
           if (r.data.active !== merchant.active) {
@@ -1121,18 +1118,17 @@ export default function MerchantPage() {
         .catch(() => {});
     }, 15_000);
     return () => clearInterval(interval);
-  }, [merchant?.id, token]);
+  }, [merchant?.id]);
 
-  function handleLogin(m: Merchant, t: string) {
+  function handleLogin(m: Merchant) {
     setMerchant(m);
-    setToken(t);
-    localStorage.setItem(SESSION_KEY, JSON.stringify({ merchant: m, token: t }));
+    localStorage.setItem(SESSION_KEY, JSON.stringify({ merchant: m }));
   }
 
   function handleLogout(reason?: 'inactivity') {
+    logout().catch(() => {});
     localStorage.removeItem(SESSION_KEY);
     setMerchant(null);
-    setToken(null);
     setBalance(null);
     setActiveTab('negocio');
     setInactivity(reason === 'inactivity');
@@ -1141,17 +1137,17 @@ export default function MerchantPage() {
   useInactivityLogout(15 * 60 * 1000, () => handleLogout('inactivity'), !!merchant);
 
   if (!introComplete) return <FidelioIntro onComplete={() => setIntroComplete(true)} />;
-  if (!merchant)      return <LoginScreen onLogin={(m, t) => { setInactivity(false); handleLogin(m, t); }} inactivity={inactivity} />;
+  if (!merchant)      return <LoginScreen onLogin={(m) => { setInactivity(false); handleLogin(m); }} inactivity={inactivity} />;
 
   return (
     <div className="min-h-screen" style={{ background: C.bg }}>
       <TopBar merchant={merchant} balance={balance} onLogout={handleLogout} />
       <main className="px-4 pt-5 pb-28 flex flex-col gap-4">
         {activeTab === 'negocio'     && <NegocioTab     merchant={merchant} />}
-        {activeTab === 'canjear'     && <CanjearTab     merchant={merchant} token={token!} />}
+        {activeTab === 'canjear'     && <CanjearTab     merchant={merchant} />}
         {activeTab === 'gca'         && <GcaTab         merchant={merchant} />}
-        {activeTab === 'movimientos' && <MovimientosTab merchant={merchant} token={token!} />}
-        {activeTab === 'ajustes'     && <AjustesTab     merchant={merchant} token={token!} onUpdate={(m) => {
+        {activeTab === 'movimientos' && <MovimientosTab merchant={merchant} />}
+        {activeTab === 'ajustes'     && <AjustesTab     merchant={merchant} onUpdate={(m) => {
           setMerchant(m);
           const raw = localStorage.getItem(SESSION_KEY);
           if (raw) {

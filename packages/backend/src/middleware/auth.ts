@@ -51,12 +51,13 @@ export function adminAuth(req: Request, res: Response, next: NextFunction): void
 }
 
 export function userAuth(req: Request, res: Response, next: NextFunction): void {
+  const cookieToken = req.cookies?.fidelio_token as string | undefined;
   const authHeader = req.headers.authorization;
-  if (!authHeader || !authHeader.startsWith('Bearer ')) {
+  const token = cookieToken ?? (authHeader?.startsWith('Bearer ') ? authHeader.slice(7) : undefined);
+  if (!token) {
     res.status(401).json({ error: 'Unauthorized', code: 'MISSING_TOKEN' });
     return;
   }
-  const token = authHeader.slice(7);
   const jwtSecret = process.env.JWT_SECRET;
   if (!jwtSecret) {
     res.status(401).json({ error: 'Unauthorized', code: 'JWT_NOT_CONFIGURED' });
@@ -76,12 +77,13 @@ export function userAuth(req: Request, res: Response, next: NextFunction): void 
 }
 
 export function selfOrAdmin(req: Request, res: Response, next: NextFunction): void {
+  const cookieToken = req.cookies?.fidelio_token as string | undefined;
   const authHeader = req.headers.authorization;
-  if (!authHeader || !authHeader.startsWith('Bearer ')) {
+  const token = cookieToken ?? (authHeader?.startsWith('Bearer ') ? authHeader.slice(7) : undefined);
+  if (!token) {
     res.status(401).json({ error: 'Unauthorized', code: 'MISSING_TOKEN' });
     return;
   }
-  const token = authHeader.slice(7);
   const jwtSecret = process.env.JWT_SECRET;
   if (!jwtSecret) {
     res.status(401).json({ error: 'Unauthorized', code: 'JWT_NOT_CONFIGURED' });
@@ -106,12 +108,13 @@ export function selfOrAdmin(req: Request, res: Response, next: NextFunction): vo
 }
 
 export function merchantAuth(req: Request, res: Response, next: NextFunction): void {
+  const cookieToken = req.cookies?.fidelio_token as string | undefined;
   const authHeader = req.headers.authorization;
-  if (!authHeader || !authHeader.startsWith('Bearer ')) {
+  const token = cookieToken ?? (authHeader?.startsWith('Bearer ') ? authHeader.slice(7) : undefined);
+  if (!token) {
     res.status(401).json({ error: 'Unauthorized', code: 'MISSING_TOKEN' });
     return;
   }
-  const token = authHeader.slice(7);
   const jwtSecret = process.env.JWT_SECRET;
   if (!jwtSecret) {
     res.status(401).json({ error: 'Unauthorized', code: 'JWT_NOT_CONFIGURED' });

@@ -1,4 +1,4 @@
-import { Router, Request, Response } from 'express';
+import { Router, Request, Response, CookieOptions } from 'express';
 import { z } from 'zod';
 import jwt from 'jsonwebtoken';
 import bcrypt from 'bcrypt';
@@ -49,6 +49,16 @@ const SetPasswordSchema = z.object({
   new_password: z.string().min(6),
 });
 
+const isProd = process.env.NODE_ENV === 'production';
+
+const TOKEN_COOKIE: CookieOptions = {
+  httpOnly: true,
+  sameSite: isProd ? 'strict' : 'lax',
+  secure: isProd,
+  path: '/',
+  maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days
+};
+
 export function authRouter(): Router {
   const router = Router();
 
@@ -98,9 +108,9 @@ export function authRouter(): Router {
       db.merchant.findMany({ where: { active: true } }),
     ]);
 
+    res.cookie('fidelio_token', token, TOKEN_COOKIE);
     res.status(200).json({
       data: {
-        token,
         user: {
           id: user.id,
           full_name: user.full_name,
@@ -171,9 +181,9 @@ export function authRouter(): Router {
       { algorithm: 'HS256', expiresIn: '7d' }
     );
 
+    res.cookie('fidelio_token', token, TOKEN_COOKIE);
     res.status(200).json({
       data: {
-        token,
         merchant: {
           id: merchant.id,
           name: merchant.name,
@@ -289,6 +299,11 @@ export function authRouter(): Router {
       },
     });
     res.status(201).json({ data: { role: 'merchant', user_id: user.id, merchant_id: merchant.id, wallet_address: address } });
+  });
+
+  router.post('/logout', (_req: Request, res: Response) => {
+    res.clearCookie('fidelio_token', { path: '/' });
+    res.status(200).json({ data: { ok: true } });
   });
 
   return router;

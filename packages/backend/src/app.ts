@@ -1,5 +1,6 @@
 import express from 'express';
 import cors from 'cors';
+import cookieParser from 'cookie-parser';
 import rateLimit from 'express-rate-limit';
 import db from './db';
 import { bridgeAuth } from './middleware/auth';
@@ -43,10 +44,14 @@ const sensitiveLimiter = rateLimit({
 export function createApp(): express.Application {
   const app = express();
   const allowedOrigins = (process.env.ALLOWED_ORIGIN || 'http://localhost:3000').split(',').map(o => o.trim());
-  app.use(cors({ origin: (origin, cb) => {
-    if (!origin || allowedOrigins.some(o => origin.startsWith(o))) return cb(null, true);
-    cb(new Error('Not allowed by CORS'));
-  }}));
+  app.use(cors({
+    origin: (origin, cb) => {
+      if (!origin || allowedOrigins.some(o => origin.startsWith(o))) return cb(null, true);
+      cb(new Error('Not allowed by CORS'));
+    },
+    credentials: true,
+  }));
+  app.use(cookieParser());
   app.use(express.json({ limit: '100kb' }));
   app.use(globalLimiter);
 

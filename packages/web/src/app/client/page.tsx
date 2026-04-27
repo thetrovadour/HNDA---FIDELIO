@@ -12,6 +12,8 @@ import {
   setPassword,
   forgotPassword,
   resetPassword,
+  logout,
+  AuthError,
 } from '@/lib/api';
 import type { UserRecord, Transaction, Milestone, Merchant } from '@/lib/api';
 import { t } from '@/lib/i18n';
@@ -147,7 +149,7 @@ import { IconUser, IconActivity, IconNetwork, IconCopy, IconSettings } from '../
 // ─── Login screen ─────────────────────────────────────────────────────────────
 
 interface LoginProps {
-  onLogin: (data: { token: string; user: UserRecord; transactions: Transaction[]; milestones: Milestone[]; merchants: Merchant[] }) => void;
+  onLogin: (data: { user: UserRecord; transactions: Transaction[]; milestones: Milestone[]; merchants: Merchant[] }) => void;
   inactivity?: boolean;
 }
 
@@ -611,7 +613,7 @@ function NotifRow({ label, desc, value, onChange, disabled }: {
 
 // ─── Tab: Ajustes ─────────────────────────────────────────────────────────────
 
-function AjustesTab({ user, token, onUpdate }: { user: UserRecord; token: string; onUpdate: (u: UserRecord) => void }) {
+function AjustesTab({ user, onUpdate }: { user: UserRecord; onUpdate: (u: UserRecord) => void }) {
   const [fullName, setFullName] = useState(user.full_name);
   const [email, setEmail] = useState(user.email);
   const [phone, setPhone] = useState(user.phone ?? '');
@@ -634,7 +636,7 @@ function AjustesTab({ user, token, onUpdate }: { user: UserRecord; token: string
     setProfileState('loading');
     setProfileMsg('');
     try {
-      const res = await updateUser(user.id, { full_name: fullName, email, phone: phone || undefined }, token);
+      const res = await updateUser(user.id, { full_name: fullName, email, phone: phone || undefined });
       onUpdate({ ...user, ...res.data });
       setProfileState('success');
       setProfileMsg(t('client.profile_updated'));
@@ -680,7 +682,7 @@ function AjustesTab({ user, token, onUpdate }: { user: UserRecord; token: string
     setNotifSaving(true);
     setNotifMsg(null);
     try {
-      await updateUserNotifications(user.id, update, token);
+      await updateUserNotifications(user.id, update);
       onUpdate({ ...user, notify_points_received: field === 'points' ? value : notifPoints, notify_milestone_near: field === 'milestone' ? value : notifMilestone });
       setNotifMsg({ type: 'success', text: t('client.notifications_updated') });
     } catch {
@@ -775,7 +777,7 @@ function AjustesTab({ user, token, onUpdate }: { user: UserRecord; token: string
 
 // ─── Tab: Red ─────────────────────────────────────────────────────────────────
 
-function RedTab({ merchants, user, token, onSpend }: { merchants: Merchant[]; user: UserRecord; token: string; onSpend: () => void }) {
+function RedTab({ merchants, user, onSpend }: { merchants: Merchant[]; user: UserRecord; onSpend: () => void }) {
   const active = merchants.filter((m) => m.active);
   const [selected, setSelected] = useState<Merchant | null>(null);
   const [amount, setAmount] = useState('');
@@ -788,7 +790,7 @@ function RedTab({ merchants, user, token, onSpend }: { merchants: Merchant[]; us
     setState('loading');
     setMsg('');
     try {
-      await spendCATR({ user_id: user.id, merchant_id: selected.id, amount_catr: amount }, token);
+      await spendCATR({ user_id: user.id, merchant_id: selected.id, amount_catr: amount });
       setState('success');
       setMsg(`${parseFloat(amount).toFixed(2)} pts enviados a ${selected.name}.`);
       setAmount('');
@@ -917,7 +919,6 @@ const SESSION_KEY = 'fidelio_session';
 
 export default function ClientPage() {
   const [introComplete, setIntroComplete] = useState(false);
-  const [token, setToken] = useState<string | null>(null);
   const [user, setUser] = useState<UserRecord | null>(null);
   const [transactions, setTransactions] = useState<Transaction[]>([]);
   const [milestones, setMilestones] = useState<Milestone[]>([]);
@@ -930,7 +931,7 @@ export default function ClientPage() {
     if (!raw) return;
     try {
       const session = JSON.parse(raw);
-      setToken(session.token);
+      if (!session.user) { localStorage.removeItem(SESSION_KEY); return; }
       setUser(session.user);
       setTransactions(session.transactions ?? []);
       setMilestones(session.milestones ?? []);
@@ -941,8 +942,7 @@ export default function ClientPage() {
     }
   }, []);
 
-  function handleLogin(data: { token: string; user: UserRecord; transactions: Transaction[]; milestones: Milestone[]; merchants: Merchant[] }) {
-    setToken(data.token);
+  function handleLogin(data: { user: UserRecord; transactions: Transaction[]; milestones: Milestone[]; merchants: Merchant[] }) {
     setUser(data.user);
     setTransactions(data.transactions);
     setMilestones(data.milestones);
@@ -951,11 +951,11 @@ export default function ClientPage() {
   }
 
   async function refreshUser() {
-    if (!user || !token) return;
+    if (!user) return;
     try {
       const [userRes, txRes] = await Promise.all([
-        getUser(user.id, token),
-        getUserTransactions(user.id, token),
+        getUser(user.id),
+        getUserTransactions(user.id),
       ]);
       setUser(userRes.data);
       setTransactions(txRes.data);
@@ -964,19 +964,21 @@ export default function ClientPage() {
         const session = JSON.parse(raw);
         localStorage.setItem(SESSION_KEY, JSON.stringify({ ...session, user: userRes.data, transactions: txRes.data }));
       }
-    } catch { /* silent */ }
+    } catch (err) {
+      if (err instanceof AuthError) handleLogout();
+    }
   }
 
   // Live balance polling — every 15 seconds
   useEffect(() => {
-    if (!user || !token) return;
+    if (!user) return;
     const interval = setInterval(() => { refreshUser(); }, 15_000);
     return () => clearInterval(interval);
-  }, [user?.id, token]);
+  }, [user?.id]);
 
   function handleLogout(reason?: 'inactivity') {
+    logout().catch(() => {});
     localStorage.removeItem(SESSION_KEY);
-    setToken(null);
     setUser(null);
     setTransactions([]);
     setMilestones([]);
@@ -996,8 +998,8 @@ export default function ClientPage() {
       <main className="px-4 pt-5 pb-28 flex flex-col gap-4">
         {activeTab === 'cuenta'    && <CuentaTab user={user} />}
         {activeTab === 'actividad' && <ActividadTab transactions={transactions} milestones={milestones} />}
-        {activeTab === 'red'       && <RedTab merchants={merchants} user={user} token={token!} onSpend={refreshUser} />}
-        {activeTab === 'ajustes'   && <AjustesTab user={user} token={token!} onUpdate={(u) => { setUser(u); const raw = localStorage.getItem(SESSION_KEY); if (raw) { const s = JSON.parse(raw); localStorage.setItem(SESSION_KEY, JSON.stringify({ ...s, user: u })); } }} />}
+        {activeTab === 'red'       && <RedTab merchants={merchants} user={user} onSpend={refreshUser} />}
+        {activeTab === 'ajustes'   && <AjustesTab user={user} onUpdate={(u) => { setUser(u); const raw = localStorage.getItem(SESSION_KEY); if (raw) { const s = JSON.parse(raw); localStorage.setItem(SESSION_KEY, JSON.stringify({ ...s, user: u })); } }} />}
       </main>
       <TabBar active={activeTab} onChange={setActiveTab} />
     </div>

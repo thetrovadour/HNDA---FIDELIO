@@ -1044,3 +1044,40 @@ Next.js 16 enables Turbopack by default. On this monorepo setup (npm workspaces 
 - Step 5: run Hardhat contract tests
 - Carry-forward security debt: HttpOnly cookie migration, rate limiting, logout-on-401
 - Passkey / WebAuthn — pending `hnda.io` HTTPS
+
+---
+
+### Session — 2026-04-27
+**Focus:** Web UI verification + Security debt sprint (HttpOnly cookie, logout-on-401, rate limiting)
+
+#### What happened
+
+**1. Web UI pages verified**
+All four pages (`/`, `/register`, `/admin`, `/fidelio`) confirmed rendering correctly in browser. Carried from previous session.
+
+**2. Hardhat contract tests — 14/14 passing**
+Run manually by Cristian. All contract tests pass.
+
+**3. Security debt — all three items resolved**
+
+**A — Rate limiting:** Already in place. `sensitiveLimiter` was already applied to all `/api/auth/*` routes in `app.ts`. Nothing to implement.
+
+**B — Logout-on-401:** `apiFetch` in `lib/api.ts` now throws a typed `AuthError` on 401. Both `client/page.tsx` and `merchant/page.tsx` catch it in their polling/refresh paths and call `handleLogout()` immediately. Silent stale sessions are gone.
+
+**C — HttpOnly cookie migration:** JWT is now set as `HttpOnly; SameSite=Lax` cookie (`fidelio_token`) on login — `SameSite=Strict; Secure` in production. Token no longer stored in `localStorage` or passed as an Authorization header from client/merchant pages. `userAuth`, `merchantAuth`, and `selfOrAdmin` middleware read from cookie first, Authorization header as fallback (bridge/internal unaffected). `POST /api/auth/logout` added to clear the cookie server-side. `logout()` called on both client and merchant handleLogout. Admin page left unchanged — it uses manual JWT paste via Authorization header, which the fallback still accepts. `cookie-parser` installed and wired in `app.ts`. CORS updated with `credentials: true`. All API functions that were client/merchant-only had token params removed; admin-facing functions (`getRedemptions`, `forceBurn`, `rejectRedemption`, etc.) kept optional `token?` param for admin Authorization header use.
+
+**Also fixed:** `next build` was failing with Turbopack/webpack conflict — added `--webpack` flag to the build script (same fix applied to dev last session).
+
+**Build result:** 4/4 packages passing, 62/62 backend tests passing, 14/14 contract tests passing.
+
+#### Key decisions
+
+1. **Cookie-only for client/merchant, Authorization header fallback for admin** — admin uses manual JWT paste (no server-side login endpoint), so the middleware must accept both. Cookie takes priority for regular sessions.
+2. **`SameSite=Lax` in dev** — `localhost:3000` → `localhost:3001` is cross-port but same registrable domain. Lax works; Strict would also work but Lax is the safer default across all browsers in dev.
+3. **Admin page scoped out of cookie migration** — admin is an internal tool (Cristian only). HttpOnly cookie migration applies to client and merchant only.
+4. **`--webpack` added to build script** — Turbopack is the Next.js 16 default but panics on this monorepo's workspace hoisting. Webpack flag is the correct fix until Vercel resolves it upstream.
+
+#### Pending / next up
+
+- Passkey / WebAuthn — lands when `hnda.io` is live on HTTPS
+- LEMPIRAS_SENT auto-confirmation (BAC Credomatic API, Etapa 2)

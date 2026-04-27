@@ -1,8 +1,13 @@
 const BASE = process.env.NEXT_PUBLIC_BACKEND_URL ?? process.env.BACKEND_URL ?? 'http://localhost:3001';
 if (typeof window !== 'undefined') console.log('[FIDELIO] BACKEND_URL =', BASE);
 
+export class AuthError extends Error {
+  constructor() { super('Unauthorized'); this.name = 'AuthError'; }
+}
+
 async function apiFetch<T>(path: string, options?: RequestInit): Promise<T> {
-  const res = await fetch(`${BASE}${path}`, options);
+  const res = await fetch(`${BASE}${path}`, { credentials: 'include', ...options });
+  if (res.status === 401) throw new AuthError();
   if (!res.ok) {
     const text = await res.text().catch(() => res.statusText);
     throw new Error(`API ${res.status}: ${text}`);
@@ -10,12 +15,13 @@ async function apiFetch<T>(path: string, options?: RequestInit): Promise<T> {
   return res.json() as Promise<T>;
 }
 
-function authHeaders(token: string): HeadersInit {
-  return { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' };
-}
-
 function jsonHeaders(): HeadersInit {
   return { 'Content-Type': 'application/json' };
+}
+
+// Kept for admin page which uses manual JWT paste via Authorization header
+export function authHeaders(token: string): HeadersInit {
+  return { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' };
 }
 
 // --- Auth ---
@@ -23,7 +29,6 @@ function jsonHeaders(): HeadersInit {
 export function pilotLogin(body: { full_name: string; credential: string }) {
   return apiFetch<{
     data: {
-      token: string;
       user: UserRecord;
       transactions: Transaction[];
       milestones: Milestone[];
@@ -39,7 +44,6 @@ export function pilotLogin(body: { full_name: string; credential: string }) {
 export function merchantLogin(body: { full_name: string; credential: string }) {
   return apiFetch<{
     data: {
-      token: string;
       merchant: Merchant;
     };
   }>('/api/auth/merchant-login', {
@@ -47,6 +51,10 @@ export function merchantLogin(body: { full_name: string; credential: string }) {
     headers: jsonHeaders(),
     body: JSON.stringify(body),
   });
+}
+
+export function logout() {
+  return apiFetch<{ data: { ok: boolean } }>('/api/auth/logout', { method: 'POST' });
 }
 
 export function forgotPassword(email: string) {
@@ -89,30 +97,28 @@ export function setPassword(body: { user_id: string; current_credential: string;
 export function updateUserNotifications(
   id: string,
   body: { notify_points_received?: boolean; notify_milestone_near?: boolean },
-  token: string
 ) {
   return apiFetch<{ data: { notify_points_received: boolean; notify_milestone_near: boolean } }>(
     `/api/users/${id}/notifications`,
-    { method: 'PATCH', headers: authHeaders(token), body: JSON.stringify(body) }
+    { method: 'PATCH', headers: jsonHeaders(), body: JSON.stringify(body) }
   );
 }
 
-export function updateUser(id: string, body: { full_name?: string; email?: string; phone?: string }, token: string) {
+export function updateUser(id: string, body: { full_name?: string; email?: string; phone?: string }) {
   return apiFetch<{ data: UserRecord }>(`/api/users/${id}`, {
     method: 'PATCH',
-    headers: authHeaders(token),
+    headers: jsonHeaders(),
     body: JSON.stringify(body),
   });
 }
 
-export function getUser(id: string, token: string) {
-  return apiFetch<{ data: UserRecord }>(`/api/users/${id}`, { headers: authHeaders(token) });
+export function getUser(id: string) {
+  return apiFetch<{ data: UserRecord }>(`/api/users/${id}`);
 }
 
-export function getUserTransactions(id: string, token: string, page = 1, limit = 20) {
+export function getUserTransactions(id: string, page = 1, limit = 20) {
   return apiFetch<{ data: Transaction[]; total: number; page: number; limit: number }>(
     `/api/users/${id}/transactions?page=${page}&limit=${limit}`,
-    { headers: authHeaders(token) }
   );
 }
 
@@ -122,18 +128,18 @@ export function getUserRewards(id: string) {
 
 // --- Spend ---
 
-export function spendCATR(body: { user_id: string; merchant_id: string; amount_catr: string }, token: string) {
+export function spendCATR(body: { user_id: string; merchant_id: string; amount_catr: string }) {
   return apiFetch<{ data: Transaction }>('/api/transactions/spend', {
     method: 'POST',
-    headers: authHeaders(token),
+    headers: jsonHeaders(),
     body: JSON.stringify(body),
   });
 }
 
 // --- Merchants ---
 
-export function getMerchants(token?: string) {
-  return apiFetch<{ data: Merchant[] }>('/api/merchants', token ? { headers: authHeaders(token) } : undefined);
+export function getMerchants() {
+  return apiFetch<{ data: Merchant[] }>('/api/merchants');
 }
 
 export function getMerchant(id: string) {
@@ -144,39 +150,33 @@ export function getMerchantPublic(id: string) {
   return apiFetch<{ data: Merchant }>(`/api/merchants/${id}/public`);
 }
 
-export function getMerchantBalance(id: string, token: string) {
-  return apiFetch<{ data: MerchantBalance }>(`/api/merchants/${id}/balance`, {
-    headers: authHeaders(token),
-  });
+export function getMerchantBalance(id: string) {
+  return apiFetch<{ data: MerchantBalance }>(`/api/merchants/${id}/balance`);
 }
 
-export function getMerchantTransactions(id: string, token: string) {
-  return apiFetch<{ data: MerchantTransaction[] }>(`/api/merchants/${id}/transactions`, {
-    headers: authHeaders(token),
-  });
+export function getMerchantTransactions(id: string) {
+  return apiFetch<{ data: MerchantTransaction[] }>(`/api/merchants/${id}/transactions`);
 }
 
-export function getMerchantRedemptions(id: string, token: string) {
-  return apiFetch<{ data: RedemptionRequest[] }>(`/api/merchants/${id}/redemptions`, {
-    headers: authHeaders(token),
-  });
+export function getMerchantRedemptions(id: string) {
+  return apiFetch<{ data: RedemptionRequest[] }>(`/api/merchants/${id}/redemptions`);
 }
 
-export function createMerchantRedemption(merchantId: string, amount_catr: string, token: string) {
+export function createMerchantRedemption(merchantId: string, amount_catr: string) {
   return apiFetch<{ data: RedemptionRequest }>(`/api/merchants/${merchantId}/redemptions`, {
     method: 'POST',
-    headers: authHeaders(token),
+    headers: jsonHeaders(),
     body: JSON.stringify({ amount_catr }),
   });
 }
 
 export function createMerchant(
   body: { name: string; category: string; wallet_address: string; contact_email: string },
-  token: string
+  token?: string,
 ) {
   return apiFetch<{ data: Merchant }>('/api/merchants', {
     method: 'POST',
-    headers: authHeaders(token),
+    headers: token ? authHeaders(token) : jsonHeaders(),
     body: JSON.stringify(body),
   });
 }
@@ -184,11 +184,10 @@ export function createMerchant(
 export function updateMerchantNotifications(
   id: string,
   body: { notify_redemption_update?: boolean },
-  token: string,
 ) {
   return apiFetch<{ data: { notify_redemption_update: boolean } }>(`/api/merchants/${id}/notifications`, {
     method: 'PATCH',
-    headers: authHeaders(token),
+    headers: jsonHeaders(),
     body: JSON.stringify(body),
   });
 }
@@ -201,11 +200,10 @@ export function updateMerchantPayout(
     payout_account_type?: 'SAVINGS' | 'CHECKING';
     payout_crypto_address?: string;
   },
-  token: string,
 ) {
   return apiFetch<{ data: Merchant }>(`/api/merchants/${id}/payout`, {
     method: 'PATCH',
-    headers: authHeaders(token),
+    headers: jsonHeaders(),
     body: JSON.stringify(body),
   });
 }
@@ -213,11 +211,10 @@ export function updateMerchantPayout(
 export function updateMerchantProfile(
   id: string,
   body: { name?: string; category?: string; contact_email?: string },
-  token: string,
 ) {
   return apiFetch<{ data: Merchant }>(`/api/merchants/${id}/profile`, {
     method: 'PATCH',
-    headers: authHeaders(token),
+    headers: jsonHeaders(),
     body: JSON.stringify(body),
   });
 }
@@ -225,11 +222,11 @@ export function updateMerchantProfile(
 export function updateMerchant(
   id: string,
   body: { name?: string; category?: string; contact_email?: string; active?: boolean },
-  token: string
+  token?: string,
 ) {
   return apiFetch<{ data: Merchant }>(`/api/merchants/${id}`, {
     method: 'PATCH',
-    headers: authHeaders(token),
+    headers: token ? authHeaders(token) : jsonHeaders(),
     body: JSON.stringify(body),
   });
 }
@@ -244,41 +241,41 @@ export function createRedemption(body: { merchant_id: string; amount_catr: strin
   });
 }
 
-export function getRedemptions(token: string, filters?: { status?: string; tier?: string }) {
+export function getRedemptions(token?: string, filters?: { status?: string; tier?: string }) {
   const params = new URLSearchParams();
   if (filters?.status) params.set('status', filters.status);
   if (filters?.tier) params.set('tier', filters.tier);
   const qs = params.toString() ? `?${params.toString()}` : '';
-  return apiFetch<{ data: RedemptionRequest[] }>(`/api/redemptions${qs}`, {
-    headers: authHeaders(token),
-  });
+  return apiFetch<{ data: RedemptionRequest[] }>(`/api/redemptions${qs}`,
+    token ? { headers: authHeaders(token) } : undefined
+  );
 }
 
-export function approveRedemption(id: string, token: string) {
+export function approveRedemption(id: string, token?: string) {
   return apiFetch<{ data: RedemptionRequest }>(`/api/redemptions/${id}/approve`, {
     method: 'PATCH',
-    headers: authHeaders(token),
+    ...(token ? { headers: authHeaders(token) } : {}),
   });
 }
 
-export function rejectRedemption(id: string, token: string) {
+export function rejectRedemption(id: string, token?: string) {
   return apiFetch<{ data: RedemptionRequest }>(`/api/redemptions/${id}/reject`, {
     method: 'PATCH',
-    headers: authHeaders(token),
+    ...(token ? { headers: authHeaders(token) } : {}),
   });
 }
 
-export function forceBurn(id: string, token: string) {
+export function forceBurn(id: string, token?: string) {
   return apiFetch<{ data: { redemption_id: string; tx_hash: string } }>(`/api/redemptions/${id}/force-burn`, {
     method: 'POST',
-    headers: authHeaders(token),
+    ...(token ? { headers: authHeaders(token) } : {}),
   });
 }
 
-export function confirmLempirasSent(id: string, token: string) {
+export function confirmLempirasSent(id: string, token?: string) {
   return apiFetch<{ data: RedemptionRequest }>(`/api/redemptions/${id}/confirm-lempiras`, {
     method: 'PATCH',
-    headers: authHeaders(token),
+    ...(token ? { headers: authHeaders(token) } : {}),
   });
 }
 
@@ -326,9 +323,7 @@ export function adminMint(body: AdminMintBody, token: string) {
 // --- Reward queue ---
 
 export function getRewardQueue(token: string) {
-  return apiFetch<{ data: RewardPayout[] }>('/api/rewards/queue', {
-    headers: authHeaders(token),
-  });
+  return apiFetch<{ data: RewardPayout[] }>('/api/rewards/queue', { headers: authHeaders(token) });
 }
 
 export function approveRewardPayout(id: string, token: string) {
