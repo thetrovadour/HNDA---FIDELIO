@@ -1003,3 +1003,44 @@ First session in VS Code on the new Ubuntu machine. GitHub was signaling 827 cha
 - Passkey / WebAuthn — lands when `hnda.io` is live on HTTPS
 - LEMPIRAS_SENT auto-confirmation (BAC Credomatic API, Etapa 2)
 - Security debt: HttpOnly cookie migration, rate limiting on `/auth/merchant-login`, logout-on-401
+
+---
+
+### Session — 2026-04-25
+**Focus:** Ubuntu migration boot — first full dev stack run on Linux
+
+#### What happened
+
+**1. nvm not sourced in zsh**
+Fresh Ubuntu install had nvm installed but not wired into `.zshrc`. Added the standard nvm source block to `~/.zshrc`. `npm` is now available in all new terminals.
+
+**2. Turbopack disabled — switched to webpack**
+Next.js 16 enables Turbopack by default. On this monorepo setup (npm workspaces with hoisted `node_modules`), Turbopack panics repeatedly with "Next.js package not found" — a known Vercel bug with workspace hoisting. Fixed by adding `--webpack` flag to the web dev script in `packages/web/package.json`. Turbopack can be revisited when Vercel fixes the monorepo resolution issue.
+
+**3. MetaMask SDK React Native warning suppressed**
+`@metamask/sdk` ships React Native code in its browser bundle, causing a noisy webpack warning about `@react-native-async-storage/async-storage`. Fixed by adding a webpack alias in `next.config.mjs` that stubs the module to `false` for client builds.
+
+**4. Full test suite run — Ubuntu baseline established**
+
+| Component | Result |
+|---|---|
+| Backend (Jest) | 62/62 passing |
+| MerL1nk C++ Core (ctest) | 6/6 passing |
+| MerL1nk Bridge (Jest) | 8/8 passing (fixed 2 test files) |
+| Contracts (Hardhat) | not run this session |
+| Web UI | not manually verified this session |
+
+**5. Bridge test fixes**
+`ContractLike` interface had gained a `burn` method and `MintResult` had gained `tx_hash` since the tests were last updated. Fixed mocks in `minter.test.ts` and `socket_server.test.ts` to match current interfaces.
+
+#### Key decisions
+
+- Webpack is the correct bundler for dev on this monorepo until Turbopack's workspace resolution is fixed upstream. No functionality lost.
+- Test count grew from 44 → 62 on the backend since last session — new tests were already there, just not counted previously.
+
+#### Pending / next up
+
+- Step 4: manually verify web UI pages (`/`, `/register`, `/admin`, `/fidelio`)
+- Step 5: run Hardhat contract tests
+- Carry-forward security debt: HttpOnly cookie migration, rate limiting, logout-on-401
+- Passkey / WebAuthn — pending `hnda.io` HTTPS
