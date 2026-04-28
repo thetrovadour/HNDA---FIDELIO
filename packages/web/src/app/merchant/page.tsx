@@ -17,6 +17,8 @@ import {
   updateMerchantNotifications,
   updateMerchantPayout,
   logout,
+  forgotPassword,
+  resetPassword,
   AuthError,
   type Merchant,
   type MerchantBalance,
@@ -176,6 +178,13 @@ function LoginScreen({ onLogin, inactivity }: { onLogin: (merchant: Merchant) =>
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
 
+  // forgot-password state
+  const [mode, setMode] = useState<'login' | 'forgot' | 'reset'>('login');
+  const [fpEmail, setFpEmail] = useState('');
+  const [fpCode, setFpCode] = useState('');
+  const [fpNewPass, setFpNewPass] = useState('');
+  const [fpMsg, setFpMsg] = useState('');
+
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     if (!fullName.trim() || !credential.trim()) return;
@@ -191,87 +200,121 @@ function LoginScreen({ onLogin, inactivity }: { onLogin: (merchant: Merchant) =>
     }
   }
 
-  return (
-    <div
-      className="min-h-screen flex flex-col items-center justify-center px-6 relative"
-      style={{ background: C.bg, fontFamily: 'var(--font-body)' }}
-    >
-      <div className="mb-12 text-center">
-        <p
-          className="uppercase tracking-widest mb-1"
-          style={{ color: C.slate, fontSize: '0.65rem', fontWeight: 300, letterSpacing: '0.22em' }}
-        >
-          Honduras Nativa Digital Answers
-        </p>
-        <h1
-          style={{
-            fontSize: 'clamp(2.5rem, 8vw, 3.5rem)',
-            fontWeight: 200,
-            letterSpacing: '0.18em',
-            color: C.white,
-            lineHeight: 1,
-          }}
-        >
-          FIDELIO
-        </h1>
-        <div className="mx-auto mt-3" style={{ width: 32, height: 1, background: 'rgba(201,168,76,0.4)' }} />
-        <p
-          className="mt-3 uppercase tracking-widest"
-          style={{ color: C.slate, fontSize: '0.6rem', fontWeight: 300, letterSpacing: '0.18em' }}
-        >
-          {t('merchant.portal_label')}
-        </p>
+  async function handleForgot(e: React.FormEvent) {
+    e.preventDefault();
+    setLoading(true);
+    setFpMsg('');
+    try {
+      await forgotPassword(fpEmail.trim());
+      setFpMsg('Si ese correo existe, recibirás un código. Revisa tu bandeja.');
+      setMode('reset');
+    } catch {
+      setFpMsg('Error al enviar el código. Intenta de nuevo.');
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  async function handleReset(e: React.FormEvent) {
+    e.preventDefault();
+    if (fpNewPass.length < 6) { setFpMsg('La contraseña debe tener al menos 6 caracteres.'); return; }
+    setLoading(true);
+    setFpMsg('');
+    try {
+      await resetPassword({ email: fpEmail.trim(), code: fpCode.trim(), new_password: fpNewPass });
+      setFpMsg('');
+      setMode('login');
+      setError('Contraseña actualizada. Inicia sesión.');
+    } catch {
+      setFpMsg('Código inválido o expirado. Verifica e intenta de nuevo.');
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  const header = (
+    <div className="mb-12 text-center">
+      <p className="uppercase tracking-widest mb-1" style={{ color: C.slate, fontSize: '0.65rem', fontWeight: 300, letterSpacing: '0.22em' }}>
+        Honduras Nativa Digital Answers
+      </p>
+      <h1 style={{ fontSize: 'clamp(2.5rem, 8vw, 3.5rem)', fontWeight: 200, letterSpacing: '0.18em', color: C.white, lineHeight: 1 }}>
+        FIDELIO
+      </h1>
+      <div className="mx-auto mt-3" style={{ width: 32, height: 1, background: 'rgba(201,168,76,0.4)' }} />
+      <p className="mt-3 uppercase tracking-widest" style={{ color: C.slate, fontSize: '0.6rem', fontWeight: 300, letterSpacing: '0.18em' }}>
+        {t('merchant.portal_label')}
+      </p>
+    </div>
+  );
+
+  if (mode === 'forgot') {
+    return (
+      <div className="min-h-screen flex flex-col items-center justify-center px-6 relative" style={{ background: C.bg, fontFamily: 'var(--font-body)' }}>
+        {header}
+        <div className="shimmer-border rounded-2xl p-px w-full max-w-sm">
+          <form onSubmit={handleForgot} className="rounded-2xl px-6 py-7 flex flex-col gap-5" style={{ background: C.surface }}>
+            <p style={{ color: C.white, fontSize: '0.85rem', fontWeight: 400, textAlign: 'center' }}>Recuperar contraseña</p>
+            <p style={{ color: C.slate, fontSize: '0.72rem', textAlign: 'center', lineHeight: 1.5 }}>
+              Ingresa el correo con el que te registraste. Te enviaremos un código de recuperación.
+            </p>
+            <Input label="Correo electrónico" type="email" value={fpEmail} onChange={(e) => setFpEmail(e.target.value)} placeholder="tu@correo.com" autoComplete="email" />
+            {fpMsg && <StatusMsg type="error" msg={fpMsg} />}
+            <PrimaryBtn type="submit" disabled={loading || !fpEmail.trim()}>{loading ? 'Enviando...' : 'Enviar código'}</PrimaryBtn>
+            <button type="button" onClick={() => { setMode('login'); setFpMsg(''); }} style={{ background: 'none', border: 'none', cursor: 'pointer', color: C.slate, fontSize: '0.7rem', textDecoration: 'underline', textUnderlineOffset: '3px' }}>
+              Volver al inicio de sesión
+            </button>
+          </form>
+        </div>
       </div>
+    );
+  }
 
+  if (mode === 'reset') {
+    return (
+      <div className="min-h-screen flex flex-col items-center justify-center px-6 relative" style={{ background: C.bg, fontFamily: 'var(--font-body)' }}>
+        {header}
+        <div className="shimmer-border rounded-2xl p-px w-full max-w-sm">
+          <form onSubmit={handleReset} className="rounded-2xl px-6 py-7 flex flex-col gap-5" style={{ background: C.surface }}>
+            <p style={{ color: C.white, fontSize: '0.85rem', fontWeight: 400, textAlign: 'center' }}>Nueva contraseña</p>
+            {fpMsg && <StatusMsg type={fpMsg.includes('inválido') ? 'error' : 'success'} msg={fpMsg} />}
+            <Input label="Código de recuperación" value={fpCode} onChange={(e) => setFpCode(e.target.value)} placeholder="6 dígitos" autoComplete="one-time-code" />
+            <Input label="Nueva contraseña" type="password" value={fpNewPass} onChange={(e) => setFpNewPass(e.target.value)} placeholder="Mínimo 6 caracteres" autoComplete="new-password" />
+            <PrimaryBtn type="submit" disabled={loading || !fpCode.trim() || !fpNewPass}>{loading ? 'Guardando...' : 'Cambiar contraseña'}</PrimaryBtn>
+            <button type="button" onClick={() => setMode('forgot')} style={{ background: 'none', border: 'none', cursor: 'pointer', color: C.slate, fontSize: '0.7rem', textDecoration: 'underline', textUnderlineOffset: '3px' }}>
+              Reenviar código
+            </button>
+          </form>
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="min-h-screen flex flex-col items-center justify-center px-6 relative" style={{ background: C.bg, fontFamily: 'var(--font-body)' }}>
+      {header}
       <div className="shimmer-border rounded-2xl p-px w-full max-w-sm">
-        <form
-          onSubmit={handleSubmit}
-          className="rounded-2xl px-6 py-7 flex flex-col gap-5"
-          style={{ background: C.surface }}
-        >
-          <Input
-            label="Nombre completo"
-            value={fullName}
-            onChange={(e) => setFullName(e.target.value)}
-            placeholder="Tu nombre completo"
-            autoComplete="name"
-          />
-          <Input
-            label="PIN o contraseña"
-            type="password"
-            value={credential}
-            onChange={(e) => setCredential(e.target.value)}
-            placeholder="PIN o contraseña"
-            autoComplete="current-password"
-          />
+        <form onSubmit={handleSubmit} className="rounded-2xl px-6 py-7 flex flex-col gap-5" style={{ background: C.surface }}>
+          <Input label="Nombre completo" value={fullName} onChange={(e) => setFullName(e.target.value)} placeholder="Tu nombre completo" autoComplete="name" />
+          <Input label="PIN o contraseña" type="password" value={credential} onChange={(e) => setCredential(e.target.value)} placeholder="PIN o contraseña" autoComplete="current-password" />
 
-          {inactivity && (
-            <StatusMsg type="error" msg="Sesión cerrada por inactividad." />
-          )}
-
-          {error && <StatusMsg type="error" msg={error} />}
+          {inactivity && <StatusMsg type="error" msg="Sesión cerrada por inactividad." />}
+          {error && <StatusMsg type={error.includes('actualizada') ? 'success' : 'error'} msg={error} />}
 
           <PrimaryBtn type="submit" disabled={loading || !fullName.trim() || !credential.trim()}>
             {loading ? t('common.verifying') : t('common.access')}
           </PrimaryBtn>
 
-          <p
-            className="text-center"
-            style={{ color: C.slate, fontSize: '0.7rem', fontWeight: 300, letterSpacing: '0.06em' }}
-          >
+          <button type="button" onClick={() => { setMode('forgot'); setError(''); setFpMsg(''); }} style={{ background: 'none', border: 'none', cursor: 'pointer', color: C.slate, fontSize: '0.7rem', textDecoration: 'underline', textUnderlineOffset: '3px', textAlign: 'center' }}>
+            ¿Olvidaste tu contraseña?
+          </button>
+
+          <p className="text-center" style={{ color: C.slate, fontSize: '0.7rem', fontWeight: 300, letterSpacing: '0.06em' }}>
             {t('merchant.client_link')}{' '}
-            <a href="/client" style={{ color: C.slateHi, textDecoration: 'underline', textUnderlineOffset: '3px' }}>
-              {t('common.access_here')}
-            </a>
+            <a href="/client" style={{ color: C.slateHi, textDecoration: 'underline', textUnderlineOffset: '3px' }}>{t('common.access_here')}</a>
           </p>
-          <p
-            className="text-center"
-            style={{ color: C.slate, fontSize: '0.7rem', fontWeight: 300, letterSpacing: '0.06em' }}
-          >
+          <p className="text-center" style={{ color: C.slate, fontSize: '0.7rem', fontWeight: 300, letterSpacing: '0.06em' }}>
             {t('client.no_account')}{' '}
-            <a href="/register" style={{ color: C.slateHi, textDecoration: 'underline', textUnderlineOffset: '3px' }}>
-              {t('common.register')}
-            </a>
+            <a href="/register" style={{ color: C.slateHi, textDecoration: 'underline', textUnderlineOffset: '3px' }}>{t('common.register')}</a>
           </p>
         </form>
       </div>

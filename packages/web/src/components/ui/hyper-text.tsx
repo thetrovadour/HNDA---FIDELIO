@@ -174,7 +174,7 @@ export function HyperText({
         {displayText.map((letter, index) => (
           <motion.span
             key={index}
-            className="hero-seq-item" style={{ fontSize: "clamp(5.5rem, 15vw, 7rem)", fontWeight: 100, letterSpacing: "-0.04em", lineHeight: 1, marginBottom: "1.5rem", color: "var(--text)", fontFamily: "var(--font-stencil)" }}
+            className="hero-seq-item" style={{ fontSize: "clamp(5.5rem, 15vw, 7rem)", fontWeight: 100, letterSpacing: "-0.04em", lineHeight: 1, marginBottom: "1.5rem", color: "var(--text)", fontFamily: "var(--font-oxanium)" }}
           >
             {letter.toUpperCase()}
           </motion.span>

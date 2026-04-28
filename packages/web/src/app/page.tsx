@@ -66,7 +66,19 @@ export default function HndaHome() {
       }}>
         <div style={{ display: "flex", alignItems: "center", gap: "2rem" }}>
         <a href="#hero" style={{ display: "flex", alignItems: "center", textDecoration: "none" }} className="shrink-0">
-          <svg xmlns="http://www.w3.org/2000/svg" width="125" height="125" viewBox="0 0 300 300" style={{ transition: "transform 0.6s cubic-bezier(0.4,0,0.2,1)", transform: logoRotated ? "rotate(180deg)" : "rotate(0deg)" }}>
+          <svg xmlns="http://www.w3.org/2000/svg" width="160" height="160" viewBox="0 0 300 300" style={{ transition: "transform 0.6s cubic-bezier(0.4,0,0.2,1)", transform: logoRotated ? "rotate(180deg)" : "rotate(0deg)" }}>
+            <defs>
+              <linearGradient id="logo-shimmer" x1="0" x2="1" y1="0" y2="0">
+                <stop offset="0%" stopColor="white" stopOpacity="0" />
+                <stop offset="45%" stopColor="white" stopOpacity="0" />
+                <stop offset="50%" stopColor="white" stopOpacity="0.55" />
+                <stop offset="55%" stopColor="white" stopOpacity="0" />
+                <stop offset="100%" stopColor="white" stopOpacity="0" />
+              </linearGradient>
+              <clipPath id="logo-clip">
+                <rect width="300" height="300" />
+              </clipPath>
+            </defs>
             {/* Outer ring */}
             <g transform="matrix(0.1115 0 0 0.1115 150 150)">
               <path fill="rgb(234, 234, 234)" transform="translate(-512,-512)" d="M 844.1 211.4 C 840.5 207.4 836.8 203.5 833.1 199.7 C 779.3 144.3 711.2 102.8 634.9 81 C 619.8 76.7 604.4 73.2 588.7 70.5 C 563.7 66.2 538.1 64 512 64 C 386 64 272.1 116 190.7 199.8 C 187 203.6 183.3 207.5 179.7 211.5 C 107.8 290.9 64 396.4 64 512 C 64 627.6 107.8 732.9 179.6 812.4 C 183.2 816.4 186.8 820.3 190.6 824.1 C 244.5 879.6 312.7 921.2 389.2 943 C 404.3 947.3 419.7 950.8 435.4 953.5 C 460.3 957.8 485.9 960 512 960 C 538.1 960 563.7 957.8 588.7 953.5 C 604.4 950.8 619.8 947.3 634.9 943 C 711.4 921.3 779.5 879.7 833.4 824.2 C 837.1 820.3 840.8 816.5 844.4 812.5 C 916.2 733 960 627.6 960 512 C 960 396.3 916.1 290.9 844.1 211.4 Z M 915.9 520.2 C 914.9 571.9 904.3 622 884.3 669.3 C 866.9 710.5 843 748.1 813.2 781.3 C 809.7 785.3 806 789.2 802.3 793 C 800.8 794.6 799.2 796.1 797.7 797.7 C 760.6 834.8 717.4 864 669.3 884.3 C 633.5 899.4 596.2 909.2 557.7 913.5 C 545.2 914.9 532.7 915.7 520 915.9 C 517.4 916 514.7 916 512 916 C 509.3 916 506.7 916 504 915.9 C 491.4 915.7 478.8 914.9 466.3 913.5 C 427.9 909.2 390.5 899.4 354.7 884.3 C 306.6 863.9 263.4 834.8 226.3 797.7 C 224.7 796.1 223.1 794.5 221.6 792.9 C 217.9 789.1 214.2 785.1 210.7 781.2 C 180.9 748 157.1 710.4 139.7 669.3 C 119.7 622 109.1 571.9 108.1 520.2 L 217.4 520.2 C 217.4 517.5 217.3 514.8 217.3 512 C 217.3 509.4 217.3 506.8 217.4 504.2 L 108.1 504.2 C 109.1 452.4 119.7 402.2 139.8 354.8 C 157.2 313.6 181.1 275.9 211 242.7 C 214.5 238.7 218.2 234.8 221.9 231 C 223.4 229.5 224.9 227.9 226.4 226.4 C 263.5 189.3 306.7 160.1 354.8 139.8 C 390.6 124.7 427.9 114.9 466.4 110.6 C 478.9 109.2 491.4 108.4 504.1 108.1 C 506.8 108 509.4 108 512.1 108 C 514.8 108 517.4 108 520.1 108.1 C 532.8 108.3 545.3 109.2 557.8 110.6 C 596.2 114.9 633.6 124.7 669.3 139.8 C 717.4 160.1 760.6 189.3 797.7 226.4 C 799.2 227.9 800.7 229.4 802.1 230.9 C 805.8 234.7 809.5 238.6 813 242.6 C 842.9 275.9 866.8 313.5 884.3 354.8 C 904.3 402.2 915 452.4 915.9 504.2 L 806.6 504.2 C 806.6 506.8 806.7 509.4 806.7 512 C 806.7 514.7 806.7 517.4 806.6 520.2 L 915.9 520.2 Z" />
@@ -85,6 +97,10 @@ export default function HndaHome() {
                 <polygon fill="rgb(255,255,255)" points="0,-67.8381 20.5725,-21.1537 71.3292,-16.0144 33.287,17.9775 44.0839,67.8381 0,42.1619 -44.0839,67.8381 -33.287,17.9775 -71.3292,-16.0144 -20.5725,-21.1537" />
               </g>
             ))}
+            {/* Shimmer sweep */}
+            <rect x="-300" y="0" width="300" height="300" fill="url(#logo-shimmer)" clipPath="url(#logo-clip)" style={{ mixBlendMode: "overlay" }}>
+              <animateTransform attributeName="transform" type="translate" from="-300 0" to="600 0" dur="2.8s" repeatCount="indefinite" />
+            </rect>
           </svg>
         </a>
           <a href="#mission" style={navLink} className="hidden md:inline">Mission</a>

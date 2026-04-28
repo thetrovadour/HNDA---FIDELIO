@@ -83,7 +83,7 @@ export default function AwardPoints({ token }: { token: string }) {
   const [error,      setError]      = useState('');
 
   useEffect(() => {
-    Promise.all([getAdminUsers(token), getMerchants()])
+    Promise.all([getAdminUsers(token), getMerchants(token)])
       .then(([u, m]) => { setUsers(u.data); setMerchants(m.data); })
       .catch((e) => setLoadErr(e instanceof Error ? e.message : 'Error al cargar datos.'))
       .finally(() => setLoading(false));

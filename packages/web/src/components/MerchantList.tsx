@@ -58,6 +58,15 @@ export default function MerchantList({ merchants, token, onRefresh }: Props) {
     }
   }
 
+  async function handleActivate(id: string) {
+    try {
+      await updateMerchant(id, { active: true }, token);
+      onRefresh();
+    } catch (err) {
+      alert(err instanceof Error ? err.message : 'Failed to activate merchant.');
+    }
+  }
+
   async function handleDeactivate(id: string) {
     try {
       await updateMerchant(id, { active: false }, token);
@@ -114,13 +123,21 @@ export default function MerchantList({ merchants, token, onRefresh }: Props) {
                     {m.active ? 'Active' : 'Inactive'}
                   </span>
                 </td>
-                <td style={tdStyle}>
+                <td style={{ ...tdStyle, display: 'flex', gap: '0.4rem' }}>
+                  {!m.active && (
+                    <button
+                      onClick={() => handleActivate(m.id)}
+                      style={{ ...font, background: C.successBg, border: `1px solid rgba(16,185,129,0.3)`, borderRadius: '0.25rem', color: C.success, fontSize: '0.65rem', padding: '0.2rem 0.5rem', cursor: 'pointer' }}
+                    >
+                      Activar
+                    </button>
+                  )}
                   {m.active && (
                     <button
                       onClick={() => handleDeactivate(m.id)}
                       style={{ ...font, background: C.dangerBg, border: `1px solid rgba(239,68,68,0.2)`, borderRadius: '0.25rem', color: C.danger, fontSize: '0.65rem', padding: '0.2rem 0.5rem', cursor: 'pointer' }}
                     >
-                      Deactivate
+                      Desactivar
                     </button>
                   )}
                 </td>

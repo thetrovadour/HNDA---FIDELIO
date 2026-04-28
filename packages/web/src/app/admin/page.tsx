@@ -310,7 +310,7 @@ export default function AdminPage() {
   const loadMerchants = useCallback(async () => {
     if (!token) return;
     try {
-      const res = await getMerchants();
+      const res = await getMerchants(token);
       setMerchants(res.data);
     } catch { /* handled per-component */ }
   }, [token]);

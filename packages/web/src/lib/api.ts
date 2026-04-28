@@ -138,8 +138,8 @@ export function spendCATR(body: { user_id: string; merchant_id: string; amount_c
 
 // --- Merchants ---
 
-export function getMerchants() {
-  return apiFetch<{ data: Merchant[] }>('/api/merchants');
+export function getMerchants(token?: string) {
+  return apiFetch<{ data: Merchant[] }>('/api/merchants', token ? { headers: adminHeaders(token) } : undefined);
 }
 
 export function getMerchant(id: string) {

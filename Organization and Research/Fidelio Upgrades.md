@@ -14,3 +14,37 @@ These are the following upgrades to be considered for FIDELIO. They create a bet
 - Dual-role UI — a merchant who is also registered as a client can switch between both views from a single session. Two main tabs at the top: "Cliente" and "Comercio". Each tab loads its respective dashboard. No need to log in twice.
 - Merchant auto-activation — when a merchant registers, define a checklist of requirements that must be met before the account activates (e.g. wallet assigned, contact email verified, category set). Once all requirements pass, the merchant activates automatically without admin intervention.
 - Merchant deactivation rules — define conditions that trigger automatic deactivation (e.g. inactivity threshold, failed redemptions, compliance flag). Admin can also manually deactivate with a required reason. Deactivated merchants see a clear status message explaining why and what to do next.
+
+---
+
+## npm Dependency Upgrades
+
+~50 packages outdated across the monorepo as of 2026-04-27.
+
+### Minor / Patch — Safe to update
+- `@tanstack/react-query` 5.96.2 → 5.100.5
+- `express-rate-limit` 8.3.2 → 8.4.1
+- `autoprefixer` 10.4.27 → 10.5.0
+- `@types/node` 20.19.37 → 20.19.39
+
+### Major — Breaking changes, migrate carefully
+| Package | Current | Latest | Location |
+|---|---|---|---|
+| `@prisma/client` | 5.22.0 | 7.8.0 | backend |
+| `express` | 4.22.1 | 5.2.1 | backend |
+| `hardhat` | 2.28.6 | 3.4.2 | contracts |
+| `@nomicfoundation/hardhat-toolbox` | 5.0.0 | 7.0.0 | contracts |
+| `@nomicfoundation/hardhat-ethers` | 3.1.3 | 4.0.9 | contracts |
+| `@nomicfoundation/hardhat-chai-matchers` | 2.1.2 | 3.0.0 | contracts |
+| `@nomicfoundation/hardhat-ignition-ethers` | 0.15.17 | 3.1.4 | contracts |
+| `@nomicfoundation/hardhat-verify` | 2.1.3 | 3.0.15 | contracts |
+| `@nomicfoundation/hardhat-network-helpers` | 1.1.2 | 3.0.6 | contracts |
+| `chai` | 4.5.0 | 6.2.2 | contracts |
+| `@types/jest` | 29.5.14 | 30.0.0 | backend, bridge |
+| `@types/express` | 4.17.25 | 5.0.6 | backend |
+| `@types/react` | 18.3.28 | 19.2.14 | web |
+| `@types/react-dom` | 18.3.7 | 19.2.3 | web |
+| `@types/supertest` | 6.0.3 | 7.2.0 | backend |
+| `dotenv` | 16.6.1 | 17.4.2 | backend, bridge, contracts, e2e |
+
+**Rule:** Do minor/patch upgrades freely. Major upgrades require a dedicated migration session — test suite must pass after each one.
