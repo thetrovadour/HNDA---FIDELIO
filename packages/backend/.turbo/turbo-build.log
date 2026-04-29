@@ -1,4 +1,393 @@
 
+
 > @hnda/backend@0.1.0 build
 > tsc
 
+[1G[0K[96msrc/routes/gca.ts[0m:[93m31[0m:[93m16[0m - [91merror[0m[90m TS2322: [0mType 'string | string[]' is not assignable to type 'string | undefined'.
+  Type 'string[]' is not assignable to type 'string'.
+
+[7m31[0m       where: { merchant_id: req.params.merchant_id },
+[7m  [0m [91m               ~~~~~~~~~~~[0m
+
+  [96m../../node_modules/.prisma/client/index.d.ts[0m:[93m20445[0m:[93m5[0m
+    [7m20445[0m     merchant_id?: string
+    [7m     [0m [96m    ~~~~~~~~~~~[0m
+    The expected type comes from property 'merchant_id' which is declared here on type 'MerchantGcaAllocationWhereUniqueInput'
+
+[96msrc/routes/gca.ts[0m:[93m56[0m:[93m16[0m - [91merror[0m[90m TS2322: [0mType 'string | string[]' is not assignable to type 'string | StringFilter<"GcaTransaction"> | undefined'.
+  Type 'string[]' is not assignable to type 'string | StringFilter<"GcaTransaction"> | undefined'.
+
+[7m56[0m       where: { merchant_id: req.params.merchant_id },
+[7m  [0m [91m               ~~~~~~~~~~~[0m
+
+[96msrc/routes/gca.ts[0m:[93m170[0m:[93m16[0m - [91merror[0m[90m TS2322: [0mType 'string | string[]' is not assignable to type 'string | undefined'.
+  Type 'string[]' is not assignable to type 'string'.
+
+[7m170[0m       where: { merchant_id: req.params.merchant_id },
+[7m   [0m [91m               ~~~~~~~~~~~[0m
+
+  [96m../../node_modules/.prisma/client/index.d.ts[0m:[93m20445[0m:[93m5[0m
+    [7m20445[0m     merchant_id?: string
+    [7m     [0m [96m    ~~~~~~~~~~~[0m
+    The expected type comes from property 'merchant_id' which is declared here on type 'MerchantGcaAllocationWhereUniqueInput'
+
+[96msrc/routes/gca.ts[0m:[93m176[0m:[93m34[0m - [91merror[0m[90m TS2345: [0mArgument of type 'string | string[]' is not assignable to parameter of type 'string'.
+  Type 'string[]' is not assignable to type 'string'.
+
+[7m176[0m     await evaluateGcaVesting(db, req.params.merchant_id);
+[7m   [0m [91m                                 ~~~~~~~~~~~~~~~~~~~~~~[0m
+
+[96msrc/routes/gca.ts[0m:[93m178[0m:[93m16[0m - [91merror[0m[90m TS2322: [0mType 'string | string[]' is not assignable to type 'string | undefined'.
+  Type 'string[]' is not assignable to type 'string'.
+
+[7m178[0m       where: { merchant_id: req.params.merchant_id },
+[7m   [0m [91m               ~~~~~~~~~~~[0m
+
+  [96m../../node_modules/.prisma/client/index.d.ts[0m:[93m20445[0m:[93m5[0m
+    [7m20445[0m     merchant_id?: string
+    [7m     [0m [96m    ~~~~~~~~~~~[0m
+    The expected type comes from property 'merchant_id' which is declared here on type 'MerchantGcaAllocationWhereUniqueInput'
+
+[96msrc/routes/gca.ts[0m:[93m195[0m:[93m71[0m - [91merror[0m[90m TS2322: [0mType 'string | string[]' is not assignable to type 'string | undefined'.
+  Type 'string[]' is not assignable to type 'string'.
+
+[7m195[0m     const entry = await db.gcaRedemptionRequest.findUnique({ where: { id: req.params.id } });
+[7m   [0m [91m                                                                      ~~[0m
+
+  [96m../../node_modules/.prisma/client/index.d.ts[0m:[93m20598[0m:[93m5[0m
+    [7m20598[0m     id?: string
+    [7m     [0m [96m    ~~[0m
+    The expected type comes from property 'id' which is declared here on type 'GcaRedemptionRequestWhereUniqueInput'
+
+[96msrc/routes/gca.ts[0m:[93m222[0m:[93m18[0m - [91merror[0m[90m TS2322: [0mType 'string | string[]' is not assignable to type 'string | undefined'.
+  Type 'string[]' is not assignable to type 'string'.
+
+[7m222[0m         where: { id: req.params.id },
+[7m   [0m [91m                 ~~[0m
+
+  [96m../../node_modules/.prisma/client/index.d.ts[0m:[93m20598[0m:[93m5[0m
+    [7m20598[0m     id?: string
+    [7m     [0m [96m    ~~[0m
+    The expected type comes from property 'id' which is declared here on type 'GcaRedemptionRequestWhereUniqueInput'
+
+[96msrc/routes/gca.ts[0m:[93m232[0m:[93m71[0m - [91merror[0m[90m TS2322: [0mType 'string | string[]' is not assignable to type 'string | undefined'.
+  Type 'string[]' is not assignable to type 'string'.
+
+[7m232[0m     const entry = await db.gcaRedemptionRequest.findUnique({ where: { id: req.params.id } });
+[7m   [0m [91m                                                                      ~~[0m
+
+  [96m../../node_modules/.prisma/client/index.d.ts[0m:[93m20598[0m:[93m5[0m
+    [7m20598[0m     id?: string
+    [7m     [0m [96m    ~~[0m
+    The expected type comes from property 'id' which is declared here on type 'GcaRedemptionRequestWhereUniqueInput'
+
+[96msrc/routes/gca.ts[0m:[93m238[0m:[93m16[0m - [91merror[0m[90m TS2322: [0mType 'string | string[]' is not assignable to type 'string | undefined'.
+  Type 'string[]' is not assignable to type 'string'.
+
+[7m238[0m       where: { id: req.params.id },
+[7m   [0m [91m               ~~[0m
+
+  [96m../../node_modules/.prisma/client/index.d.ts[0m:[93m20598[0m:[93m5[0m
+    [7m20598[0m     id?: string
+    [7m     [0m [96m    ~~[0m
+    The expected type comes from property 'id' which is declared here on type 'GcaRedemptionRequestWhereUniqueInput'
+
+[96msrc/routes/merchants.ts[0m:[93m33[0m:[93m62[0m - [91merror[0m[90m TS2322: [0mType 'string | string[]' is not assignable to type 'string | undefined'.
+  Type 'string[]' is not assignable to type 'string'.
+
+[7m33[0m     const merchant = await db.merchant.findUnique({ where: { id: req.params.id } });
+[7m  [0m [91m                                                             ~~[0m
+
+  [96m../../node_modules/.prisma/client/index.d.ts[0m:[93m19719[0m:[93m5[0m
+    [7m19719[0m     id?: string
+    [7m     [0m [96m    ~~[0m
+    The expected type comes from property 'id' which is declared here on type 'MerchantWhereUniqueInput'
+
+[96msrc/routes/merchants.ts[0m:[93m42[0m:[93m62[0m - [91merror[0m[90m TS2322: [0mType 'string | string[]' is not assignable to type 'string | undefined'.
+  Type 'string[]' is not assignable to type 'string'.
+
+[7m42[0m     const merchant = await db.merchant.findUnique({ where: { id: req.params.id } });
+[7m  [0m [91m                                                             ~~[0m
+
+  [96m../../node_modules/.prisma/client/index.d.ts[0m:[93m19719[0m:[93m5[0m
+    [7m19719[0m     id?: string
+    [7m     [0m [96m    ~~[0m
+    The expected type comes from property 'id' which is declared here on type 'MerchantWhereUniqueInput'
+
+[96msrc/routes/merchants.ts[0m:[93m50[0m:[93m18[0m - [91merror[0m[90m TS2322: [0mType 'string | string[]' is not assignable to type 'string | StringNullableFilter<"Transaction"> | null | undefined'.
+  Type 'string[]' is not assignable to type 'string | StringNullableFilter<"Transaction"> | null | undefined'.
+
+[7m50[0m         where: { merchant_id: req.params.id, type: 'SPEND', status: 'CONFIRMED' },
+[7m  [0m [91m                 ~~~~~~~~~~~[0m
+
+[96msrc/routes/merchants.ts[0m:[93m60[0m:[93m18[0m - [91merror[0m[90m TS2322: [0mType 'string | string[]' is not assignable to type 'string | StringFilter<"RedemptionRequest"> | undefined'.
+  Type 'string[]' is not assignable to type 'string | StringFilter<"RedemptionRequest"> | undefined'.
+
+[7m60[0m         where: { merchant_id: req.params.id, status: { in: ['BURNED', 'LEMPIRAS_SENT'] } },
+[7m  [0m [91m                 ~~~~~~~~~~~[0m
+
+[96msrc/routes/merchants.ts[0m:[93m65[0m:[93m34[0m - [91merror[0m[90m TS18048: [0m'received._sum' is possibly 'undefined'.
+
+[7m65[0m     const totalReceived = Number(received._sum.amount_catr ?? 0);
+[7m  [0m [91m                                 ~~~~~~~~~~~~~[0m
+
+[96msrc/routes/merchants.ts[0m:[93m67[0m:[93m34[0m - [91merror[0m[90m TS18048: [0m'redeemed._sum' is possibly 'undefined'.
+
+[7m67[0m     const totalRedeemed = Number(redeemed._sum.amount_catr ?? 0);
+[7m  [0m [91m                                 ~~~~~~~~~~~~~[0m
+
+[96msrc/routes/merchants.ts[0m:[93m80[0m:[93m62[0m - [91merror[0m[90m TS2322: [0mType 'string | string[]' is not assignable to type 'string | undefined'.
+  Type 'string[]' is not assignable to type 'string'.
+
+[7m80[0m     const merchant = await db.merchant.findUnique({ where: { id: req.params.id } });
+[7m  [0m [91m                                                             ~~[0m
+
+  [96m../../node_modules/.prisma/client/index.d.ts[0m:[93m19719[0m:[93m5[0m
+    [7m19719[0m     id?: string
+    [7m     [0m [96m    ~~[0m
+    The expected type comes from property 'id' which is declared here on type 'MerchantWhereUniqueInput'
+
+[96msrc/routes/merchants.ts[0m:[93m88[0m:[93m18[0m - [91merror[0m[90m TS2322: [0mType 'string | string[]' is not assignable to type 'string | StringNullableFilter<"Transaction"> | null | undefined'.
+  Type 'string[]' is not assignable to type 'string | StringNullableFilter<"Transaction"> | null | undefined'.
+
+[7m88[0m         where: { merchant_id: req.params.id, status: 'CONFIRMED' },
+[7m  [0m [91m                 ~~~~~~~~~~~[0m
+
+[96msrc/routes/merchants.ts[0m:[93m120[0m:[93m16[0m - [91merror[0m[90m TS2322: [0mType 'string | string[]' is not assignable to type 'string | StringFilter<"RedemptionRequest"> | undefined'.
+  Type 'string[]' is not assignable to type 'string | StringFilter<"RedemptionRequest"> | undefined'.
+
+[7m120[0m       where: { merchant_id: req.params.id },
+[7m   [0m [91m               ~~~~~~~~~~~[0m
+
+[96msrc/routes/merchants.ts[0m:[93m128[0m:[93m60[0m - [91merror[0m[90m TS2345: [0mArgument of type 'string | string[]' is not assignable to parameter of type 'string'.
+  Type 'string[]' is not assignable to type 'string'.
+
+[7m128[0m       const result = await redemptionService.createRequest(req.params.id, req.body.amount_catr);
+[7m   [0m [91m                                                           ~~~~~~~~~~~~~[0m
+
+[96msrc/routes/merchants.ts[0m:[93m144[0m:[93m62[0m - [91merror[0m[90m TS2322: [0mType 'string | string[]' is not assignable to type 'string | undefined'.
+  Type 'string[]' is not assignable to type 'string'.
+
+[7m144[0m     const merchant = await db.merchant.findUnique({ where: { id: req.params.id } });
+[7m   [0m [91m                                                             ~~[0m
+
+  [96m../../node_modules/.prisma/client/index.d.ts[0m:[93m19719[0m:[93m5[0m
+    [7m19719[0m     id?: string
+    [7m     [0m [96m    ~~[0m
+    The expected type comes from property 'id' which is declared here on type 'MerchantWhereUniqueInput'
+
+[96msrc/routes/merchants.ts[0m:[93m150[0m:[93m59[0m - [91merror[0m[90m TS2322: [0mType 'string | string[]' is not assignable to type 'string | undefined'.
+  Type 'string[]' is not assignable to type 'string'.
+
+[7m150[0m       const updated = await db.merchant.update({ where: { id: req.params.id }, data: req.body });
+[7m   [0m [91m                                                          ~~[0m
+
+  [96m../../node_modules/.prisma/client/index.d.ts[0m:[93m19719[0m:[93m5[0m
+    [7m19719[0m     id?: string
+    [7m     [0m [96m    ~~[0m
+    The expected type comes from property 'id' which is declared here on type 'MerchantWhereUniqueInput'
+
+[96msrc/routes/merchants.ts[0m:[93m164[0m:[93m62[0m - [91merror[0m[90m TS2322: [0mType 'string | string[]' is not assignable to type 'string | undefined'.
+  Type 'string[]' is not assignable to type 'string'.
+
+[7m164[0m     const merchant = await db.merchant.findUnique({ where: { id: req.params.id } });
+[7m   [0m [91m                                                             ~~[0m
+
+  [96m../../node_modules/.prisma/client/index.d.ts[0m:[93m19719[0m:[93m5[0m
+    [7m19719[0m     id?: string
+    [7m     [0m [96m    ~~[0m
+    The expected type comes from property 'id' which is declared here on type 'MerchantWhereUniqueInput'
+
+[96msrc/routes/merchants.ts[0m:[93m169[0m:[93m57[0m - [91merror[0m[90m TS2322: [0mType 'string | string[]' is not assignable to type 'string | undefined'.
+  Type 'string[]' is not assignable to type 'string'.
+
+[7m169[0m     const updated = await db.merchant.update({ where: { id: req.params.id }, data: req.body });
+[7m   [0m [91m                                                        ~~[0m
+
+  [96m../../node_modules/.prisma/client/index.d.ts[0m:[93m19719[0m:[93m5[0m
+    [7m19719[0m     id?: string
+    [7m     [0m [96m    ~~[0m
+    The expected type comes from property 'id' which is declared here on type 'MerchantWhereUniqueInput'
+
+[96msrc/routes/merchants.ts[0m:[93m183[0m:[93m62[0m - [91merror[0m[90m TS2322: [0mType 'string | string[]' is not assignable to type 'string | undefined'.
+  Type 'string[]' is not assignable to type 'string'.
+
+[7m183[0m     const merchant = await db.merchant.findUnique({ where: { id: req.params.id } });
+[7m   [0m [91m                                                             ~~[0m
+
+  [96m../../node_modules/.prisma/client/index.d.ts[0m:[93m19719[0m:[93m5[0m
+    [7m19719[0m     id?: string
+    [7m     [0m [96m    ~~[0m
+    The expected type comes from property 'id' which is declared here on type 'MerchantWhereUniqueInput'
+
+[96msrc/routes/merchants.ts[0m:[93m189[0m:[93m59[0m - [91merror[0m[90m TS2322: [0mType 'string | string[]' is not assignable to type 'string | undefined'.
+  Type 'string[]' is not assignable to type 'string'.
+
+[7m189[0m       const updated = await db.merchant.update({ where: { id: req.params.id }, data: req.body });
+[7m   [0m [91m                                                          ~~[0m
+
+  [96m../../node_modules/.prisma/client/index.d.ts[0m:[93m19719[0m:[93m5[0m
+    [7m19719[0m     id?: string
+    [7m     [0m [96m    ~~[0m
+    The expected type comes from property 'id' which is declared here on type 'MerchantWhereUniqueInput'
+
+[96msrc/routes/merchants.ts[0m:[93m204[0m:[93m62[0m - [91merror[0m[90m TS2322: [0mType 'string | string[]' is not assignable to type 'string | undefined'.
+  Type 'string[]' is not assignable to type 'string'.
+
+[7m204[0m     const merchant = await db.merchant.findUnique({ where: { id: req.params.id } });
+[7m   [0m [91m                                                             ~~[0m
+
+  [96m../../node_modules/.prisma/client/index.d.ts[0m:[93m19719[0m:[93m5[0m
+    [7m19719[0m     id?: string
+    [7m     [0m [96m    ~~[0m
+    The expected type comes from property 'id' which is declared here on type 'MerchantWhereUniqueInput'
+
+[96msrc/routes/merchants.ts[0m:[93m224[0m:[93m60[0m - [91merror[0m[90m TS2322: [0mType 'string | string[]' is not assignable to type 'string | undefined'.
+  Type 'string[]' is not assignable to type 'string'.
+
+[7m224[0m       const merchant = await db.merchant.update({ where: { id: req.params.id }, data: req.body });
+[7m   [0m [91m                                                           ~~[0m
+
+  [96m../../node_modules/.prisma/client/index.d.ts[0m:[93m19719[0m:[93m5[0m
+    [7m19719[0m     id?: string
+    [7m     [0m [96m    ~~[0m
+    The expected type comes from property 'id' which is declared here on type 'MerchantWhereUniqueInput'
+
+[96msrc/routes/redemptions.ts[0m:[93m57[0m:[93m61[0m - [91merror[0m[90m TS2345: [0mArgument of type 'string | string[]' is not assignable to parameter of type 'string'.
+  Type 'string[]' is not assignable to type 'string'.
+
+[7m57[0m       const result = await redemptionService.approveRequest(req.params.id, admin?.sub ?? 'admin');
+[7m  [0m [91m                                                            ~~~~~~~~~~~~~[0m
+
+[96msrc/routes/redemptions.ts[0m:[93m66[0m:[93m72[0m - [91merror[0m[90m TS2322: [0mType 'string | string[]' is not assignable to type 'string | undefined'.
+  Type 'string[]' is not assignable to type 'string'.
+
+[7m66[0m       const request = await db.redemptionRequest.findUnique({ where: { id: req.params.id } });
+[7m  [0m [91m                                                                       ~~[0m
+
+  [96m../../node_modules/.prisma/client/index.d.ts[0m:[93m20066[0m:[93m5[0m
+    [7m20066[0m     id?: string
+    [7m     [0m [96m    ~~[0m
+    The expected type comes from property 'id' which is declared here on type 'RedemptionRequestWhereUniqueInput'
+
+[96msrc/routes/redemptions.ts[0m:[93m82[0m:[93m46[0m - [91merror[0m[90m TS2345: [0mArgument of type 'string | string[]' is not assignable to parameter of type 'string'.
+  Type 'string[]' is not assignable to type 'string'.
+
+[7m82[0m       await redemptionService.approveRequest(req.params.id, (req as any).admin?.sub ?? 'admin');
+[7m  [0m [91m                                             ~~~~~~~~~~~~~[0m
+
+[96msrc/routes/redemptions.ts[0m:[93m110[0m:[93m66[0m - [91merror[0m[90m TS2345: [0mArgument of type 'string | string[]' is not assignable to parameter of type 'string'.
+  Type 'string[]' is not assignable to type 'string'.
+
+[7m110[0m       const result = await redemptionService.confirmLempirasSent(req.params.id);
+[7m   [0m [91m                                                                 ~~~~~~~~~~~~~[0m
+
+[96msrc/routes/rewards.ts[0m:[93m36[0m:[93m16[0m - [91merror[0m[90m TS2322: [0mType 'string | string[]' is not assignable to type 'string | StringFilter<"RewardMilestone"> | undefined'.
+  Type 'string[]' is not assignable to type 'string | StringFilter<"RewardMilestone"> | undefined'.
+
+[7m36[0m       where: { user_id: req.params.user_id },
+[7m  [0m [91m               ~~~~~~~[0m
+
+[96msrc/routes/rewards.ts[0m:[93m43[0m:[93m70[0m - [91merror[0m[90m TS2322: [0mType 'string | string[]' is not assignable to type 'string | undefined'.
+  Type 'string[]' is not assignable to type 'string'.
+
+[7m43[0m       const entry = await db.rewardPayoutQueue.findUnique({ where: { id: req.params.id } });
+[7m  [0m [91m                                                                     ~~[0m
+
+  [96m../../node_modules/.prisma/client/index.d.ts[0m:[93m20362[0m:[93m5[0m
+    [7m20362[0m     id?: string
+    [7m     [0m [96m    ~~[0m
+    The expected type comes from property 'id' which is declared here on type 'RewardPayoutQueueWhereUniqueInput'
+
+[96msrc/routes/rewards.ts[0m:[93m56[0m:[93m20[0m - [91merror[0m[90m TS2322: [0mType 'string | string[]' is not assignable to type 'string | undefined'.
+  Type 'string[]' is not assignable to type 'string'.
+
+[7m56[0m           where: { id: req.params.id },
+[7m  [0m [91m                   ~~[0m
+
+  [96m../../node_modules/.prisma/client/index.d.ts[0m:[93m20362[0m:[93m5[0m
+    [7m20362[0m     id?: string
+    [7m     [0m [96m    ~~[0m
+    The expected type comes from property 'id' which is declared here on type 'RewardPayoutQueueWhereUniqueInput'
+
+[96msrc/routes/rewards.ts[0m:[93m70[0m:[93m18[0m - [91merror[0m[90m TS2322: [0mType 'string | string[]' is not assignable to type 'string | undefined'.
+  Type 'string[]' is not assignable to type 'string'.
+
+[7m70[0m         where: { id: req.params.id },
+[7m  [0m [91m                 ~~[0m
+
+  [96m../../node_modules/.prisma/client/index.d.ts[0m:[93m20362[0m:[93m5[0m
+    [7m20362[0m     id?: string
+    [7m     [0m [96m    ~~[0m
+    The expected type comes from property 'id' which is declared here on type 'RewardPayoutQueueWhereUniqueInput'
+
+[96msrc/routes/transactions.ts[0m:[93m18[0m:[93m59[0m - [91merror[0m[90m TS2322: [0mType 'string | string[]' is not assignable to type 'string | undefined'.
+  Type 'string[]' is not assignable to type 'string'.
+
+[7m18[0m     const tx = await db.transaction.findUnique({ where: { id: req.params.id } });
+[7m  [0m [91m                                                          ~~[0m
+
+  [96m../../node_modules/.prisma/client/index.d.ts[0m:[93m19827[0m:[93m5[0m
+    [7m19827[0m     id?: string
+    [7m     [0m [96m    ~~[0m
+    The expected type comes from property 'id' which is declared here on type 'TransactionWhereUniqueInput'
+
+[96msrc/routes/users.ts[0m:[93m39[0m:[93m44[0m - [91merror[0m[90m TS2345: [0mArgument of type 'string | string[]' is not assignable to parameter of type 'string'.
+  Type 'string[]' is not assignable to type 'string'.
+
+[7m39[0m     const user = await userService.getUser(req.params.id);
+[7m  [0m [91m                                           ~~~~~~~~~~~~~[0m
+
+[96msrc/routes/users.ts[0m:[93m60[0m:[93m52[0m - [91merror[0m[90m TS2322: [0mType 'string | string[]' is not assignable to type 'string | undefined'.
+  Type 'string[]' is not assignable to type 'string'.
+
+[7m60[0m       const user = await db.user.update({ where: { id: req.params.id }, data: req.body });
+[7m  [0m [91m                                                   ~~[0m
+
+  [96m../../node_modules/.prisma/client/index.d.ts[0m:[93m19539[0m:[93m5[0m
+    [7m19539[0m     id?: string
+    [7m     [0m [96m    ~~[0m
+    The expected type comes from property 'id' which is declared here on type 'UserWhereUniqueInput'
+
+[96msrc/routes/users.ts[0m:[93m74[0m:[93m49[0m - [91merror[0m[90m TS2345: [0mArgument of type 'string | string[]' is not assignable to parameter of type 'string'.
+  Type 'string[]' is not assignable to type 'string'.
+
+[7m74[0m       const user = await userService.updateUser(req.params.id, req.body);
+[7m  [0m [91m                                                ~~~~~~~~~~~~~[0m
+
+[96msrc/routes/users.ts[0m:[93m92[0m:[93m65[0m - [91merror[0m[90m TS2345: [0mArgument of type 'string | string[]' is not assignable to parameter of type 'string'.
+  Type 'string[]' is not assignable to type 'string'.
+
+[7m92[0m     const result = await transactionService.getUserTransactions(req.params.id, page, limit);
+[7m  [0m [91m                                                                ~~~~~~~~~~~~~[0m
+
+[96msrc/routes/wallets.ts[0m:[93m26[0m:[93m58[0m - [91merror[0m[90m TS2322: [0mType 'string | string[]' is not assignable to type 'string | undefined'.
+  Type 'string[]' is not assignable to type 'string'.
+
+[7m26[0m     const wallet = await db.wallet.findUnique({ where: { address: req.params.address } });
+[7m  [0m [91m                                                         ~~~~~~~[0m
+
+  [96m../../node_modules/.prisma/client/index.d.ts[0m:[93m19628[0m:[93m5[0m
+    [7m19628[0m     address?: string
+    [7m     [0m [96m    ~~~~~~~[0m
+    The expected type comes from property 'address' which is declared here on type 'WalletWhereUniqueInput'
+
+
+Found 41 errors in 7 files.
+
+Errors  Files
+     9  src/routes/gca.ts[90m:31[0m
+    18  src/routes/merchants.ts[90m:33[0m
+     4  src/routes/redemptions.ts[90m:57[0m
+     4  src/routes/rewards.ts[90m:36[0m
+     1  src/routes/transactions.ts[90m:18[0m
+     4  src/routes/users.ts[90m:39[0m
+     1  src/routes/wallets.ts[90m:26[0m
+[1G[0K⠙[1G[0K[1mnpm[22m [31merror[39m Lifecycle script `build` failed with error:
+[1G[0K⠙[1G[0K[1mnpm[22m [31merror[39m [94mcode[39m [33m2[39m
+[1G[0K⠙[1G[0K[1mnpm[22m [31merror[39m [94mpath[39m /home/nait/proyectos/HNDA---FIDELIO/packages/backend
+[1G[0K⠙[1G[0K[1mnpm[22m [31merror[39m [94mworkspace[39m @hnda/backend@0.1.0
+[1G[0K⠙[1G[0K[1mnpm[22m [31merror[39m [94mlocation[39m /home/nait/proyectos/HNDA---FIDELIO/packages/backend
+[1G[0K⠙[1G[0K[1mnpm[22m [31merror[39m command failed
+[1G[0K⠙[1G[0K[1mnpm[22m [31merror[39m [94mcommand[39m sh -c tsc
+[1G[0K⠙[1G[0K
