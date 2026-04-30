@@ -27,7 +27,7 @@ export function redemptionsRouter(redemptionService: RedemptionService): Router 
   router.get('/:id', adminAuth, async (req: Request, res: Response) => {
     try {
       const { db } = redemptionService as any;
-      const request = await db.redemptionRequest.findUnique({ where: { id: req.params.id } });
+      const request = await db.redemptionRequest.findUnique({ where: { id: req.params.id as string } });
       if (!request) {
         res.status(404).json({ error: 'Not found', code: 'NOT_FOUND' });
         return;
@@ -54,7 +54,7 @@ export function redemptionsRouter(redemptionService: RedemptionService): Router 
   router.patch('/:id/approve', adminAuth, async (req: Request, res: Response) => {
     try {
       const admin = (req as any).admin;
-      const result = await redemptionService.approveRequest(req.params.id, admin?.sub ?? 'admin');
+      const result = await redemptionService.approveRequest(req.params.id as string, admin?.sub ?? 'admin');
       res.status(200).json({ data: result });
     } catch (err: any) {
       res.status(400).json({ error: err.message, code: 'BAD_REQUEST' });
@@ -63,7 +63,7 @@ export function redemptionsRouter(redemptionService: RedemptionService): Router 
 
   router.post('/:id/force-burn', adminAuth, async (req: Request, res: Response) => {
     try {
-      const request = await db.redemptionRequest.findUnique({ where: { id: req.params.id } });
+      const request = await db.redemptionRequest.findUnique({ where: { id: req.params.id as string } });
       if (!request) {
         res.status(404).json({ error: 'Redemption not found', code: 'NOT_FOUND' });
         return;
@@ -79,7 +79,7 @@ export function redemptionsRouter(redemptionService: RedemptionService): Router 
         return;
       }
 
-      await redemptionService.approveRequest(req.params.id, (req as any).admin?.sub ?? 'admin');
+      await redemptionService.approveRequest(req.params.id as string, (req as any).admin?.sub ?? 'admin');
 
       const bridgeRes = await fetch(`${BRIDGE_HTTP_URL}/burn`, {
         method: 'POST',
@@ -107,7 +107,7 @@ export function redemptionsRouter(redemptionService: RedemptionService): Router 
 
   router.patch('/:id/confirm-lempiras', adminAuth, async (req: Request, res: Response) => {
     try {
-      const result = await redemptionService.confirmLempirasSent(req.params.id);
+      const result = await redemptionService.confirmLempirasSent(req.params.id as string);
       res.status(200).json({ data: result });
     } catch (err: any) {
       res.status(400).json({ error: err.message, code: 'BAD_REQUEST' });
@@ -118,7 +118,7 @@ export function redemptionsRouter(redemptionService: RedemptionService): Router 
     try {
       const { db } = redemptionService as any;
       await db.redemptionRequest.update({
-        where: { id: req.params.id },
+        where: { id: req.params.id as string },
         data: { status: 'FAILED' },
       });
       res.status(200).json({ status: 'ok' });

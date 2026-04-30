@@ -28,7 +28,7 @@ export function gcaRouter(db: PrismaClient): Router {
   // GET /api/gca/:merchant_id — balance + HNL estimate
   router.get('/:merchant_id', async (req: Request, res: Response) => {
     const allocation = await db.merchantGcaAllocation.findUnique({
-      where: { merchant_id: req.params.merchant_id },
+      where: { merchant_id: req.params.merchant_id as string },
     });
     if (!allocation) {
       res.status(404).json({ error: 'No GCA allocation found', code: 'NOT_FOUND' });
@@ -53,7 +53,7 @@ export function gcaRouter(db: PrismaClient): Router {
   // GET /api/gca/:merchant_id/history — transaction log
   router.get('/:merchant_id/history', async (req: Request, res: Response) => {
     const history = await db.gcaTransaction.findMany({
-      where: { merchant_id: req.params.merchant_id },
+      where: { merchant_id: req.params.merchant_id as string },
       orderBy: { created_at: 'desc' },
     });
     res.status(200).json({ data: history });
@@ -167,15 +167,15 @@ export function gcaRouter(db: PrismaClient): Router {
   // POST /api/gca/admin/vest/:merchant_id — manually trigger vesting evaluation
   router.post('/admin/vest/:merchant_id', adminAuth, async (req: Request, res: Response) => {
     const allocation = await db.merchantGcaAllocation.findUnique({
-      where: { merchant_id: req.params.merchant_id },
+      where: { merchant_id: req.params.merchant_id as string },
     });
     if (!allocation) {
       res.status(404).json({ error: 'No GCA allocation found', code: 'NOT_FOUND' });
       return;
     }
-    await evaluateGcaVesting(db, req.params.merchant_id);
+    await evaluateGcaVesting(db, req.params.merchant_id as string);
     const updated = await db.merchantGcaAllocation.findUnique({
-      where: { merchant_id: req.params.merchant_id },
+      where: { merchant_id: req.params.merchant_id as string },
     });
     res.status(200).json({ data: { ok: true, new_balance: updated?.gca_balance, milestones_claimed: updated?.milestones_claimed } });
   });
@@ -192,7 +192,7 @@ export function gcaRouter(db: PrismaClient): Router {
 
   // PATCH /api/gca/admin/redemptions/:id/approve
   router.patch('/admin/redemptions/:id/approve', adminAuth, async (req: Request, res: Response) => {
-    const entry = await db.gcaRedemptionRequest.findUnique({ where: { id: req.params.id } });
+    const entry = await db.gcaRedemptionRequest.findUnique({ where: { id: req.params.id as string } });
     if (!entry || entry.status !== 'PENDING') {
       res.status(404).json({ error: 'Request not found or already processed', code: 'NOT_FOUND' });
       return;
@@ -219,7 +219,7 @@ export function gcaRouter(db: PrismaClient): Router {
         },
       });
       await tx.gcaRedemptionRequest.update({
-        where: { id: req.params.id },
+        where: { id: req.params.id as string },
         data: { status: 'APPROVED', approved_by: (req as any).admin?.sub ?? 'admin' },
       });
     });
@@ -229,13 +229,13 @@ export function gcaRouter(db: PrismaClient): Router {
 
   // PATCH /api/gca/admin/redemptions/:id/reject
   router.patch('/admin/redemptions/:id/reject', adminAuth, async (req: Request, res: Response) => {
-    const entry = await db.gcaRedemptionRequest.findUnique({ where: { id: req.params.id } });
+    const entry = await db.gcaRedemptionRequest.findUnique({ where: { id: req.params.id as string } });
     if (!entry || entry.status !== 'PENDING') {
       res.status(404).json({ error: 'Request not found or already processed', code: 'NOT_FOUND' });
       return;
     }
     const updated = await db.gcaRedemptionRequest.update({
-      where: { id: req.params.id },
+      where: { id: req.params.id as string },
       data: { status: 'REJECTED', notes: req.body?.notes ?? null },
     });
     res.status(200).json({ data: updated });

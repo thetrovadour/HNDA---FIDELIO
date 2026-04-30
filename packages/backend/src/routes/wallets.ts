@@ -23,7 +23,7 @@ export function walletsRouter(userService: UserService): Router {
   });
 
   router.get('/:address', adminAuth, async (req: Request, res: Response) => {
-    const wallet = await db.wallet.findUnique({ where: { address: req.params.address } });
+    const wallet = await db.wallet.findUnique({ where: { address: req.params.address as string } });
     if (!wallet) {
       res.status(404).json({ error: 'Wallet not found', code: 'NOT_FOUND' });
       return;

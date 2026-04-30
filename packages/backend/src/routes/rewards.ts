@@ -33,14 +33,14 @@ export function rewardsRouter(db: PrismaClient): Router {
 
   router.get('/:user_id', adminAuth, async (req: Request, res: Response) => {
     const milestones = await db.rewardMilestone.findMany({
-      where: { user_id: req.params.user_id },
+      where: { user_id: req.params.user_id as string },
     });
     res.status(200).json({ data: milestones });
   });
 
   router.patch('/queue/:id/approve', adminAuth, async (req: Request, res: Response) => {
     try {
-      const entry = await db.rewardPayoutQueue.findUnique({ where: { id: req.params.id } });
+      const entry = await db.rewardPayoutQueue.findUnique({ where: { id: req.params.id as string } });
       if (!entry) {
         res.status(404).json({ error: 'Not found', code: 'NOT_FOUND' });
         return;
@@ -53,7 +53,7 @@ export function rewardsRouter(db: PrismaClient): Router {
 
       if (balanceAfter.lt(poolBalance.mul(RESERVE_FLOOR))) {
         const deferred = await db.rewardPayoutQueue.update({
-          where: { id: req.params.id },
+          where: { id: req.params.id as string },
           data: { status: 'DEFERRED' },
         });
         res.status(402).json({
@@ -67,7 +67,7 @@ export function rewardsRouter(db: PrismaClient): Router {
       }
 
       const updated = await db.rewardPayoutQueue.update({
-        where: { id: req.params.id },
+        where: { id: req.params.id as string },
         data: { status: 'PAID', approved_by: (req as any).admin?.sub ?? 'admin' },
       });
       res.status(200).json({ data: updated });

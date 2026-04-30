@@ -7,10 +7,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 ## Session Start — Always Do This First
 
 At the start of every session, remind Cristian of:
-1. **Current FIDELIO build phase** — which phase is active (A/B/C/D/E)
-2. **What is complete** — checked-off phases and modules
-3. **What is in progress** — current work
-4. **What is next** — immediate next step
+1. **What happened last session**: Read the Session-Log-Archive.md and then let Cristian know where the project is standing based on the last 3 sessions.
 
 Continue doing this until FIDELIO is in complete production. Update this file when phase status changes.
 

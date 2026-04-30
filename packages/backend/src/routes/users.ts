@@ -36,7 +36,7 @@ export function usersRouter(userService: UserService, transactionService: Transa
   });
 
   router.get('/:id', selfOrAdmin, async (req: Request, res: Response) => {
-    const user = await userService.getUser(req.params.id);
+    const user = await userService.getUser(req.params.id as string);
     if (!user) {
       res.status(404).json({ error: 'User not found', code: 'NOT_FOUND' });
       return;
@@ -57,7 +57,7 @@ export function usersRouter(userService: UserService, transactionService: Transa
 
   router.patch('/:id/notifications', selfOrAdmin, validate(UpdateNotificationsSchema), async (req: Request, res: Response) => {
     try {
-      const user = await db.user.update({ where: { id: req.params.id }, data: req.body });
+      const user = await db.user.update({ where: { id: req.params.id as string }, data: req.body });
       res.status(200).json({
         data: {
           notify_points_received: user.notify_points_received,
@@ -71,7 +71,7 @@ export function usersRouter(userService: UserService, transactionService: Transa
 
   router.patch('/:id', selfOrAdmin, validate(UpdateUserSchema), async (req: Request, res: Response) => {
     try {
-      const user = await userService.updateUser(req.params.id, req.body);
+      const user = await userService.updateUser(req.params.id as string, req.body);
       res.status(200).json({
         data: {
           id: user.id,
@@ -89,7 +89,7 @@ export function usersRouter(userService: UserService, transactionService: Transa
   router.get('/:id/transactions', selfOrAdmin, async (req: Request, res: Response) => {
     const page = parseInt(req.query.page as string) || 1;
     const limit = parseInt(req.query.limit as string) || 20;
-    const result = await transactionService.getUserTransactions(req.params.id, page, limit);
+    const result = await transactionService.getUserTransactions(req.params.id as string, page, limit);
     res.status(200).json({ data: result.transactions, total: result.total, page, limit });
   });
 

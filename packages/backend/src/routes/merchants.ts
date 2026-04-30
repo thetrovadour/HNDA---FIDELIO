@@ -30,7 +30,7 @@ export function merchantsRouter(redemptionService: RedemptionService): Router {
   // ── Public merchant-facing routes (no auth) ──────────────────────────────────
 
   router.get('/:id/public', async (req: Request, res: Response) => {
-    const merchant = await db.merchant.findUnique({ where: { id: req.params.id } });
+    const merchant = await db.merchant.findUnique({ where: { id: req.params.id as string } });
     if (!merchant) {
       res.status(404).json({ error: 'Merchant not found', code: 'NOT_FOUND' });
       return;
@@ -39,7 +39,7 @@ export function merchantsRouter(redemptionService: RedemptionService): Router {
   });
 
   router.get('/:id/balance', merchantAuth, async (req: Request, res: Response) => {
-    const merchant = await db.merchant.findUnique({ where: { id: req.params.id } });
+    const merchant = await db.merchant.findUnique({ where: { id: req.params.id as string } });
     if (!merchant) {
       res.status(404).json({ error: 'Merchant not found', code: 'NOT_FOUND' });
       return;
@@ -47,7 +47,7 @@ export function merchantsRouter(redemptionService: RedemptionService): Router {
 
     const [received, minted, redeemed] = await Promise.all([
       db.transaction.aggregate({
-        where: { merchant_id: req.params.id, type: 'SPEND', status: 'CONFIRMED' },
+        where: { merchant_id: req.params.id as string, type: 'SPEND', status: 'CONFIRMED' },
         _sum: { amount_catr: true },
       }),
       merchant.wallet_address
@@ -57,14 +57,14 @@ export function merchantsRouter(redemptionService: RedemptionService): Router {
           })
         : Promise.resolve({ _sum: { amount_lempiras: null } }),
       db.redemptionRequest.aggregate({
-        where: { merchant_id: req.params.id, status: { in: ['BURNED', 'LEMPIRAS_SENT'] } },
+        where: { merchant_id: req.params.id as string, status: { in: ['BURNED', 'LEMPIRAS_SENT'] } },
         _sum: { amount_catr: true },
       }),
     ]);
 
-    const totalReceived = Number(received._sum.amount_catr ?? 0);
+    const totalReceived = Number(received._sum?.amount_catr ?? 0);
     const totalMinted   = Number(minted._sum?.amount_lempiras ?? 0);
-    const totalRedeemed = Number(redeemed._sum.amount_catr ?? 0);
+    const totalRedeemed = Number(redeemed._sum?.amount_catr ?? 0);
     const balance = totalReceived + totalMinted - totalRedeemed;
 
     res.status(200).json({
@@ -77,7 +77,7 @@ export function merchantsRouter(redemptionService: RedemptionService): Router {
   });
 
   router.get('/:id/transactions', merchantAuth, async (req: Request, res: Response) => {
-    const merchant = await db.merchant.findUnique({ where: { id: req.params.id } });
+    const merchant = await db.merchant.findUnique({ where: { id: req.params.id as string } });
     if (!merchant) {
       res.status(404).json({ error: 'Merchant not found', code: 'NOT_FOUND' });
       return;
@@ -85,7 +85,7 @@ export function merchantsRouter(redemptionService: RedemptionService): Router {
 
     const [transactions, mints] = await Promise.all([
       db.transaction.findMany({
-        where: { merchant_id: req.params.id, status: 'CONFIRMED' },
+        where: { merchant_id: req.params.id as string, status: 'CONFIRMED' },
         orderBy: { created_at: 'desc' },
         take: 100,
       }),
@@ -117,7 +117,7 @@ export function merchantsRouter(redemptionService: RedemptionService): Router {
 
   router.get('/:id/redemptions', merchantAuth, async (req: Request, res: Response) => {
     const redemptions = await db.redemptionRequest.findMany({
-      where: { merchant_id: req.params.id },
+      where: { merchant_id: req.params.id as string },
       orderBy: { created_at: 'desc' },
     });
     res.status(200).json({ data: redemptions });
@@ -125,7 +125,7 @@ export function merchantsRouter(redemptionService: RedemptionService): Router {
 
   router.post('/:id/redemptions', merchantAuth, validate(MerchantRedemptionSchema), async (req: Request, res: Response) => {
     try {
-      const result = await redemptionService.createRequest(req.params.id, req.body.amount_catr);
+      const result = await redemptionService.createRequest(req.params.id as string, req.body.amount_catr);
       res.status(201).json({ data: result });
     } catch (err: any) {
       res.status(400).json({ error: err.message, code: 'BAD_REQUEST' });
@@ -141,13 +141,13 @@ export function merchantsRouter(redemptionService: RedemptionService): Router {
   });
 
   router.patch('/:id/profile', merchantAuth, validate(UpdateProfileSchema), async (req: Request, res: Response) => {
-    const merchant = await db.merchant.findUnique({ where: { id: req.params.id } });
+    const merchant = await db.merchant.findUnique({ where: { id: req.params.id as string } });
     if (!merchant) {
       res.status(404).json({ error: 'Merchant not found', code: 'NOT_FOUND' });
       return;
     }
     try {
-      const updated = await db.merchant.update({ where: { id: req.params.id }, data: req.body });
+      const updated = await db.merchant.update({ where: { id: req.params.id as string }, data: req.body });
       res.status(200).json({ data: updated });
     } catch (err: any) {
       res.status(400).json({ error: err.message, code: 'BAD_REQUEST' });
@@ -161,12 +161,12 @@ export function merchantsRouter(redemptionService: RedemptionService): Router {
   });
 
   router.patch('/:id/notifications', merchantAuth, validate(UpdateMerchantNotificationsSchema), async (req: Request, res: Response) => {
-    const merchant = await db.merchant.findUnique({ where: { id: req.params.id } });
+    const merchant = await db.merchant.findUnique({ where: { id: req.params.id as string } });
     if (!merchant) {
       res.status(404).json({ error: 'Merchant not found', code: 'NOT_FOUND' });
       return;
     }
-    const updated = await db.merchant.update({ where: { id: req.params.id }, data: req.body });
+    const updated = await db.merchant.update({ where: { id: req.params.id as string }, data: req.body });
     res.status(200).json({ data: { notify_redemption_update: updated.notify_redemption_update } });
   });
 
@@ -180,13 +180,13 @@ export function merchantsRouter(redemptionService: RedemptionService): Router {
   });
 
   router.patch('/:id/payout', merchantAuth, validate(UpdateMerchantPayoutSchema), async (req: Request, res: Response) => {
-    const merchant = await db.merchant.findUnique({ where: { id: req.params.id } });
+    const merchant = await db.merchant.findUnique({ where: { id: req.params.id as string } });
     if (!merchant) {
       res.status(404).json({ error: 'Merchant not found', code: 'NOT_FOUND' });
       return;
     }
     try {
-      const updated = await db.merchant.update({ where: { id: req.params.id }, data: req.body });
+      const updated = await db.merchant.update({ where: { id: req.params.id as string }, data: req.body });
       res.status(200).json({ data: updated });
     } catch (err: any) {
       res.status(400).json({ error: err.message, code: 'BAD_REQUEST' });
@@ -201,7 +201,7 @@ export function merchantsRouter(redemptionService: RedemptionService): Router {
   });
 
   router.get('/:id', adminAuth, async (req: Request, res: Response) => {
-    const merchant = await db.merchant.findUnique({ where: { id: req.params.id } });
+    const merchant = await db.merchant.findUnique({ where: { id: req.params.id as string } });
     if (!merchant) {
       res.status(404).json({ error: 'Merchant not found', code: 'NOT_FOUND' });
       return;
@@ -221,7 +221,7 @@ export function merchantsRouter(redemptionService: RedemptionService): Router {
 
   router.patch('/:id', adminAuth, validate(UpdateMerchantSchema), async (req: Request, res: Response) => {
     try {
-      const merchant = await db.merchant.update({ where: { id: req.params.id }, data: req.body });
+      const merchant = await db.merchant.update({ where: { id: req.params.id as string }, data: req.body });
       res.status(200).json({ data: merchant });
     } catch (err: any) {
       res.status(400).json({ error: err.message, code: 'BAD_REQUEST' });

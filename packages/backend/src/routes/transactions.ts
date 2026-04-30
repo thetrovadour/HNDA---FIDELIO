@@ -15,7 +15,7 @@ export function transactionsRouter(transactionService: TransactionService): Rout
   const router = Router();
 
   router.get('/:id', adminAuth, async (req: Request, res: Response) => {
-    const tx = await db.transaction.findUnique({ where: { id: req.params.id } });
+    const tx = await db.transaction.findUnique({ where: { id: req.params.id as string } });
     if (!tx) {
       res.status(404).json({ error: 'Transaction not found', code: 'NOT_FOUND' });
       return;

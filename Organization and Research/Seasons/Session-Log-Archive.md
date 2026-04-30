@@ -1081,3 +1081,44 @@ Run manually by Cristian. All contract tests pass.
 
 - Passkey / WebAuthn — lands when `hnda.io` is live on HTTPS
 - LEMPIRAS_SENT auto-confirmation (BAC Credomatic API, Etapa 2)
+
+---
+
+### Session — 2026-04-29
+**Focus:** npm dependency upgrades (Steps 1–2 of 5)
+
+#### What happened
+
+- Read `Organization and Research/Fidelio Upgrades.md` — identified two tracks: feature upgrades (16 items) and npm dependency upgrades (~50 packages).
+- Decided to tackle deps first. Structured a 5-step upgrade plan:
+  - Step 1: Minor/patch (safe, no breaking changes)
+  - Step 2: `@types/*` major upgrades
+  - Step 3: `dotenv` 16→17
+  - Step 4: `express` 4→5
+  - Step 5: Hardhat + full contracts toolchain + `chai`
+
+**Step 1 — Minor/patch — COMPLETE:**
+- `@tanstack/react-query` 5.96.2 → 5.100.5 (web)
+- `express-rate-limit` 8.3.2 → 8.4.1 (backend)
+- `autoprefixer` 10.4.27 → 10.5.0 (web)
+- `@types/node` 20.x → 20.19.39 (all packages)
+- `npm audit fix` run on web — 14 inherited vulns remain (postcss inside Next.js, uuid inside MetaMask/wagmi chain) — not fixable without breaking Next.js or wagmi. Accepted as upstream debt.
+
+**Step 2 — `@types/*` major upgrades — COMPLETE:**
+- `@types/jest` → 30.0.0 (backend, bridge)
+- `@types/express` → 5.0.6 (backend)
+- `@types/supertest` → 7.2.0 (backend)
+- `@types/react` → 19.2.14 (web)
+- `@types/react-dom` → 19.2.3 (web)
+- `@types/express@5` tightened `req.params` type from `string` to `string | string[]` — caused 41 TS errors across 7 backend route files (`gca.ts`, `merchants.ts`, `redemptions.ts`, `rewards.ts`, `transactions.ts`, `users.ts`, `wallets.ts`). Fixed with `as string` casts at each `req.params.*` usage. Also fixed two `._sum` possibly-undefined errors in `merchants.ts`.
+
+**Test results after Steps 1–2:**
+- contracts: 14/14 ✅
+- backend: 62/62 ✅
+- merlink-bridge: 8/8 ✅
+
+#### Pending / next up (resume here)
+
+- Step 3: `dotenv` 16→17 — run `npm install dotenv@17.4.2` in backend, bridge, contracts, e2e — then test
+- Step 4: `express` 4→5 — likely more type fixes
+- Step 5: Hardhat + `@nomicfoundation/*` + `chai` — entire contracts toolchain
