@@ -1122,3 +1122,110 @@ Run manually by Cristian. All contract tests pass.
 - Step 3: `dotenv` 16→17 — run `npm install dotenv@17.4.2` in backend, bridge, contracts, e2e — then test
 - Step 4: `express` 4→5 — likely more type fixes
 - Step 5: Hardhat + `@nomicfoundation/*` + `chai` — entire contracts toolchain
+
+---
+
+### Session — 2026-05-04
+**Focus:** npm dependency upgrades — Step 3 (`dotenv` 16 → 17)
+
+#### What happened
+
+**Step 3 — `dotenv` 16→17 — COMPLETE**
+
+Installed `dotenv@17.4.2` in all 4 packages: `backend`, `merlink/bridge`, `contracts`, `e2e`.
+
+dotenv 17 dropped the `import * as dotenv` namespace default — named imports are required. Fixed 6 files:
+
+| File | Change |
+|---|---|
+| `packages/merlink/bridge/src/index.ts` | `import * as dotenv` → `import { config }` |
+| `packages/contracts/hardhat.config.ts` | same, aliased as `dotenvConfig` to avoid collision with hardhat's `config` var |
+| `packages/contracts/scripts/deploy.ts` | `import * as dotenv` → `import { config }` |
+| `packages/contracts/scripts/grant-burner-role.ts` | same |
+| `packages/contracts/scripts/grant-minter-role.ts` | same |
+| `packages/e2e/src/run.ts` | same |
+
+`packages/backend/src/index.ts` used `import 'dotenv/config'` — no change needed, that style is valid in v17.
+
+**Test results:**
+- backend: 62/62 ✅
+- bridge: 8/8 ✅
+- contracts: 14/14 ✅
+
+#### Pending / next up (resume here)
+
+- Step 4: `express` 4→5 — likely type fixes needed
+- Step 5: Hardhat + `@nomicfoundation/*` + `chai` — entire contracts toolchain
+
+---
+
+### Session — 2026-05-06 (dependency upgrades continued)
+
+#### What happened
+
+**Minor/patch batch completed:**
+- `express-rate-limit` 8.4.1 → 8.5.1 (backend)
+- `ts-jest` 29.4.6 → 29.4.9 (backend + bridge)
+- `@rainbow-me/rainbowkit` 2.2.10 → 2.2.11 (web)
+- `@tanstack/react-query` 5.100.5 → 5.100.9 (web)
+- `lucide-react` 1.8.0 → 1.14.0 (web)
+- `next` 16.2.4 → 16.2.5 (web)
+- `postcss` 8.5.12 → 8.5.14 (web)
+- `viem` 2.47.10 → 2.48.8 (web)
+- All tests passing after batch. 6 audit warnings in web are transitive (axios, hono, lodash inside RainbowKit/wagmi) — not fixable without wagmi 3 migration.
+
+**Major upgrades completed:**
+- `jest` 29 → 30 + `@types/jest` 29 → 30 (backend + bridge) — 70/70 passing, zero code changes needed
+- `node-cron` 3 → 4 (backend) — 62/62 passing, zero code changes needed
+- `zod` 3 → 4 (backend) — 62/62 passing. One fix: `result.error.errors` → `result.error.issues` in `packages/backend/src/middleware/validate.ts`
+- TypeScript installed globally (`npm install -g typescript`) for Claude Code LSP support
+
+**Skipped with documented reasons:**
+- `@types/node` 20 → 25 — must match Node runtime. We run Node 20, types stay at v20. Rule added to upgrades doc.
+- `chai` 4 → 6 — `hardhat-chai-matchers@2.x` requires `chai@^4`. Cannot upgrade independently; must travel with Hardhat 3 stack.
+- **Hardhat 3 full stack deferred** — blocked by Node.js version requirement. Hardhat 3 requires Node v22.10.0+; we run v20.20.2. Also still in beta — not appropriate for a production financial network. Defer until after FIDELIO is in production and Node is upgraded.
+
+#### Next
+- Tailwind 3 → 4 (web)
+
+---
+
+### Session — 2026-05-06 (Part 2 — dependency upgrades continued)
+
+#### What happened
+
+**Tailwind 3 → 4 (web) — complete**
+- Installed `tailwindcss@4.2.4` + `@tailwindcss/postcss` (new PostCSS adapter package)
+- `postcss.config.js`: `tailwindcss: {}` → `'@tailwindcss/postcss': {}`, removed `autoprefixer` (now built into v4)
+- `globals.css`: replaced three `@tailwind base/components/utilities` directives with `@import "tailwindcss"` + `@config "../../tailwind.config.ts"` (path is relative to the CSS file, not project root)
+- `tailwind.config.ts`: no changes needed — kept JS config and linked it via `@config`
+- Bonus fix: `api.ts:142` — `adminHeaders(token)` → `authHeaders(token)` (pre-existing undefined reference that the previous build was silently masking)
+- Build: 12/12 routes passing
+
+**React 18 → 19 (web) — complete**
+- Installed `react@19.2.6`, `react-dom@19.2.6`, `@types/react@19.2.14`, `@types/react-dom@19.2.3`
+- One code fix: `encrypted-text.tsx:48` — removed `React.FC<EncryptedTextProps>` wrapper (deprecated in React 19), replaced with direct type annotation on destructured props
+- No other breaking changes — no `forwardRef`, no `ReactDOM.render`, no string refs, no `defaultProps` on function components in the codebase
+- Build: 12/12 routes passing
+
+**wagmi 2 → 3 — deferred**
+- RainbowKit latest (2.2.11) requires `wagmi@^2.9.0` — no RainbowKit 3 exists yet
+- Upgrading wagmi without RainbowKit support breaks the Connect Wallet button
+- Rule added to upgrades doc: do not upgrade wagmi until RainbowKit releases a compatible v3
+
+**TypeScript 5 → 6 (all packages) — complete**
+- Installed `typescript@6.0.3` across all 5 workspaces
+- TypeScript 6 breaking changes that affected us:
+  1. `types` now defaults to `[]` (empty) — Jest globals (`jest`, `beforeEach`, etc.) became invisible. Fix: added `"types": ["jest", "node"]` to `packages/backend/tsconfig.json` and `packages/merlink/bridge/tsconfig.json`
+  2. `moduleResolution` no longer inferred from `module: commonjs` — now defaults to `bundler`. Fix: added `"moduleResolution": "node10"` explicitly to backend, bridge, contracts, and e2e tsconfigs. (`node10` is the correct pair for `module: commonjs`; `nodenext` would require `.js` extensions on all relative imports)
+- `packages/web/tsconfig.json` required no changes — already had `moduleResolution: bundler` via Next.js
+- Final results: backend 62/62 ✅, bridge 8/8 ✅, web build 12/12 routes ✅
+
+#### Deferred / blocked items (documented in Fidelio Upgrades.md)
+- `@types/node` 20 → 25 — must match Node runtime (Node 20 → stay on v20 types)
+- `chai` 4 → 6 — must travel with Hardhat 3 stack
+- Hardhat 2 → 3 full stack — requires Node v22.10.0+, also still in beta
+- `wagmi` 2 → 3 — requires RainbowKit v3 (doesn't exist yet)
+
+#### Next
+- Feature upgrades from Fidelio Upgrades.md (registration page, auth, merchant flow, etc.)

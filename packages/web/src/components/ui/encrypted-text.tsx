@@ -45,7 +45,7 @@ function generateGibberishPreservingSpaces(
   return result;
 }
 
-export const EncryptedText: React.FC<EncryptedTextProps> = ({
+export const EncryptedText = ({
   text,
   className,
   revealDelayMs = 50,
@@ -53,7 +53,7 @@ export const EncryptedText: React.FC<EncryptedTextProps> = ({
   flipDelayMs = 50,
   encryptedClassName,
   revealedClassName,
-}) => {
+}: EncryptedTextProps) => {
   const ref = useRef<HTMLSpanElement>(null);
   const isInView = useInView(ref, { once: true });
 

@@ -3,6 +3,7 @@
 > @hnda/contracts@1.0.0 build
 > npx hardhat compile
 
-[1G[0K[1G[0K⠙[1G[0KNothing to compile
+[1G[0K[1G[0K⠙[1G[0K◇ injected env (9) from .env [2m// tip: ◈ encrypted .env [www.dotenvx.com][0m
+Nothing to compile
 No need to generate any newer typings.
 [1G[0K⠙[1G[0K[1G[0K⠙[1G[0K

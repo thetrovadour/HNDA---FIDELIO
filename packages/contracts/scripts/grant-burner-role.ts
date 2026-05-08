@@ -1,7 +1,7 @@
 import { ethers } from "hardhat";
-import * as dotenv from "dotenv";
+import { config } from "dotenv";
 
-dotenv.config();
+config();
 
 async function main() {
   const contractAddress = process.env.CONTRACT_ADDRESS;
