@@ -6,6 +6,7 @@ interface ChecklistResult {
   category: boolean;
   name: boolean;
   owner_user_id: boolean;
+  [key: string]: boolean;
 }
 
 function evaluateChecklist(merchant: {

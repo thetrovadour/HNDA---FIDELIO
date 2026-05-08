@@ -1,6 +1,6 @@
 import { Router, Request, Response } from 'express';
 import { z } from 'zod';
-import { Decimal } from '@prisma/client/runtime/library';
+import { Decimal } from '@prisma/client/runtime/client';
 import { validate } from '../middleware/validate';
 import { adminAuth } from '../middleware/auth';
 import { MintService } from '../services/mint_service';

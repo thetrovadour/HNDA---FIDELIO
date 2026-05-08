@@ -1,5 +1,5 @@
 import { PrismaClient } from '@prisma/client';
-import { Decimal } from '@prisma/client/runtime/library';
+import { Decimal } from '@prisma/client/runtime/client';
 
 const GCA_GIFT          = new Decimal('200');
 const GCA_PER_MILESTONE = new Decimal('100');

@@ -105,7 +105,7 @@ export function authRouter(): Router {
       db.rewardMilestone.findMany({
         where: { user_id: user.id },
       }),
-      db.merchant.findMany({ where: { active: true } }),
+      db.merchant.findMany({ where: { merchant_status: 'ACTIVE' } }),
     ]);
 
     res.cookie('fidelio_token', token, TOKEN_COOKIE);
@@ -139,7 +139,7 @@ export function authRouter(): Router {
           category: m.category,
           wallet_address: m.wallet_address,
           contact_email: m.contact_email,
-          active: m.active,
+          merchant_status: m.merchant_status,
         })),
       },
     });
@@ -190,7 +190,7 @@ export function authRouter(): Router {
           category: merchant.category,
           contact_email: merchant.contact_email,
           wallet_address: merchant.wallet_address,
-          active: merchant.active,
+          merchant_status: merchant.merchant_status,
           notify_redemption_update: merchant.notify_redemption_update,
           payout_bank: merchant.payout_bank,
           payout_account_number: merchant.payout_account_number,
@@ -282,7 +282,7 @@ export function authRouter(): Router {
       return;
     }
 
-    // merchant: create owner user + wallet + pending merchant record (active: false)
+    // merchant: create owner user + wallet + pending merchant record (PENDING_ACTIVATION by default)
     const user = await db.user.create({
       data: { full_name: body.full_name, email: body.email, password_hash },
     });
@@ -293,7 +293,6 @@ export function authRouter(): Router {
         name: body.business_name,
         category: body.category,
         contact_email: body.email,
-        active: false,
         owner_user_id: user.id,
         wallet_address: address,
       },
