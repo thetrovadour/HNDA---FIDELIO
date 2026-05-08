@@ -43,16 +43,20 @@ model Wallet {
 }
 
 model Merchant {
-  id                  String                 @id @default(uuid())
-  name                String
-  category            String
-  wallet_address      String?                @unique
-  contact_email       String
-  active              Boolean                @default(true)
-  created_at          DateTime               @default(now())
-  updated_at          DateTime               @updatedAt
+  id                   String                 @id @default(uuid())
+  name                 String
+  category             String
+  wallet_address       String?                @unique
+  contact_email        String
+  merchant_status      MerchantStatus         @default(PENDING_ACTIVATION)
+  deactivation_reason  String?
+  deactivated_at       DateTime?
+  deactivated_by       String?
+  activation_checklist Json?
+  created_at           DateTime               @default(now())
+  updated_at           DateTime               @updatedAt
   owner_user_id            String?
-  notify_redemption_update Boolean          @default(true)
+  notify_redemption_update Boolean            @default(true)
   payout_bank              String?
   payout_account_number    String?
   payout_account_type      BankAccountType?
@@ -363,4 +367,10 @@ enum GcaRedemptionStatus {
 enum BankAccountType {
   SAVINGS
   CHECKING
+}
+
+enum MerchantStatus {
+  PENDING_ACTIVATION
+  ACTIVE
+  DEACTIVATED
 }

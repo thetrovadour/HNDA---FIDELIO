@@ -5,6 +5,7 @@ import { adminAuth, merchantAuth } from '../middleware/auth';
 import db from '../db';
 import { initGcaAllocation } from '../services/gca_service';
 import { RedemptionService } from '../services/redemption_service';
+import { checkAndActivate, deactivateMerchant } from '../services/merchant_activation_service';
 
 const CreateMerchantSchema = z.object({
   name: z.string().min(1),
@@ -17,11 +18,14 @@ const UpdateMerchantSchema = z.object({
   name: z.string().min(1).optional(),
   category: z.string().min(1).optional(),
   contact_email: z.string().email().optional(),
-  active: z.boolean().optional(),
 });
 
 const MerchantRedemptionSchema = z.object({
   amount_catr: z.string().min(1),
+});
+
+const DeactivateMerchantSchema = z.object({
+  reason: z.string().min(1),
 });
 
 export function merchantsRouter(redemptionService: RedemptionService): Router {
@@ -124,12 +128,35 @@ export function merchantsRouter(redemptionService: RedemptionService): Router {
   });
 
   router.post('/:id/redemptions', merchantAuth, validate(MerchantRedemptionSchema), async (req: Request, res: Response) => {
+    const merchant = await db.merchant.findUnique({ where: { id: req.params.id as string } });
+    if (!merchant) {
+      res.status(404).json({ error: 'Merchant not found', code: 'NOT_FOUND' });
+      return;
+    }
+    if (merchant.merchant_status !== 'ACTIVE') {
+      res.status(403).json({ error: 'Merchant account is not active', code: 'MERCHANT_NOT_ACTIVE' });
+      return;
+    }
     try {
       const result = await redemptionService.createRequest(req.params.id as string, req.body.amount_catr);
       res.status(201).json({ data: result });
     } catch (err: any) {
       res.status(400).json({ error: err.message, code: 'BAD_REQUEST' });
     }
+  });
+
+  // ── Merchant status ────────────────────────────────────────────────────────
+
+  router.get('/:id/status', merchantAuth, async (req: Request, res: Response) => {
+    const merchant = await db.merchant.findUnique({
+      where: { id: req.params.id as string },
+      select: { merchant_status: true, deactivation_reason: true, activation_checklist: true },
+    });
+    if (!merchant) {
+      res.status(404).json({ error: 'Merchant not found', code: 'NOT_FOUND' });
+      return;
+    }
+    res.status(200).json({ data: merchant });
   });
 
   // ── Merchant self-service profile update ────────────────────────────────────
@@ -148,6 +175,7 @@ export function merchantsRouter(redemptionService: RedemptionService): Router {
     }
     try {
       const updated = await db.merchant.update({ where: { id: req.params.id as string }, data: req.body });
+      await checkAndActivate(db, req.params.id as string);
       res.status(200).json({ data: updated });
     } catch (err: any) {
       res.status(400).json({ error: err.message, code: 'BAD_REQUEST' });
@@ -213,6 +241,7 @@ export function merchantsRouter(redemptionService: RedemptionService): Router {
     try {
       const merchant = await db.merchant.create({ data: req.body });
       await initGcaAllocation(db, merchant.id);
+      await checkAndActivate(db, merchant.id);
       res.status(201).json({ data: merchant });
     } catch (err: any) {
       res.status(400).json({ error: err.message, code: 'BAD_REQUEST' });
@@ -222,7 +251,24 @@ export function merchantsRouter(redemptionService: RedemptionService): Router {
   router.patch('/:id', adminAuth, validate(UpdateMerchantSchema), async (req: Request, res: Response) => {
     try {
       const merchant = await db.merchant.update({ where: { id: req.params.id as string }, data: req.body });
+      await checkAndActivate(db, req.params.id as string);
       res.status(200).json({ data: merchant });
+    } catch (err: any) {
+      res.status(400).json({ error: err.message, code: 'BAD_REQUEST' });
+    }
+  });
+
+  router.patch('/:id/deactivate', adminAuth, validate(DeactivateMerchantSchema), async (req: Request, res: Response) => {
+    const merchant = await db.merchant.findUnique({ where: { id: req.params.id as string } });
+    if (!merchant) {
+      res.status(404).json({ error: 'Merchant not found', code: 'NOT_FOUND' });
+      return;
+    }
+    try {
+      const adminPayload = req.admin as { sub?: string } | undefined;
+      const triggeredBy = adminPayload?.sub ?? 'admin';
+      await deactivateMerchant(db, req.params.id as string, req.body.reason, triggeredBy);
+      res.status(200).json({ data: { success: true } });
     } catch (err: any) {
       res.status(400).json({ error: err.message, code: 'BAD_REQUEST' });
     }
