@@ -1,5 +1,5 @@
 import { PrismaClient, RedemptionRequest } from '@prisma/client';
-import { Decimal } from '@prisma/client/runtime/library';
+import { Decimal } from '@prisma/client/runtime/client';
 
 export class RedemptionService {
   constructor(private db: PrismaClient) {}

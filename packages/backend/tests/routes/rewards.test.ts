@@ -1,7 +1,7 @@
 import request from 'supertest';
 import express from 'express';
 import jwt from 'jsonwebtoken';
-import { Decimal } from '@prisma/client/runtime/library';
+import { Decimal } from '@prisma/client/runtime/client';
 import { rewardsRouter } from '../../src/routes/rewards';
 
 const JWT_SECRET = 'test-jwt-secret';

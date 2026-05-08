@@ -42,8 +42,8 @@
     "runtime": null
   },
   "build": {
-    "buildCommand": "npm run build",
-    "testCommand": "npm test",
+    "buildCommand": "rm -f /home/nait/proyectos/HNDA---FIDELIO/packages/web/.next/build-manifest.json && find /home/nait/proyectos/HNDA---FIDELIO/packages/web/.next -name \"*.lock\" -delete 2>/dev/null; npm run build 2>&1 | tail -15",
+    "testCommand": "cd /home/nait/proyectos/HNDA---FIDELIO/packages/merlink/bridge && npm test 2>&1 | tail -10",
     "lintCommand": null,
     "devCommand": "npm run dev",
     "scripts": {

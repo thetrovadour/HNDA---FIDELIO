@@ -1,5 +1,5 @@
 import { Router, Request, Response } from 'express';
-import { Decimal } from '@prisma/client/runtime/library';
+import { Decimal } from '@prisma/client/runtime/client';
 import { PrismaClient } from '@prisma/client';
 import { adminAuth } from '../middleware/auth';
 

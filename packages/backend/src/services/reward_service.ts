@@ -1,5 +1,5 @@
 import { PrismaClient } from '@prisma/client';
-import { Decimal } from '@prisma/client/runtime/library';
+import { Decimal } from '@prisma/client/runtime/client';
 
 const MIN_QUALIFYING_CATR = new Decimal('100'); // L.100 floor (1 CATR = 1 HNL)
 const MAX_DAILY_PER_MERCHANT = 3;
