@@ -4,11 +4,10 @@ const config = {
   env: {
     BACKEND_URL: process.env.BACKEND_URL ?? 'http://localhost:3001',
   },
-  webpack: (config, { isServer }) => {
-    if (!isServer) {
-      config.resolve.alias['@react-native-async-storage/async-storage'] = false;
-    }
-    return config;
+  turbopack: {
+    resolveAlias: {
+      '@react-native-async-storage/async-storage': './src/lib/empty-stub.js',
+    },
   },
 };
 

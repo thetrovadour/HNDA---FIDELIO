@@ -134,6 +134,18 @@
       "accessCount": 3,
       "lastAccessed": 1776816010186,
       "type": "file"
+    },
+    {
+      "path": "next.config.mjs",
+      "accessCount": 3,
+      "lastAccessed": 1778289767335,
+      "type": "file"
+    },
+    {
+      "path": "src/lib/empty-stub.js",
+      "accessCount": 2,
+      "lastAccessed": 1778289806926,
+      "type": "file"
     }
   ],
   "userDirectives": []

@@ -1229,3 +1229,50 @@ dotenv 17 dropped the `import * as dotenv` namespace default — named imports a
 
 #### Next
 - Feature upgrades from Fidelio Upgrades.md (registration page, auth, merchant flow, etc.)
+
+---
+
+### Session — 2026-05-08
+**Focus:** npm upgrades completion + merchant auto-activation & deactivation
+
+#### What happened
+
+**Minor/patch batch — COMPLETE**
+- `turbo` 2.9.1 → 2.9.10
+- `jest` 30.3.0 → 30.4.1 (backend + bridge)
+- `@types/node` 20.19.39 → 20.19.40 (all packages)
+- `tailwindcss` + `@tailwindcss/postcss` 4.2.4 → 4.3.0 (web)
+- `next` 16.2.5 → 16.2.6 (web)
+- `viem` 2.48.8 → 2.48.11 (web)
+
+**`express` 4 → 5 — COMPLETE**
+- No code changes required — codebase had no deprecated Express 4 patterns.
+
+**Prisma 5 → 7 — COMPLETE**
+- Schema: removed `url = env("DATABASE_URL")` from datasource
+- New `prisma.config.ts` at `packages/backend/` — provides `datasourceUrl` to Prisma CLI
+- `src/db.ts`: `PrismaClient` now constructed with `PrismaPg` adapter (`@prisma/adapter-pg`)
+- `Decimal` import path changed from `@prisma/client/runtime/library` → `@prisma/client/runtime/client` across 6 source files + 1 test file. Additional stragglers found in `gca_service.ts`, `routes/admin.ts`, `routes/gca.ts` — fixed during dev server testing.
+
+**`npm audit fix` — COMPLETE**
+- 50 → 48 vulnerabilities. Fixed `fast-uri` and `hono`.
+- Remaining 48 are all blocked: Hardhat stack (Node v22), wagmi (RainbowKit v3), postcss inside Next.js, Prisma dev tooling (`@prisma/dev` → `@hono/node-server`).
+
+**All npm upgrades now done.** Remaining blocked items documented in `Fidelio Upgrades.md`.
+
+**Merchant auto-activation & deactivation — COMPLETE**
+- Schema: replaced `active: Boolean` with `merchant_status: MerchantStatus` enum (`PENDING_ACTIVATION | ACTIVE | DEACTIVATED`) + `deactivation_reason`, `deactivated_at`, `deactivated_by`, `activation_checklist` fields
+- New `src/services/merchant_activation_service.ts`: `checkAndActivate()` (5-item checklist) + `deactivateMerchant()` (shared path)
+- New `src/jobs/merchant_monitor.ts`: daily job at 09:00 UTC — deactivates ACTIVE merchants with 90-day inactivity or 5 consecutive failed redemptions
+- Routes updated: `POST /`, `PATCH /:id`, `PATCH /:id/profile` call `checkAndActivate` after changes; new `PATCH /:id/deactivate` (admin, reason required); new `GET /:id/status` (merchantAuth); redemption endpoint blocks non-ACTIVE merchants with 403
+- Post-implementation fixes: `redemption_service.ts` stale `merchant.active` check, `auth.ts` three `active` references (query filter + two response fields), `active: false` in merchant create
+- Migration SQL at `prisma/migrations/20260508000000_add_merchant_status/`
+- Test results: 73/73 ✅ (62 existing + 11 new)
+
+**tsx swap — COMPLETE**
+- `ts-node` → `tsx` (esbuild-based) for `dev` script in backend and merlink/bridge
+- Noticeably faster dev server startup
+
+#### Pending / next up
+- Apply Prisma migration to the database when ready: `npx prisma migrate deploy`
+- Feature upgrades: auth security, configuration menu, inactivity logout, Spanish translation, GCA script, registration page, etc.
