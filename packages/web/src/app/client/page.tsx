@@ -778,7 +778,7 @@ function AjustesTab({ user, onUpdate }: { user: UserRecord; onUpdate: (u: UserRe
 // ─── Tab: Red ─────────────────────────────────────────────────────────────────
 
 function RedTab({ merchants, user, onSpend }: { merchants: Merchant[]; user: UserRecord; onSpend: () => void }) {
-  const active = merchants.filter((m) => m.active);
+  const active = merchants.filter((m) => m.merchant_status === 'ACTIVE');
   const [selected, setSelected] = useState<Merchant | null>(null);
   const [amount, setAmount] = useState('');
   const [state, setState] = useState<'idle' | 'loading' | 'success' | 'error'>('idle');

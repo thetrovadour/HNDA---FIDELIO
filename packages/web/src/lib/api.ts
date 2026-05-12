@@ -73,11 +73,23 @@ export function resetPassword(body: { email: string; code: string; new_password:
   });
 }
 
-export function register(body:
-  | { role: 'client'; full_name: string; email: string; password: string }
-  | { role: 'merchant'; full_name: string; email: string; password: string; business_name: string; category: string }
-) {
-  return apiFetch<{ data: { role: 'client' | 'merchant'; user_id: string; merchant_id?: string } }>('/api/auth/register', {
+export function register(body: { role: 'client'; full_name: string; email: string; password: string }) {
+  return apiFetch<{ data: { role: 'client'; user_id: string } }>('/api/auth/register', {
+    method: 'POST',
+    headers: jsonHeaders(),
+    body: JSON.stringify(body),
+  });
+}
+
+export function applyMerchant(body: {
+  business_name: string;
+  category: string;
+  contact_name: string;
+  contact_email: string;
+  contact_phone: string;
+  notes?: string;
+}) {
+  return apiFetch<{ data: { id: string } }>('/api/applications/merchant', {
     method: 'POST',
     headers: jsonHeaders(),
     body: JSON.stringify(body),
@@ -208,6 +220,17 @@ export function updateMerchantPayout(
   });
 }
 
+export function changeMerchantPassword(
+  id: string,
+  body: { current_password: string; new_password: string },
+) {
+  return apiFetch<{ data: { ok: boolean } }>(`/api/merchants/${id}/password`, {
+    method: 'PATCH',
+    headers: jsonHeaders(),
+    body: JSON.stringify(body),
+  });
+}
+
 export function updateMerchantProfile(
   id: string,
   body: { name?: string; category?: string; contact_email?: string },
@@ -221,13 +244,28 @@ export function updateMerchantProfile(
 
 export function updateMerchant(
   id: string,
-  body: { name?: string; category?: string; contact_email?: string; active?: boolean },
+  body: { name?: string; category?: string; contact_email?: string },
   token?: string,
 ) {
   return apiFetch<{ data: Merchant }>(`/api/merchants/${id}`, {
     method: 'PATCH',
     headers: token ? authHeaders(token) : jsonHeaders(),
     body: JSON.stringify(body),
+  });
+}
+
+export function activateMerchantAdmin(id: string, token: string) {
+  return apiFetch<{ data: { ok: boolean } }>(`/api/merchants/${id}/activate`, {
+    method: 'PATCH',
+    headers: authHeaders(token),
+  });
+}
+
+export function deactivateMerchantAdmin(id: string, reason: string, token: string) {
+  return apiFetch<{ data: { ok: boolean } }>(`/api/merchants/${id}/deactivate`, {
+    method: 'PATCH',
+    headers: authHeaders(token),
+    body: JSON.stringify({ reason }),
   });
 }
 
@@ -367,7 +405,8 @@ export interface Merchant {
   category: string;
   wallet_address: string;
   contact_email: string;
-  active: boolean;
+  merchant_status: 'PENDING_ACTIVATION' | 'ACTIVE' | 'DEACTIVATED';
+  reactivated_at?: string | null;
   notify_redemption_update: boolean;
   payout_bank?: string | null;
   payout_account_number?: string | null;
@@ -526,5 +565,51 @@ export function setGcaPriceFloor(body: { price_hnl: number }, token: string) {
     method: 'POST',
     headers: authHeaders(token),
     body: JSON.stringify(body),
+  });
+}
+
+// --- Merchant Applications (admin) ---
+
+export interface MerchantApplication {
+  id: string;
+  business_name: string;
+  category: string;
+  contact_name: string;
+  contact_email: string;
+  contact_phone: string;
+  notes?: string;
+  status: 'PENDING' | 'APPROVED' | 'REJECTED';
+  reviewed_at?: string;
+  rejection_reason?: string;
+  created_at: string;
+}
+
+export interface ApprovedMerchantCredentials {
+  user_id: string;
+  full_name: string;
+  email: string;
+  temp_password: string;
+  wallet_address: string;
+}
+
+export function getAdminApplications(token: string, status?: string) {
+  const params = status ? `?status=${status}` : '';
+  return apiFetch<{ data: MerchantApplication[] }>(`/api/admin/merchant-applications${params}`, {
+    headers: authHeaders(token),
+  });
+}
+
+export function approveApplication(id: string, token: string) {
+  return apiFetch<{ data: ApprovedMerchantCredentials }>(`/api/admin/merchant-applications/${id}/approve`, {
+    method: 'POST',
+    headers: authHeaders(token),
+  });
+}
+
+export function rejectApplication(id: string, token: string, reason?: string) {
+  return apiFetch<{ data: { ok: boolean } }>(`/api/admin/merchant-applications/${id}/reject`, {
+    method: 'POST',
+    headers: authHeaders(token),
+    body: JSON.stringify({ reason }),
   });
 }

@@ -7,6 +7,7 @@ export class RedemptionService {
   async createRequest(merchant_id: string, amount_catr: string): Promise<RedemptionRequest> {
     const merchant = await this.db.merchant.findUnique({ where: { id: merchant_id } });
     if (!merchant) throw new Error('Merchant not found');
+    if (merchant.merchant_status !== 'ACTIVE') throw new Error('Merchant is not active');
 
     const adminMin = parseFloat(process.env.REDEMPTION_TIER_ADMIN_MIN ?? '50');
     const vaultMin = parseFloat(process.env.REDEMPTION_TIER_VAULT_MIN ?? '500');

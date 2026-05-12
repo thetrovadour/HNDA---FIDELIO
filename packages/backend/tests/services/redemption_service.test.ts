@@ -7,7 +7,7 @@ beforeEach(() => resetMocks());
 
 describe('RedemptionService.createRequest', () => {
   it('assigns AUTO tier for amount < 50', async () => {
-    mockDb.merchant.findUnique.mockResolvedValue({ id: 'm1', active: true });
+    mockDb.merchant.findUnique.mockResolvedValue({ id: 'm1', merchant_status: 'ACTIVE' });
     mockDb.redemptionRequest.create.mockImplementation(({ data }: any) => Promise.resolve({ id: 'r1', ...data }));
 
     const result = await service.createRequest('m1', '30');
@@ -15,7 +15,7 @@ describe('RedemptionService.createRequest', () => {
   });
 
   it('assigns ADMIN_APPROVAL tier for amount 50-500', async () => {
-    mockDb.merchant.findUnique.mockResolvedValue({ id: 'm1', active: true });
+    mockDb.merchant.findUnique.mockResolvedValue({ id: 'm1', merchant_status: 'ACTIVE' });
     mockDb.redemptionRequest.create.mockImplementation(({ data }: any) => Promise.resolve({ id: 'r1', ...data }));
 
     const result = await service.createRequest('m1', '200');
@@ -23,7 +23,7 @@ describe('RedemptionService.createRequest', () => {
   });
 
   it('assigns VAULT_OP tier for amount > 500', async () => {
-    mockDb.merchant.findUnique.mockResolvedValue({ id: 'm1', active: true });
+    mockDb.merchant.findUnique.mockResolvedValue({ id: 'm1', merchant_status: 'ACTIVE' });
     mockDb.redemptionRequest.create.mockImplementation(({ data }: any) => Promise.resolve({ id: 'r1', ...data }));
 
     const result = await service.createRequest('m1', '1000');
@@ -36,7 +36,7 @@ describe('RedemptionService.createRequest', () => {
   });
 
   it('throws if merchant not active', async () => {
-    mockDb.merchant.findUnique.mockResolvedValue({ id: 'm1', active: false });
+    mockDb.merchant.findUnique.mockResolvedValue({ id: 'm1', merchant_status: 'PENDING_ACTIVATION' });
     await expect(service.createRequest('m1', '100')).rejects.toThrow('Merchant is not active');
   });
 });

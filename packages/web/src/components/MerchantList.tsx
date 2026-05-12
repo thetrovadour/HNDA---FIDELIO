@@ -1,7 +1,7 @@
 'use client';
 
 import { useState } from 'react';
-import { createMerchant, updateMerchant, type Merchant } from '@/lib/api';
+import { createMerchant, activateMerchantAdmin, deactivateMerchantAdmin, type Merchant } from '@/lib/api';
 
 interface Props {
   merchants: Merchant[];
@@ -60,7 +60,7 @@ export default function MerchantList({ merchants, token, onRefresh }: Props) {
 
   async function handleActivate(id: string) {
     try {
-      await updateMerchant(id, { active: true }, token);
+      await activateMerchantAdmin(id, token);
       onRefresh();
     } catch (err) {
       alert(err instanceof Error ? err.message : 'Failed to activate merchant.');
@@ -68,8 +68,10 @@ export default function MerchantList({ merchants, token, onRefresh }: Props) {
   }
 
   async function handleDeactivate(id: string) {
+    const reason = prompt('Reason for deactivation:');
+    if (!reason) return;
     try {
-      await updateMerchant(id, { active: false }, token);
+      await deactivateMerchantAdmin(id, reason, token);
       onRefresh();
     } catch (err) {
       alert(err instanceof Error ? err.message : 'Failed to deactivate merchant.');
@@ -119,12 +121,12 @@ export default function MerchantList({ merchants, token, onRefresh }: Props) {
                 </td>
                 <td style={tdStyle}>{m.category}</td>
                 <td style={tdStyle}>
-                  <span style={{ color: m.active ? C.success : C.danger }}>
-                    {m.active ? 'Active' : 'Inactive'}
+                  <span style={{ color: m.merchant_status === 'ACTIVE' ? C.success : m.merchant_status === 'DEACTIVATED' ? C.danger : C.slate }}>
+                    {m.merchant_status === 'ACTIVE' ? 'Active' : m.merchant_status === 'DEACTIVATED' ? 'Deactivated' : 'Pending'}
                   </span>
                 </td>
                 <td style={{ ...tdStyle, display: 'flex', gap: '0.4rem' }}>
-                  {!m.active && (
+                  {m.merchant_status !== 'ACTIVE' && (
                     <button
                       onClick={() => handleActivate(m.id)}
                       style={{ ...font, background: C.successBg, border: `1px solid rgba(16,185,129,0.3)`, borderRadius: '0.25rem', color: C.success, fontSize: '0.65rem', padding: '0.2rem 0.5rem', cursor: 'pointer' }}
@@ -132,7 +134,7 @@ export default function MerchantList({ merchants, token, onRefresh }: Props) {
                       Activar
                     </button>
                   )}
-                  {m.active && (
+                  {m.merchant_status === 'ACTIVE' && (
                     <button
                       onClick={() => handleDeactivate(m.id)}
                       style={{ ...font, background: C.dangerBg, border: `1px solid rgba(239,68,68,0.2)`, borderRadius: '0.25rem', color: C.danger, fontSize: '0.65rem', padding: '0.2rem 0.5rem', cursor: 'pointer' }}

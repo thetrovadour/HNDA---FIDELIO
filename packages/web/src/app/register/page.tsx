@@ -25,12 +25,6 @@ const C = {
 
 const font = { fontFamily: 'var(--font-body)' };
 
-const CATEGORIES = [
-  'Restaurante', 'Supermercado', 'Farmacia', 'Ropa y Calzado',
-  'Electrónica', 'Salud y Belleza', 'Educación', 'Transporte',
-  'Entretenimiento', 'Servicios', 'Otro',
-];
-
 // ─── Field ────────────────────────────────────────────────────────────────────
 
 function Field({ label, children }: { label: string; children: React.ReactNode }) {
@@ -61,17 +55,13 @@ const inputStyle = {
 
 export default function RegisterPage() {
   const router = useRouter();
-  const [role, setRole] = useState<'client' | 'merchant'>('client');
   const [fullName, setFullName] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [confirm, setConfirm] = useState('');
-  const [businessName, setBusinessName] = useState('');
-  const [category, setCategory] = useState(CATEGORIES[0]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [success, setSuccess] = useState(false);
-  const [merchantId, setMerchantId] = useState('');
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -88,24 +78,10 @@ export default function RegisterPage() {
 
     setLoading(true);
     try {
-      const body = role === 'client'
-        ? { role: 'client' as const, full_name: fullName, email, password }
-        : { role: 'merchant' as const, full_name: fullName, email, password, business_name: businessName, category };
-
-      const res = await register(body);
+      await register({ role: 'client', full_name: fullName, email, password });
       localStorage.removeItem('fidelio_session');
-
-      if (role === 'merchant' && res?.data?.merchant_id) {
-        setMerchantId(res.data.merchant_id);
-      }
-
       setSuccess(true);
-
-      if (role === 'client') {
-        setTimeout(() => {
-          router.push('/client');
-        }, 2000);
-      }
+      setTimeout(() => router.push('/client'), 2000);
     } catch (err: unknown) {
       const msg = err instanceof Error ? err.message : 'Error al registrar';
       if (msg.includes('409') || msg.includes('EMAIL_TAKEN')) {
@@ -137,78 +113,11 @@ export default function RegisterPage() {
               </div>
             )}
 
-            {/* Role toggle */}
-            {!success && (
-              <div style={{ display: 'flex', gap: '0.5rem', marginBottom: '1.5rem', background: C.surfaceHi, borderRadius: '0.5rem', padding: '0.25rem' }}>
-                {(['client', 'merchant'] as const).map((r) => (
-                  <button
-                    key={r}
-                    type="button"
-                    onClick={() => { setRole(r); setError(''); }}
-                    style={{
-                      ...font,
-                      flex: 1,
-                      padding: '0.5rem',
-                      borderRadius: '0.375rem',
-                      border: 'none',
-                      cursor: 'pointer',
-                      fontSize: '0.72rem',
-                      fontWeight: role === r ? 500 : 300,
-                      background: role === r ? C.goldDim : 'transparent',
-                      color: role === r ? C.gold : C.slate,
-                      transition: 'all 0.2s',
-                      letterSpacing: '0.04em',
-                    }}
-                  >
-                    {r === 'client' ? 'Soy Cliente' : 'Soy Comercio'}
-                  </button>
-                ))}
-              </div>
-            )}
 
             {success ? (
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
-
-                {role === 'client' && (
-                  <div style={{ ...font, background: C.successBg, border: `1px solid rgba(34,197,94,0.3)`, borderRadius: '0.5rem', padding: '1rem', textAlign: 'center' as const }}>
-                    <p style={{ fontSize: '0.85rem', fontWeight: 500, color: C.success, marginBottom: '0.25rem' }}>¡Cuenta creada exitosamente!</p>
-                    <p style={{ fontSize: '0.72rem', color: C.slate }}>Redirigiendo al inicio de sesión...</p>
-                  </div>
-                )}
-
-                {role === 'merchant' && (
-                  <div style={{ ...font, background: C.surfaceHi, border: `1px solid ${C.borderHi}`, borderRadius: '0.5rem', padding: '0.875rem' }}>
-                    <p style={{ fontSize: '0.9rem', fontWeight: 600, color: C.success, marginBottom: '0.8rem' }}>
-                      ¡Solicitud enviada!
-                    </p>
-                    <p style={{ fontSize: '0.75rem', color: C.slate, marginBottom: '0.75rem' }}>
-                      Un administrador activará tu cuenta pronto.
-                    </p>
-                    {merchantId ? (
-                      <>
-                        <p style={{ fontSize: '0.7rem', fontWeight: 400, letterSpacing: '0.12em', color: C.slate, textTransform: 'uppercase' as const, marginBottom: '0.4rem' }}>
-                          Tu ID de comercio
-                        </p>
-                        <p style={{ fontSize: '.92rem', color: C.white, fontFamily: 'monospace', wordBreak: 'break-all' as const, margin: 0 }}>
-                          {merchantId}
-                        </p>
-                        <p style={{ fontSize: '0.65rem', color: C.slate, margin: '0.5rem 0 0' }}>
-                          Guarda este ID para acceder al portal de comercios. Mantenlo seguro. No lo pierdas.
-                        </p>
-                      </>
-                    ) : (
-                      <p style={{ fontSize: '0.72rem', color: C.danger }}>
-                        No se recibió el ID de comercio. Contacta a HNDA para obtenerlo.
-                      </p>
-                    )}
-                    <a
-                      href="/merchant"
-                      style={{ ...font, display: 'block', marginTop: '0.875rem', textAlign: 'center' as const, background: C.goldDim, border: `1px solid ${C.gold}`, borderRadius: '0.5rem', color: C.gold, fontSize: '0.72rem', fontWeight: 400, letterSpacing: '0.1em', padding: '0.6rem', textDecoration: 'none', textTransform: 'uppercase' as const }}
-                    >
-                      Ir al portal →
-                    </a>
-                  </div>
-                )}
+              <div style={{ ...font, background: C.successBg, border: `1px solid rgba(34,197,94,0.3)`, borderRadius: '0.5rem', padding: '1rem', textAlign: 'center' as const }}>
+                <p style={{ fontSize: '0.85rem', fontWeight: 500, color: C.success, marginBottom: '0.25rem' }}>¡Cuenta creada exitosamente!</p>
+                <p style={{ fontSize: '0.72rem', color: C.slate }}>Redirigiendo al inicio de sesión...</p>
               </div>
             ) : (
               <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '0.875rem' }}>
@@ -220,25 +129,6 @@ export default function RegisterPage() {
                 <Field label="Correo electrónico">
                   <input style={inputStyle} type="email" value={email} onChange={(e) => setEmail(e.target.value)} required placeholder="juan@email.com" />
                 </Field>
-
-                {role === 'merchant' && (
-                  <>
-                    <Field label="Nombre del negocio">
-                      <input style={inputStyle} value={businessName} onChange={(e) => setBusinessName(e.target.value)} required placeholder="Restaurante El Buen Sabor" />
-                    </Field>
-                    <Field label="Categoría">
-                      <select
-                        style={{ ...inputStyle, cursor: 'pointer' }}
-                        value={category}
-                        onChange={(e) => setCategory(e.target.value)}
-                      >
-                        {CATEGORIES.map((c) => (
-                          <option key={c} value={c} style={{ background: C.surface }}>{c}</option>
-                        ))}
-                      </select>
-                    </Field>
-                  </>
-                )}
 
                 <Field label="Contraseña">
                   <input style={inputStyle} type="password" value={password} onChange={(e) => setPassword(e.target.value)} required placeholder="Mínimo 6 caracteres" />
@@ -279,6 +169,11 @@ export default function RegisterPage() {
                 <p style={{ ...font, textAlign: 'center' as const, fontSize: '0.7rem', color: C.slate, margin: 0 }}>
                   ¿Ya tienes cuenta?{' '}
                   <a href="/client" style={{ color: C.gold, textDecoration: 'none' }}>Inicia sesión</a>
+                </p>
+
+                <p style={{ ...font, textAlign: 'center' as const, fontSize: '0.7rem', color: C.slate, margin: 0 }}>
+                  ¿Eres un comercio?{' '}
+                  <a href="/apply" style={{ color: C.gold, textDecoration: 'none' }}>Aplica aquí</a>
                 </p>
 
               </form>

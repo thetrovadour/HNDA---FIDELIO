@@ -52,6 +52,7 @@ model Merchant {
   deactivation_reason  String?
   deactivated_at       DateTime?
   deactivated_by       String?
+  reactivated_at       DateTime?
   activation_checklist Json?
   created_at           DateTime               @default(now())
   updated_at           DateTime               @updatedAt
@@ -373,4 +374,28 @@ enum MerchantStatus {
   PENDING_ACTIVATION
   ACTIVE
   DEACTIVATED
+}
+
+enum ApplicationStatus {
+  PENDING
+  APPROVED
+  REJECTED
+}
+
+model MerchantApplication {
+  id             String            @id @default(uuid())
+  business_name  String
+  category       String
+  contact_name   String
+  contact_email  String
+  contact_phone  String
+  notes          String?
+  status         ApplicationStatus @default(PENDING)
+  reviewed_by    String?
+  reviewed_at    DateTime?
+  rejection_reason String?
+  created_at     DateTime          @default(now())
+
+  @@index([status])
+  @@index([created_at])
 }

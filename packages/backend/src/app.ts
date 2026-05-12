@@ -23,6 +23,7 @@ import { rewardsRouter } from './routes/rewards';
 import { authRouter } from './routes/auth';
 import { adminRouter } from './routes/admin';
 import { gcaRouter } from './routes/gca';
+import { applicationsRouter } from './routes/applications';
 import { evaluateGcaVesting } from './services/gca_service';
 
 const isDev = process.env.NODE_ENV !== 'production';
@@ -78,6 +79,7 @@ export function createApp(): express.Application {
   app.use('/api/rewards', sensitiveLimiter, rewardsRouter(db));
   app.use('/api/admin', sensitiveLimiter, adminRouter(mintService));
   app.use('/api/gca', gcaRouter(db));
+  app.use('/api/applications', applicationsRouter());
 
   // Error handler (last middleware)
   app.use(errorHandler);

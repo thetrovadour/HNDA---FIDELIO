@@ -2,14 +2,125 @@
 
 import Link from "next/link"
 import { useEffect, useRef, useState } from "react"
+import { useRouter } from "next/navigation"
 import { HexCanvasBackground } from "@/components/HexCanvasBackground"
 import { useScrollReveal } from "@/hooks/useScrollReveal"
 import { Android } from "@/components/ui/android"
 import { InteractiveHoverButton } from "@/components/ui/interactive-hover-button"
+import { pilotLogin, merchantLogin } from "@/lib/api"
 
+
+// ─── Right Sidebar ────────────────────────────────────────────────────────────
+
+function LoginSidebar() {
+  const router = useRouter()
+  const [panel, setPanel] = useState<'client' | 'merchant' | null>(null)
+  const [name, setName] = useState('')
+  const [cred, setCred] = useState('')
+  const [loading, setLoading] = useState(false)
+  const [error, setError] = useState('')
+
+  function toggle(p: 'client' | 'merchant') {
+    setPanel(prev => prev === p ? null : p)
+    setName(''); setCred(''); setError('')
+  }
+
+  async function handleSubmit(e: React.FormEvent) {
+    e.preventDefault()
+    if (!name.trim() || !cred) return
+    setLoading(true); setError('')
+    try {
+      if (panel === 'client') {
+        const res = await pilotLogin({ full_name: name.trim(), credential: cred })
+        localStorage.setItem('fidelio_session', JSON.stringify(res.data))
+        router.push('/client')
+      } else {
+        const res = await merchantLogin({ full_name: name.trim(), credential: cred })
+        localStorage.setItem('fidelio_merchant_session', JSON.stringify(res.data))
+        router.push('/merchant')
+      }
+    } catch {
+      setError('Credenciales incorrectas')
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  const sb: React.CSSProperties = {
+    position: 'fixed', top: '80px', right: '1rem', zIndex: 200,
+    width: '240px', display: 'flex', flexDirection: 'column', gap: '0.5rem',
+    fontFamily: 'var(--font-body)',
+  }
+  const btn = (active: boolean): React.CSSProperties => ({
+    width: '100%', padding: '0.55rem 0.9rem',
+    background: active ? 'rgba(201,168,76,0.12)' : 'rgba(12,16,24,0.92)',
+    border: `1px solid ${active ? 'rgba(201,168,76,0.5)' : 'rgba(255,255,255,0.09)'}`,
+    borderRadius: '0.5rem', color: active ? '#C9A84C' : '#94A3B8',
+    fontSize: '0.75rem', fontWeight: 500, letterSpacing: '0.06em',
+    cursor: 'pointer', textAlign: 'left' as const,
+    backdropFilter: 'blur(10px)',
+    transition: 'all 0.15s',
+  })
+  const input: React.CSSProperties = {
+    width: '100%', boxSizing: 'border-box' as const,
+    background: '#111820', border: '1px solid rgba(255,255,255,0.07)',
+    borderRadius: '0.4rem', padding: '0.5rem 0.6rem',
+    color: '#F1F5F9', fontSize: '0.75rem', outline: 'none',
+    fontFamily: 'var(--font-body)',
+  }
+
+  return (
+    <div style={sb}>
+      {/* Client button */}
+      <button style={btn(panel === 'client')} onClick={() => toggle('client')}>
+        {panel === 'client' ? '▾' : '▸'} Soy Cliente
+      </button>
+
+      {panel === 'client' && (
+        <div style={{ background: 'rgba(12,16,24,0.95)', border: '1px solid rgba(255,255,255,0.07)', borderRadius: '0.5rem', padding: '0.875rem', backdropFilter: 'blur(10px)' }}>
+          <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
+            <input style={input} placeholder="Nombre completo" value={name} onChange={e => setName(e.target.value)} required />
+            <input style={input} type="password" placeholder="Contraseña o PIN" value={cred} onChange={e => setCred(e.target.value)} required />
+            {error && <p style={{ fontSize: '0.68rem', color: '#EF4444', margin: 0 }}>{error}</p>}
+            <button type="submit" disabled={loading} style={{ ...btn(false), background: 'rgba(201,168,76,0.1)', border: '1px solid rgba(201,168,76,0.35)', color: '#C9A84C', textAlign: 'center' as const, marginTop: '0.1rem' }}>
+              {loading ? 'Entrando...' : 'Entrar'}
+            </button>
+            <p style={{ fontSize: '0.68rem', color: '#64748B', textAlign: 'center' as const, margin: 0 }}>
+              ¿No tienes cuenta?{' '}
+              <Link href="/register" style={{ color: '#C9A84C', textDecoration: 'none' }}>Regístrate</Link>
+            </p>
+          </form>
+        </div>
+      )}
+
+      {/* Merchant button */}
+      <button style={btn(panel === 'merchant')} onClick={() => toggle('merchant')}>
+        {panel === 'merchant' ? '▾' : '▸'} Soy Comercio
+      </button>
+
+      {panel === 'merchant' && (
+        <div style={{ background: 'rgba(12,16,24,0.95)', border: '1px solid rgba(255,255,255,0.07)', borderRadius: '0.5rem', padding: '0.875rem', backdropFilter: 'blur(10px)' }}>
+          <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
+            <input style={input} placeholder="Nombre completo" value={name} onChange={e => setName(e.target.value)} required />
+            <input style={input} type="password" placeholder="Contraseña" value={cred} onChange={e => setCred(e.target.value)} required />
+            {error && <p style={{ fontSize: '0.68rem', color: '#EF4444', margin: 0 }}>{error}</p>}
+            <button type="submit" disabled={loading} style={{ ...btn(false), background: 'rgba(201,168,76,0.1)', border: '1px solid rgba(201,168,76,0.35)', color: '#C9A84C', textAlign: 'center' as const, marginTop: '0.1rem' }}>
+              {loading ? 'Entrando...' : 'Entrar'}
+            </button>
+            <p style={{ fontSize: '0.68rem', color: '#64748B', textAlign: 'center' as const, margin: 0 }}>
+              ¿No tienes cuenta?{' '}
+              <Link href="/apply" style={{ color: '#C9A84C', textDecoration: 'none' }}>Aplica aquí</Link>
+            </p>
+          </form>
+        </div>
+      )}
+    </div>
+  )
+}
+
+// ─── Page ─────────────────────────────────────────────────────────────────────
 
 export default function FidelioPage() {
-  const [showIntro, setShowIntro] = useState(true)
   useScrollReveal()
   const clipRef = useRef<SVGRectElement>(null)
 
@@ -46,6 +157,7 @@ export default function FidelioPage() {
     <div style={{ background: "var(--bg)", color: "var(--text)", minHeight: "100vh", fontFamily: "var(--font-body)", position: "relative" }}>
      
       <HexCanvasBackground />
+      <LoginSidebar />
 
       {/* ── Nav ── */}
       <nav style={{
@@ -62,7 +174,6 @@ export default function FidelioPage() {
           <a href="#actors" style={navLink} className="hidden md:inline">Network</a>
           <a href="#how" style={navLink} className="hidden md:inline">How it Works</a>
           <a href="#token" style={navLink} className="hidden md:inline">CATR</a>
-          <a href="/register" style={{ ...navLink, background: "var(--accent)", color: "#fff", padding: "0.3rem 0.75rem", borderRadius: "999px", fontWeight: 600, fontSize: "0.78rem" }}>Join Network</a>
         </div>
       </nav>
 
@@ -346,8 +457,6 @@ export default function FidelioPage() {
 }
 
 const navLink: React.CSSProperties = { color: "var(--muted)", textDecoration: "none", fontSize: "0.9rem", fontWeight: 500 }
-const btnPrimary: React.CSSProperties = { background: "var(--accent)", color: "#fff", padding: "0.75rem 1.75rem", borderRadius: "999px", fontWeight: 600, textDecoration: "none", fontSize: "1rem", display: "inline-block" }
-const btnOutline: React.CSSProperties = { border: "1.5px solid var(--border)", color: "var(--text)", padding: "0.75rem 1.75rem", borderRadius: "999px", fontWeight: 600, textDecoration: "none", fontSize: "1rem", display: "inline-block" }
 const section: React.CSSProperties = { padding: "5rem 2rem" }
 const sectionInner: React.CSSProperties = { maxWidth: "960px", margin: "0 auto" }
 const label: React.CSSProperties = { fontSize: "0.78rem", fontWeight: 700, letterSpacing: "0.12em", textTransform: "uppercase" as const, color: "var(--accent)", marginBottom: "0.75rem" }

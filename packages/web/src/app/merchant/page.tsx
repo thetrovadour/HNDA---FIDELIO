@@ -16,6 +16,7 @@ import {
   updateMerchantProfile,
   updateMerchantNotifications,
   updateMerchantPayout,
+  changeMerchantPassword,
   logout,
   forgotPassword,
   resetPassword,
@@ -359,12 +360,12 @@ function TopBar({ merchant, balance, onLogout }: { merchant: Merchant; balance: 
         <span
           className="text-xs font-semibold px-2 py-0.5 rounded-full"
           style={{
-            background: merchant.active ? 'rgba(16,185,129,0.1)' : 'rgba(239,68,68,0.1)',
-            color: merchant.active ? C.success : C.error,
-            border: `1px solid ${merchant.active ? 'rgba(16,185,129,0.3)' : 'rgba(239,68,68,0.3)'}`,
+            background: merchant.merchant_status === 'ACTIVE' ? 'rgba(16,185,129,0.1)' : merchant.merchant_status === 'DEACTIVATED' ? 'rgba(239,68,68,0.1)' : 'rgba(100,116,139,0.1)',
+            color: merchantStatusColor(merchant),
+            border: `1px solid ${merchant.merchant_status === 'ACTIVE' ? 'rgba(16,185,129,0.3)' : merchant.merchant_status === 'DEACTIVATED' ? 'rgba(239,68,68,0.3)' : 'rgba(100,116,139,0.3)'}`,
           }}
         >
-          {merchant.active ? t('common.active') : t('common.inactive')}
+          {merchantStatusLabel(merchant)}
         </span>
       </div>
 
@@ -423,6 +424,21 @@ function TabBar({ active, onChange }: { active: Tab; onChange: (t: Tab) => void 
   );
 }
 
+// ─── Merchant status helpers ──────────────────────────────────────────────────
+
+function merchantStatusLabel(merchant: Merchant): string {
+  if (merchant.merchant_status === 'DEACTIVATED') return 'Desactivado';
+  if (merchant.merchant_status === 'ACTIVE' && merchant.reactivated_at) return 'Reactivado';
+  if (merchant.merchant_status === 'ACTIVE') return 'Activado';
+  return 'No activado';
+}
+
+function merchantStatusColor(merchant: Merchant): string {
+  if (merchant.merchant_status === 'DEACTIVATED') return C.error;
+  if (merchant.merchant_status === 'ACTIVE') return C.success;
+  return C.slate;
+}
+
 // ─── Tab: Mi Negocio ──────────────────────────────────────────────────────────
 
 function NegocioTab({ merchant }: { merchant: Merchant }) {
@@ -479,8 +495,8 @@ function NegocioTab({ merchant }: { merchant: Merchant }) {
           <InfoRow label={t('merchant.label_category')} value={merchant.category} />
           <InfoRow label={t('merchant.label_contact')} value={merchant.contact_email} />
           <InfoRow label={t('merchant.label_status')}  value={
-            <span style={{ color: merchant.active ? C.success : C.error }}>
-              {merchant.active ? t('common.active') : t('common.inactive')}
+            <span style={{ color: merchantStatusColor(merchant) }}>
+              {merchantStatusLabel(merchant)}
             </span>
           } />
         </div>
@@ -972,6 +988,12 @@ function AjustesTab({ merchant, onUpdate }: { merchant: Merchant; onUpdate: (m: 
   const [payoutState, setPayoutState] = useState<'idle' | 'loading' | 'success' | 'error'>('idle');
   const [payoutMsg, setPayoutMsg] = useState('');
 
+  const [currentPwd, setCurrentPwd] = useState('');
+  const [newPwd, setNewPwd] = useState('');
+  const [confirmPwd, setConfirmPwd] = useState('');
+  const [pwdState, setPwdState] = useState<'idle' | 'loading' | 'success' | 'error'>('idle');
+  const [pwdMsg, setPwdMsg] = useState('');
+
   async function handleSave(e: React.FormEvent) {
     e.preventDefault();
     setProfileState('loading');
@@ -1000,6 +1022,28 @@ function AjustesTab({ merchant, onUpdate }: { merchant: Merchant; onUpdate: (m: 
       setNotifMsg({ type: 'error', text: t('common.error_save') });
     } finally {
       setNotifSaving(false);
+    }
+  }
+
+  async function handlePasswordChange(e: React.FormEvent) {
+    e.preventDefault();
+    if (newPwd !== confirmPwd) {
+      setPwdState('error');
+      setPwdMsg('Las contraseñas nuevas no coinciden.');
+      return;
+    }
+    setPwdState('loading');
+    setPwdMsg('');
+    try {
+      await changeMerchantPassword(merchant.id, { current_password: currentPwd, new_password: newPwd });
+      setCurrentPwd('');
+      setNewPwd('');
+      setConfirmPwd('');
+      setPwdState('success');
+      setPwdMsg('Contraseña actualizada correctamente.');
+    } catch (err) {
+      setPwdState('error');
+      setPwdMsg(err instanceof Error ? err.message : 'Error al cambiar la contraseña.');
     }
   }
 
@@ -1108,6 +1152,19 @@ function AjustesTab({ merchant, onUpdate }: { merchant: Merchant; onUpdate: (m: 
           </PrimaryBtn>
         </form>
       </Section>
+
+      <Section title="Cambiar Contraseña">
+        <form onSubmit={handlePasswordChange} className="flex flex-col gap-3">
+          <Input label="Contraseña actual" type="password" value={currentPwd} onChange={(e) => setCurrentPwd(e.target.value)} required />
+          <Input label="Nueva contraseña" type="password" value={newPwd} onChange={(e) => setNewPwd(e.target.value)} required />
+          <Input label="Confirmar nueva contraseña" type="password" value={confirmPwd} onChange={(e) => setConfirmPwd(e.target.value)} required />
+          {pwdState === 'success' && <StatusMsg type="success" msg={pwdMsg} />}
+          {pwdState === 'error'   && <StatusMsg type="error"   msg={pwdMsg} />}
+          <PrimaryBtn type="submit" disabled={pwdState === 'loading'}>
+            {pwdState === 'loading' ? 'Cambiando...' : 'Cambiar contraseña'}
+          </PrimaryBtn>
+        </form>
+      </Section>
     </div>
   );
 }
@@ -1148,8 +1205,8 @@ export default function MerchantPage() {
         .catch((err) => { if (err instanceof AuthError) handleLogout(); });
       getMerchantPublic(merchant.id)
         .then((r) => {
-          if (r.data.active !== merchant.active) {
-            const updated = { ...merchant, active: r.data.active };
+          if (r.data.merchant_status !== merchant.merchant_status) {
+            const updated = { ...merchant, merchant_status: r.data.merchant_status };
             setMerchant(updated);
             const raw = localStorage.getItem(SESSION_KEY);
             if (raw) {

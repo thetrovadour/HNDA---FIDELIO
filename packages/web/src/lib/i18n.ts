@@ -7,6 +7,7 @@ export const esHN = {
   'tab.health':      'Estado',
   'tab.clients':     'Clientes',
   'tab.gca':         'GCA',
+  'tab.applications': 'Solicitudes',
 
   // Admin UI
   'admin.title':           'Consola Admin',
@@ -217,6 +218,7 @@ export const enUS: Record<keyof typeof esHN, string> = {
   'tab.health':      'Health',
   'tab.clients':     'Clients',
   'tab.gca':         'GCA',
+  'tab.applications': 'Applications',
 
   // Admin UI
   'admin.title':           'Admin Console',

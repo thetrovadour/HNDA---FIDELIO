@@ -1,5 +1,6 @@
 import { Router, Request, Response } from 'express';
 import { z } from 'zod';
+import bcrypt from 'bcrypt';
 import { validate } from '../middleware/validate';
 import { adminAuth, merchantAuth } from '../middleware/auth';
 import db from '../db';
@@ -221,6 +222,34 @@ export function merchantsRouter(redemptionService: RedemptionService): Router {
     }
   });
 
+  // ── Merchant self-service password change ──────────────────────────────────
+
+  const ChangePasswordSchema = z.object({
+    current_password: z.string().min(1),
+    new_password: z.string().min(6),
+  });
+
+  router.patch('/:id/password', merchantAuth, validate(ChangePasswordSchema), async (req: Request, res: Response) => {
+    const merchant = await db.merchant.findUnique({ where: { id: req.params.id as string } });
+    if (!merchant || !merchant.owner_user_id) {
+      res.status(404).json({ error: 'Merchant not found', code: 'NOT_FOUND' });
+      return;
+    }
+    const user = await db.user.findUnique({ where: { id: merchant.owner_user_id } });
+    if (!user || !user.password_hash) {
+      res.status(400).json({ error: 'No password set for this account', code: 'NO_PASSWORD' });
+      return;
+    }
+    const valid = await bcrypt.compare(req.body.current_password, user.password_hash);
+    if (!valid) {
+      res.status(401).json({ error: 'Contraseña actual incorrecta', code: 'INVALID_PASSWORD' });
+      return;
+    }
+    const password_hash = await bcrypt.hash(req.body.new_password, 10);
+    await db.user.update({ where: { id: merchant.owner_user_id }, data: { password_hash } });
+    res.status(200).json({ data: { ok: true } });
+  });
+
   // ── Admin routes ─────────────────────────────────────────────────────────────
 
   router.get('/', adminAuth, async (_req: Request, res: Response) => {
@@ -256,6 +285,25 @@ export function merchantsRouter(redemptionService: RedemptionService): Router {
     } catch (err: any) {
       res.status(400).json({ error: err.message, code: 'BAD_REQUEST' });
     }
+  });
+
+  router.patch('/:id/activate', adminAuth, async (req: Request, res: Response) => {
+    const merchant = await db.merchant.findUnique({ where: { id: req.params.id as string } });
+    if (!merchant) {
+      res.status(404).json({ error: 'Merchant not found', code: 'NOT_FOUND' });
+      return;
+    }
+    await db.merchant.update({
+      where: { id: req.params.id as string },
+      data: {
+        merchant_status: 'ACTIVE',
+        deactivation_reason: null,
+        deactivated_at: null,
+        deactivated_by: null,
+        reactivated_at: merchant.merchant_status === 'DEACTIVATED' ? new Date() : undefined,
+      },
+    });
+    res.status(200).json({ data: { ok: true } });
   });
 
   router.patch('/:id/deactivate', adminAuth, validate(DeactivateMerchantSchema), async (req: Request, res: Response) => {

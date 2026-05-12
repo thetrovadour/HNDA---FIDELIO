@@ -1276,3 +1276,59 @@ dotenv 17 dropped the `import * as dotenv` namespace default — named imports a
 #### Pending / next up
 - Apply Prisma migration to the database when ready: `npx prisma migrate deploy`
 - Feature upgrades: auth security, configuration menu, inactivity logout, Spanish translation, GCA script, registration page, etc.
+
+---
+
+### Session — 2026-05-12
+**Focus:** Client login fix, merchant application flow, sidebar login, admin activate/deactivate, merchant status display, password change
+
+#### What happened
+
+**Client login fix ("we didn't find your account") — COMPLETE**
+- Root cause: migration `20260508000000_add_merchant_status` was never applied to the DB; `merchant_status` column didn't exist, crashing all auth queries
+- Fixed `prisma.config.ts`: Prisma 7 breaking change — `datasourceUrl` key invalid, must use `datasource: { url }`. Added `dotenv` load so `DATABASE_URL` is available during `migrate deploy`
+- Ran `npx prisma migrate deploy` — applied the pending migration
+
+**Merchant application flow — COMPLETE**
+- Decision: merchants should NOT self-register freely; admin creates accounts after vetting
+- New schema: `MerchantApplication` model + `ApplicationStatus` enum (`PENDING | APPROVED | REJECTED`)
+- Migration: `20260512000000_add_merchant_application`
+- New backend route: `POST /api/applications/merchant` (public, no auth) — saves application to DB
+- New admin endpoints in `routes/admin.ts`: `GET /merchant-applications`, `POST /merchant-applications/:id/approve` (creates user + wallet + merchant in transaction, returns temp credentials), `POST /merchant-applications/:id/reject`
+- `routes/auth.ts`: removed merchant registration branch from `/register` — now client-only
+- New `/apply` page (Next.js): public merchant application form with category dropdown, optional notes, success message: "Recibimos tu solicitud, te contactaremos pronto para confirmar tu número de teléfono y activar tu cuenta!"
+- `register/page.tsx`: stripped to client-only, added "¿Eres un comercio? Aplica aquí" link to `/apply`
+- Admin console: new "Solicitudes" tab with approve/reject UI and credential display
+- `api.ts`: added `applyMerchant()`, `MerchantApplication`, `ApprovedMerchantCredentials`, `getAdminApplications()`, `approveApplication()`, `rejectApplication()`
+
+**Sidebar login on /fidelio — COMPLETE**
+- Added fixed right sidebar (`LoginSidebar`) to `fidelio/page.tsx` with collapsible "Soy Cliente" and "Soy Comercio" panels
+- Fixed redirect: sidebar login was going to `/login` instead of dashboard — fixed by writing `res.data` to localStorage before `router.push()`
+- Links use Next.js `Link` (not `<a>`) to prevent bfcache freeze with canvas animation on browser back
+
+**Admin Activar/Desactivar — COMPLETE**
+- `Merchant` interface: `active: boolean` → `merchant_status` enum across `api.ts`, `MerchantList.tsx`, `client/page.tsx`, `merchant/page.tsx`
+- New `PATCH /:id/activate` route (adminAuth): directly sets `ACTIVE`, clears deactivation fields — handles DEACTIVATED → ACTIVE re-activation that `checkAndActivate` cannot do
+- New `activateMerchantAdmin()` and `deactivateMerchantAdmin()` in `api.ts`
+- `redemption_service.test.ts`: updated mocks from `{ active: false }` → `{ merchant_status: 'PENDING_ACTIVATION' }`
+
+**Merchant status display — COMPLETE**
+- 4-state display on merchant page: No activado (gray) / Activado (green) / Desactivado (red) / Reactivado (green)
+- "Reactivado" detected via new `reactivated_at DateTime?` field set by the activate route when transitioning from DEACTIVATED
+- Migration: `20260512010000_add_reactivated_at`
+- Helper functions `merchantStatusLabel()` and `merchantStatusColor()` added to merchant page
+
+**Merchant password change — COMPLETE**
+- New `PATCH /:id/password` route (merchantAuth): verifies current password hash, saves new hash on owner user record
+- New `changeMerchantPassword()` in `api.ts`
+- "Cambiar Contraseña" section added to Ajustes tab with current/new/confirm fields, match validation, and success/error feedback
+
+#### Key decisions
+- Merchants apply publicly → admin reviews → admin creates account (no free self-registration)
+- `reactivated_at` field distinguishes "Reactivado" from first-time "Activado" without extra boolean flags
+- Cookie-based merchant auth means password change endpoint needs no token in request headers
+
+#### Pending / next up
+- Restart backend dev server after each session (tsx without --watch doesn't hot-reload)
+- Test password change flow end-to-end
+- Email notification to merchant on approval (temp credentials delivery)

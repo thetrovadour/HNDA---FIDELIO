@@ -6,22 +6,12 @@ import { validate } from '../middleware/validate';
 import db from '../db';
 import { generateWallet } from '../utils/wallet_crypto';
 
-const RegisterSchema = z.discriminatedUnion('role', [
-  z.object({
-    role: z.literal('client'),
-    full_name: z.string().min(1),
-    email: z.string().email(),
-    password: z.string().min(6),
-  }),
-  z.object({
-    role: z.literal('merchant'),
-    full_name: z.string().min(1),
-    email: z.string().email(),
-    password: z.string().min(6),
-    business_name: z.string().min(1),
-    category: z.string().min(1),
-  }),
-]);
+const RegisterSchema = z.object({
+  role: z.literal('client'),
+  full_name: z.string().min(1),
+  email: z.string().email(),
+  password: z.string().min(6),
+});
 
 const PilotLoginSchema = z.object({
   full_name: z.string().min(1),
@@ -272,32 +262,12 @@ export function authRouter(): Router {
 
     const password_hash = await bcrypt.hash(body.password, 10);
 
-    if (body.role === 'client') {
-      const user = await db.user.create({
-        data: { full_name: body.full_name, email: body.email, password_hash },
-      });
-      const { address, privateKeyEncrypted } = generateWallet();
-      await db.wallet.create({ data: { user_id: user.id, address, private_key_encrypted: privateKeyEncrypted } });
-      res.status(201).json({ data: { role: 'client', user_id: user.id, wallet_address: address } });
-      return;
-    }
-
-    // merchant: create owner user + wallet + pending merchant record (PENDING_ACTIVATION by default)
     const user = await db.user.create({
       data: { full_name: body.full_name, email: body.email, password_hash },
     });
     const { address, privateKeyEncrypted } = generateWallet();
     await db.wallet.create({ data: { user_id: user.id, address, private_key_encrypted: privateKeyEncrypted } });
-    const merchant = await db.merchant.create({
-      data: {
-        name: body.business_name,
-        category: body.category,
-        contact_email: body.email,
-        owner_user_id: user.id,
-        wallet_address: address,
-      },
-    });
-    res.status(201).json({ data: { role: 'merchant', user_id: user.id, merchant_id: merchant.id, wallet_address: address } });
+    res.status(201).json({ data: { role: 'client', user_id: user.id, wallet_address: address } });
   });
 
   router.post('/logout', (_req: Request, res: Response) => {

@@ -181,5 +181,82 @@ export function adminRouter(mintService: MintService): Router {
     });
   });
 
+  // ── Merchant Applications ──────────────────────────────────────────────────
+
+  router.get('/merchant-applications', adminAuth, async (req: Request, res: Response) => {
+    const status = req.query.status as string | undefined;
+    const applications = await db.merchantApplication.findMany({
+      where: status ? { status: status as 'PENDING' | 'APPROVED' | 'REJECTED' } : undefined,
+      orderBy: { created_at: 'desc' },
+    });
+    res.status(200).json({ data: applications });
+  });
+
+  router.post('/merchant-applications/:id/approve', adminAuth, async (req: Request, res: Response) => {
+    const id = req.params.id as string;
+    const application = await db.merchantApplication.findUnique({ where: { id } });
+    if (!application) { res.status(404).json({ error: 'Application not found' }); return; }
+    if (application.status !== 'PENDING') { res.status(409).json({ error: 'Application already reviewed' }); return; }
+
+    const tempPassword = Math.random().toString(36).slice(2, 10) + Math.random().toString(36).slice(2, 6).toUpperCase();
+    const bcrypt = await import('bcrypt');
+    const password_hash = await bcrypt.hash(tempPassword, 10);
+    const { generateWallet } = await import('../utils/wallet_crypto');
+    const { address, privateKeyEncrypted } = generateWallet();
+
+    const [user] = await db.$transaction([
+      db.user.create({
+        data: {
+          full_name: application.contact_name,
+          email: application.contact_email,
+          phone: application.contact_phone,
+          password_hash,
+        },
+      }),
+    ]);
+
+    await db.$transaction([
+      db.wallet.create({ data: { user_id: user.id, address, private_key_encrypted: privateKeyEncrypted } }),
+      db.merchant.create({
+        data: {
+          name: application.business_name,
+          category: application.category,
+          contact_email: application.contact_email,
+          owner_user_id: user.id,
+          wallet_address: address,
+        },
+      }),
+      db.merchantApplication.update({
+        where: { id },
+        data: { status: 'APPROVED', reviewed_at: new Date() },
+      }),
+    ]);
+
+    res.status(200).json({
+      data: {
+        user_id: user.id,
+        full_name: user.full_name,
+        email: user.email,
+        temp_password: tempPassword,
+        wallet_address: address,
+      },
+    });
+  });
+
+  router.post('/merchant-applications/:id/reject', adminAuth, async (req: Request, res: Response) => {
+    const id = req.params.id as string;
+    const { reason } = req.body as { reason?: string };
+    const application = await db.merchantApplication.findUnique({ where: { id } });
+    if (!application) { res.status(404).json({ error: 'Application not found' }); return; }
+    if (application.status !== 'PENDING') { res.status(409).json({ error: 'Application already reviewed' }); return; }
+
+    await db.merchantApplication.update({
+      where: { id },
+      data: { status: 'REJECTED', reviewed_at: new Date(), rejection_reason: reason ?? null },
+    });
+
+    res.status(200).json({ data: { ok: true } });
+  });
+
   return router;
 }
