@@ -1332,3 +1332,9 @@ dotenv 17 dropped the `import * as dotenv` namespace default — named imports a
 - Restart backend dev server after each session (tsx without --watch doesn't hot-reload)
 - Test password change flow end-to-end
 - Email notification to merchant on approval (temp credentials delivery)
+
+#### Addendum — phone testing setup
+- Backend `index.ts`: `app.listen(PORT)` → `app.listen(PORT, '0.0.0.0')` so backend accepts LAN connections; also cast `PORT` to `Number()` to fix TS overload error
+- `packages/backend/.env`: updated `ALLOWED_ORIGIN` to include `http://192.168.0.107:3000` (LAN IP)
+- `packages/web/.env.local`: set `NEXT_PUBLIC_BACKEND_URL=http://192.168.0.107:3001`
+- Phone accesses Fidelio at `http://192.168.0.107:3000` on same WiFi — confirmed working

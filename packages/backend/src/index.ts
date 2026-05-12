@@ -4,12 +4,12 @@ import db from './db';
 import { ReconciliationJob } from './jobs/reconciliation';
 import { MerchantMonitorJob } from './jobs/merchant_monitor';
 
-const PORT = process.env.PORT ?? 3001;
+const PORT = Number(process.env.PORT ?? 3001);
 const BRIDGE_URL = process.env.BRIDGE_URL ?? 'http://localhost:3002';
 
 const app = createApp();
 
-const server = app.listen(PORT, () => {
+const server = app.listen(PORT, '0.0.0.0', () => {
   console.log(`FIDELIO backend running on port ${PORT}`);
 });
 
