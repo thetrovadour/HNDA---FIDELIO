@@ -1338,3 +1338,67 @@ dotenv 17 dropped the `import * as dotenv` namespace default — named imports a
 - `packages/backend/.env`: updated `ALLOWED_ORIGIN` to include `http://192.168.0.107:3000` (LAN IP)
 - `packages/web/.env.local`: set `NEXT_PUBLIC_BACKEND_URL=http://192.168.0.107:3001`
 - Phone accesses Fidelio at `http://192.168.0.107:3000` on same WiFi — confirmed working
+
+---
+
+### Session N — 2026-05-13
+**Location:** San Pedro Sula, Honduras (CST, UTC-6)
+
+#### What happened
+
+**IP address update**
+- DHCP reassigned LAN IP: 192.168.0.107 → 192.168.0.113
+- Updated `packages/backend/.env` (ALLOWED_ORIGIN) and `packages/web/.env.local` (NEXT_PUBLIC_BACKEND_URL)
+
+**Logout redirect fix**
+- Client and merchant logout now redirect to `/fidelio` instead of the login screen
+- Fixed flash bug: `router.push('/fidelio')` moved BEFORE `setState(null)` to prevent brief LoginScreen render
+
+**FIDELIO logo as nav link**
+- Every page (client, merchant, admin, apply, register) now has the FIDELIO logo as a `Link href="/"` in the top-left corner
+
+**Mobile login nav fix**
+- "Soy Cliente" / "Soy Comercio" buttons on `/fidelio` now live inside the nav bar on mobile (no more content overlap)
+- Split into two components: `MobileLoginNav` (mobile, flex md:hidden) and `LoginSidebar` (desktop), sharing state via `useLoginPanel` hook
+
+**GCA admin CLI script — `scripts/gca-admin.ts`**
+- 5 subcommands: `status`, `gift`, `vest`, `set-floor`, `list-redemptions`
+- `gift <merchant>`: approves 1,200 GCA welcome gift, mints on-chain, updates DB record with tx_hash
+
+**GCAToken.sol — deployed to Base Sepolia**
+- Address: `0x8c699A1c9566d104CC7177e171F52A008793d281`
+- Cap: 3,000,000 GCA | Minted at deploy: 1,800,000 (founder + treasury) | Reserved: 1,200,000 for merchants
+- MINTER_ROLE and BURNER_ROLE: bridge wallet `0x2C8D`
+- `GCA_CONTRACT_ADDRESS` added to `packages/backend/.env` and `packages/contracts/.env`
+
+**GCA gift flow — full end-to-end**
+- `approveGcaGift()` in `gca_service.ts`: DB-first (marks claimed, increments balance), then mints on-chain via `gca_chain.ts`
+- `POST /api/gca/admin/gift/:merchant_id` route added (adminAuth)
+- `gca_chain.ts`: thin ethers v6 wrapper exposing `mintGca()` and `burnGca()`, uses `MINTER_PRIVATE_KEY` (bridge wallet `0x2C8D`)
+- Key lesson: `MINTER_PRIVATE_KEY` ≠ `PRIVATE_KEY` (admin key doesn't have MINTER_ROLE)
+- `gift_claimed` field added to `MerchantGcaAllocation` schema + migration `20260512020000_add_gca_gift_claimed`
+
+**GCA redemption burn — wired on-chain**
+- `PATCH /api/gca/admin/redemptions/:id/approve`: DB-first approval, then `burnGca()` on-chain, tx_hash stored in GcaTransaction notes
+
+**GCA flow tested end-to-end (baleadas merchant)**
+- Gift: 1,200 GCA minted on-chain | tx: `0x85be09c6...`
+- Vesting: seeded 25,000 CATR across 4 unique users (80% ratio → 2.0x multiplier → 50,000 effective CATR → 2 milestones → +200 GCA)
+- Redemption: 1,000 GCA burned on-chain | tx: `0xe62355d1...`
+- Final balance: 400 GCA
+
+**Number formatting — UI**
+- All CATR/GCA/HNL amounts now use `toLocaleString('en-US', { minimumFractionDigits: 2 })` — commas for thousands
+- Applied to: client transaction history, AnimatedBalance, merchant CATR balance, GCA panel (balance, HNL value, price floor), redemption history
+
+#### Key decisions
+- DB-first pattern for all on-chain operations: gift and redemption mark state in DB before hitting the chain — prevents double-execution on retry
+- `MINTER_PRIVATE_KEY` is the bridge wallet key (separate from admin/Cristian key) — stored in `packages/backend/.env`
+- Backend must be restarted to pick up new route code (no hot-reload in tsx without --watch)
+
+#### Pending / next up
+- Restart backend after session to load burnGca into the redemption approval route
+- Wire on-chain mint into vesting milestones (currently DB-only)
+- Add `approve-redemption` subcommand to `gca-admin.ts` CLI for terminal-based approval
+- Email notification to merchant on gift/vesting/redemption events
+- Admin UI panel for GCA management (gift approval queue, redemption queue)
