@@ -2,6 +2,7 @@
 
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
+import Link from 'next/link';
 import { register } from '@/lib/api';
 
 // ─── Design tokens ────────────────────────────────────────────────────────────
@@ -104,9 +105,9 @@ export default function RegisterPage() {
             {/* Header */}
             {!success && (
               <div style={{ marginBottom: '1.75rem', textAlign: 'center' as const }}>
-                <p style={{ ...font, fontSize: '0.6rem', fontWeight: 300, letterSpacing: '0.2em', color: C.slate, textTransform: 'uppercase' as const, marginBottom: '0.4rem' }}>
+                <Link href="/" style={{ ...font, fontSize: '0.6rem', fontWeight: 300, letterSpacing: '0.2em', color: C.slate, textTransform: 'uppercase' as const, marginBottom: '0.4rem', textDecoration: 'none', display: 'block' }}>
                   FIDELIO
-                </p>
+                </Link>
                 <h1 style={{ ...font, fontSize: '1.2rem', fontWeight: 300, color: C.white, letterSpacing: '0.04em' }}>
                   Crear cuenta
                 </h1>

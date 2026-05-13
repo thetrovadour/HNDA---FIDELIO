@@ -13,7 +13,8 @@
     "db:migrate": "prisma migrate dev",
     "db:migrate:prod": "prisma migrate deploy",
     "db:studio": "prisma studio",
-    "db:seed": "ts-node prisma/seed.ts"
+    "db:seed": "ts-node prisma/seed.ts",
+    "gca": "tsx scripts/gca-admin.ts"
   },
   "dependencies": {
     "@prisma/adapter-pg": "^7.8.0",

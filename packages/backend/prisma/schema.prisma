@@ -220,6 +220,7 @@ model MerchantGcaAllocation {
   gca_balance             Decimal          @default(0) @db.Decimal(20, 4)
   lifetime_effective_catr Decimal          @default(0) @db.Decimal(36, 18)
   milestones_claimed      Int              @default(0)
+  gift_claimed            Boolean          @default(false)
   joined_at               DateTime         @default(now())
   updated_at              DateTime         @updatedAt
   gca_transactions        GcaTransaction[]

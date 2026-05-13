@@ -10,9 +10,9 @@ import { InteractiveHoverButton } from "@/components/ui/interactive-hover-button
 import { pilotLogin, merchantLogin } from "@/lib/api"
 
 
-// ─── Right Sidebar ────────────────────────────────────────────────────────────
+// ─── Login Panel (shared state, renders in nav on mobile / sidebar on desktop) ─
 
-function LoginSidebar() {
+function useLoginPanel() {
   const router = useRouter()
   const [panel, setPanel] = useState<'client' | 'merchant' | null>(null)
   const [name, setName] = useState('')
@@ -46,75 +46,103 @@ function LoginSidebar() {
     }
   }
 
-  const sb: React.CSSProperties = {
-    position: 'fixed', top: '80px', right: '1rem', zIndex: 200,
-    width: '240px', display: 'flex', flexDirection: 'column', gap: '0.5rem',
-    fontFamily: 'var(--font-body)',
-  }
-  const btn = (active: boolean): React.CSSProperties => ({
+  return { panel, toggle, name, setName, cred, setCred, loading, error, handleSubmit }
+}
+
+const loginInput: React.CSSProperties = {
+  width: '100%', boxSizing: 'border-box' as const,
+  background: '#111820', border: '1px solid rgba(255,255,255,0.07)',
+  borderRadius: '0.4rem', padding: '0.5rem 0.6rem',
+  color: '#F1F5F9', fontSize: '0.75rem', outline: 'none',
+  fontFamily: 'var(--font-body)',
+}
+
+function LoginForm({ panel, name, setName, cred, setCred, loading, error, handleSubmit }: {
+  panel: 'client' | 'merchant'
+  name: string; setName: (v: string) => void
+  cred: string; setCred: (v: string) => void
+  loading: boolean; error: string
+  handleSubmit: (e: React.FormEvent) => void
+}) {
+  return (
+    <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
+      <input style={loginInput} placeholder="Nombre completo" value={name} onChange={e => setName(e.target.value)} required />
+      <input style={loginInput} type="password" placeholder={panel === 'client' ? 'Contraseña o PIN' : 'Contraseña'} value={cred} onChange={e => setCred(e.target.value)} required />
+      {error && <p style={{ fontSize: '0.68rem', color: '#EF4444', margin: 0 }}>{error}</p>}
+      <button type="submit" disabled={loading} style={{ width: '100%', padding: '0.5rem', background: 'rgba(201,168,76,0.1)', border: '1px solid rgba(201,168,76,0.35)', borderRadius: '0.4rem', color: '#C9A84C', fontSize: '0.75rem', fontWeight: 500, cursor: 'pointer', fontFamily: 'var(--font-body)' }}>
+        {loading ? 'Entrando...' : 'Entrar'}
+      </button>
+      <p style={{ fontSize: '0.68rem', color: '#64748B', textAlign: 'center' as const, margin: 0 }}>
+        {panel === 'client' ? (
+          <>¿No tienes cuenta?{' '}<Link href="/register" style={{ color: '#C9A84C', textDecoration: 'none' }}>Regístrate</Link></>
+        ) : (
+          <>¿Eres comercio?{' '}<Link href="/apply" style={{ color: '#C9A84C', textDecoration: 'none' }}>Aplica aquí</Link></>
+        )}
+      </p>
+    </form>
+  )
+}
+
+// Desktop sidebar (hidden on mobile)
+function LoginSidebar(props: ReturnType<typeof useLoginPanel>) {
+  const { panel, toggle, ...formProps } = props
+  const navBtn = (active: boolean): React.CSSProperties => ({
     width: '100%', padding: '0.55rem 0.9rem',
     background: active ? 'rgba(201,168,76,0.12)' : 'rgba(12,16,24,0.92)',
     border: `1px solid ${active ? 'rgba(201,168,76,0.5)' : 'rgba(255,255,255,0.09)'}`,
     borderRadius: '0.5rem', color: active ? '#C9A84C' : '#94A3B8',
     fontSize: '0.75rem', fontWeight: 500, letterSpacing: '0.06em',
     cursor: 'pointer', textAlign: 'left' as const,
-    backdropFilter: 'blur(10px)',
-    transition: 'all 0.15s',
+    backdropFilter: 'blur(10px)', transition: 'all 0.15s',
   })
-  const input: React.CSSProperties = {
-    width: '100%', boxSizing: 'border-box' as const,
-    background: '#111820', border: '1px solid rgba(255,255,255,0.07)',
-    borderRadius: '0.4rem', padding: '0.5rem 0.6rem',
-    color: '#F1F5F9', fontSize: '0.75rem', outline: 'none',
-    fontFamily: 'var(--font-body)',
-  }
-
   return (
-    <div style={sb}>
-      {/* Client button */}
-      <button style={btn(panel === 'client')} onClick={() => toggle('client')}>
+    <div className="hidden md:flex" style={{ position: 'fixed', top: '80px', right: '1rem', zIndex: 200, width: '240px', flexDirection: 'column', gap: '0.5rem', fontFamily: 'var(--font-body)' }}>
+      <button style={navBtn(panel === 'client')} onClick={() => toggle('client')}>
         {panel === 'client' ? '▾' : '▸'} Soy Cliente
       </button>
-
       {panel === 'client' && (
         <div style={{ background: 'rgba(12,16,24,0.95)', border: '1px solid rgba(255,255,255,0.07)', borderRadius: '0.5rem', padding: '0.875rem', backdropFilter: 'blur(10px)' }}>
-          <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
-            <input style={input} placeholder="Nombre completo" value={name} onChange={e => setName(e.target.value)} required />
-            <input style={input} type="password" placeholder="Contraseña o PIN" value={cred} onChange={e => setCred(e.target.value)} required />
-            {error && <p style={{ fontSize: '0.68rem', color: '#EF4444', margin: 0 }}>{error}</p>}
-            <button type="submit" disabled={loading} style={{ ...btn(false), background: 'rgba(201,168,76,0.1)', border: '1px solid rgba(201,168,76,0.35)', color: '#C9A84C', textAlign: 'center' as const, marginTop: '0.1rem' }}>
-              {loading ? 'Entrando...' : 'Entrar'}
-            </button>
-            <p style={{ fontSize: '0.68rem', color: '#64748B', textAlign: 'center' as const, margin: 0 }}>
-              ¿No tienes cuenta?{' '}
-              <Link href="/register" style={{ color: '#C9A84C', textDecoration: 'none' }}>Regístrate</Link>
-            </p>
-          </form>
+          <LoginForm panel="client" {...formProps} />
         </div>
       )}
-
-      {/* Merchant button */}
-      <button style={btn(panel === 'merchant')} onClick={() => toggle('merchant')}>
+      <button style={navBtn(panel === 'merchant')} onClick={() => toggle('merchant')}>
         {panel === 'merchant' ? '▾' : '▸'} Soy Comercio
       </button>
-
       {panel === 'merchant' && (
         <div style={{ background: 'rgba(12,16,24,0.95)', border: '1px solid rgba(255,255,255,0.07)', borderRadius: '0.5rem', padding: '0.875rem', backdropFilter: 'blur(10px)' }}>
-          <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
-            <input style={input} placeholder="Nombre completo" value={name} onChange={e => setName(e.target.value)} required />
-            <input style={input} type="password" placeholder="Contraseña" value={cred} onChange={e => setCred(e.target.value)} required />
-            {error && <p style={{ fontSize: '0.68rem', color: '#EF4444', margin: 0 }}>{error}</p>}
-            <button type="submit" disabled={loading} style={{ ...btn(false), background: 'rgba(201,168,76,0.1)', border: '1px solid rgba(201,168,76,0.35)', color: '#C9A84C', textAlign: 'center' as const, marginTop: '0.1rem' }}>
-              {loading ? 'Entrando...' : 'Entrar'}
-            </button>
-            <p style={{ fontSize: '0.68rem', color: '#64748B', textAlign: 'center' as const, margin: 0 }}>
-              ¿No tienes cuenta?{' '}
-              <Link href="/apply" style={{ color: '#C9A84C', textDecoration: 'none' }}>Aplica aquí</Link>
-            </p>
-          </form>
+          <LoginForm panel="merchant" {...formProps} />
         </div>
       )}
     </div>
+  )
+}
+
+// Mobile nav buttons + dropdown panel (hidden on desktop)
+function MobileLoginNav(props: ReturnType<typeof useLoginPanel>) {
+  const { panel, toggle, ...formProps } = props
+  const activeBtn = (active: boolean): React.CSSProperties => ({
+    padding: '0.3rem 0.65rem',
+    background: active ? 'rgba(201,168,76,0.12)' : 'transparent',
+    border: `1px solid ${active ? 'rgba(201,168,76,0.5)' : 'rgba(255,255,255,0.15)'}`,
+    borderRadius: '0.4rem', color: active ? '#C9A84C' : '#94A3B8',
+    fontSize: '0.7rem', fontWeight: 500, letterSpacing: '0.04em',
+    cursor: 'pointer', whiteSpace: 'nowrap' as const,
+    fontFamily: 'var(--font-body)', transition: 'all 0.15s',
+  })
+  return (
+    <>
+      {/* Buttons in nav — rendered via portal into nav, but simpler: just position fixed at nav level */}
+      <div className="flex md:hidden" style={{ gap: '0.4rem', alignItems: 'center' }}>
+        <button style={activeBtn(panel === 'client')} onClick={() => toggle('client')}>Cliente</button>
+        <button style={activeBtn(panel === 'merchant')} onClick={() => toggle('merchant')}>Comercio</button>
+      </div>
+      {/* Dropdown panel below nav */}
+      {panel && (
+        <div className="block md:hidden" style={{ position: 'fixed', top: '64px', left: 0, right: 0, zIndex: 190, background: 'rgba(10,15,20,0.97)', borderBottom: '1px solid rgba(255,255,255,0.08)', backdropFilter: 'blur(12px)', padding: '1rem' }}>
+          <LoginForm panel={panel} {...formProps} />
+        </div>
+      )}
+    </>
   )
 }
 
@@ -123,6 +151,7 @@ function LoginSidebar() {
 export default function FidelioPage() {
   useScrollReveal()
   const clipRef = useRef<SVGRectElement>(null)
+  const loginPanel = useLoginPanel()
 
   // Animated SVG mark draw-on
   useEffect(() => {
@@ -157,23 +186,24 @@ export default function FidelioPage() {
     <div style={{ background: "var(--bg)", color: "var(--text)", minHeight: "100vh", fontFamily: "var(--font-body)", position: "relative" }}>
      
       <HexCanvasBackground />
-      <LoginSidebar />
+      <LoginSidebar {...loginPanel} />
 
       {/* ── Nav ── */}
       <nav style={{
         position: "fixed", top: 0, left: 0, right: 0, zIndex: 100,
         display: "flex", alignItems: "center", justifyContent: "space-between",
-        padding: "0 2rem", height: "64px",
+        padding: "0 1.25rem", height: "64px",
         background: "rgba(10,15,20,0.88)", backdropFilter: "blur(12px)",
         borderBottom: "1px solid var(--border)",
         animation: "fadeIn 0.6s ease-out both",
       }}>
         <style>{`@keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }`}</style>
-        <Link href="/" style={{ color: "var(--muted)", textDecoration: "none", fontSize: "0.85rem", fontWeight: 500 }}>← HNDA</Link>
+        <Link href="/" style={{ color: "var(--muted)", textDecoration: "none", fontSize: "0.85rem", fontWeight: 500, flexShrink: 0 }}>← HNDA</Link>
         <div style={{ display: "flex", gap: "1.25rem", alignItems: "center" }}>
           <a href="#actors" style={navLink} className="hidden md:inline">Network</a>
           <a href="#how" style={navLink} className="hidden md:inline">How it Works</a>
           <a href="#token" style={navLink} className="hidden md:inline">CATR</a>
+          <MobileLoginNav {...loginPanel} />
         </div>
       </nav>
 

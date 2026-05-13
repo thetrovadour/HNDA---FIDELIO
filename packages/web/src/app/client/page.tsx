@@ -1,6 +1,8 @@
 'use client';
 import { FidelioIntro } from '@/components/FidelioIntro';
 import { useState, useEffect, useRef } from 'react';
+import { useRouter } from 'next/navigation';
+import Link from 'next/link';
 import { useInactivityLogout } from '@/hooks/useInactivityLogout';
 import {
   pilotLogin,
@@ -118,8 +120,12 @@ function StatusMsg({ type, msg }: { type: 'success' | 'error'; msg: string }) {
 
 // ─── Animated balance counter ─────────────────────────────────────────────────
 
+function fmt2(n: string | number) {
+  return parseFloat(String(n)).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+}
+
 function AnimatedBalance({ value }: { value: string }) {
-  const [display, setDisplay] = useState(value);
+  const [display, setDisplay] = useState(() => fmt2(value));
   const prev = useRef(value);
 
   useEffect(() => {
@@ -133,7 +139,7 @@ function AnimatedBalance({ value }: { value: string }) {
       const elapsed = now - startTime;
       const progress = Math.min(elapsed / duration, 1);
       const eased = 1 - Math.pow(1 - progress, 3);
-      setDisplay((start + (end - start) * eased).toFixed(2));
+      setDisplay(fmt2(start + (end - start) * eased));
       if (progress < 1) requestAnimationFrame(tick);
       else prev.current = value;
     }
@@ -324,7 +330,7 @@ function TopBar({ user, onLogout }: { user: UserRecord; onLogout: () => void }) 
       />
 
       <div className="flex items-center justify-between mb-5">
-        <span className="text-base font-black tracking-widest" style={{ color: C.gold }}>FIDELIO</span>
+        <Link href="/" className="text-base font-black tracking-widest" style={{ color: C.gold, textDecoration: 'none' }}>FIDELIO</Link>
         <button
           onClick={onLogout}
           className="text-xs font-semibold px-3 py-1.5 rounded-lg transition-all active:scale-95"
@@ -560,7 +566,7 @@ function ActividadTab({ transactions, milestones }: { transactions: Transaction[
                     </div>
                   </div>
                   <span className="text-sm font-bold" style={{ color: isMint ? C.success : C.slateHi }}>
-                    {isMint ? '+' : '-'}{parseFloat(tx.amount_catr).toFixed(2)}
+                    {isMint ? '+' : '-'}{parseFloat(tx.amount_catr).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                   </span>
                 </div>
               );
@@ -918,6 +924,7 @@ function RedTab({ merchants, user, onSpend }: { merchants: Merchant[]; user: Use
 const SESSION_KEY = 'fidelio_session';
 
 export default function ClientPage() {
+  const router = useRouter();
   const [introComplete, setIntroComplete] = useState(false);
   const [user, setUser] = useState<UserRecord | null>(null);
   const [transactions, setTransactions] = useState<Transaction[]>([]);
@@ -979,6 +986,7 @@ export default function ClientPage() {
   function handleLogout(reason?: 'inactivity') {
     logout().catch(() => {});
     localStorage.removeItem(SESSION_KEY);
+    router.push('/fidelio');
     setUser(null);
     setTransactions([]);
     setMilestones([]);

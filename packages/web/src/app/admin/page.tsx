@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect, useCallback } from 'react';
+import Link from 'next/link';
 import { useInactivityLogout } from '@/hooks/useInactivityLogout';
 import { useLang } from '@/hooks/useLang';
 import {
@@ -373,7 +374,7 @@ function TopBar({ onDisconnect }: { onDisconnect: () => void }) {
       borderBottom: `1px solid ${C.border}`,
     }}>
       <div>
-        <p style={{ ...font, fontSize: '0.55rem', fontWeight: 300, letterSpacing: '0.2em', color: C.slate, textTransform: 'uppercase' as const }}>FIDELIO</p>
+        <Link href="/" style={{ ...font, fontSize: '0.55rem', fontWeight: 300, letterSpacing: '0.2em', color: C.slate, textTransform: 'uppercase' as const, textDecoration: 'none' }}>FIDELIO</Link>
         <h1 style={{ ...font, fontSize: '0.95rem', fontWeight: 400, color: C.white, letterSpacing: '0.06em' }}>{t('admin.title')}</h1>
       </div>
       <button

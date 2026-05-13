@@ -30,3 +30,5 @@ export type { IERC165 } from "./@openzeppelin/contracts/utils/introspection/IERC
 export { IERC165__factory } from "./factories/@openzeppelin/contracts/utils/introspection/IERC165__factory";
 export type { CATRToken } from "./contracts/CATRToken";
 export { CATRToken__factory } from "./factories/contracts/CATRToken__factory";
+export type { GCAToken } from "./contracts/GCAToken";
+export { GCAToken__factory } from "./factories/contracts/GCAToken__factory";

@@ -2,3 +2,4 @@
 /* tslint:disable */
 /* eslint-disable */
 export type { CATRToken } from "./CATRToken";
+export type { GCAToken } from "./GCAToken";

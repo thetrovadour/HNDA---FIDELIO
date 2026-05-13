@@ -1,6 +1,7 @@
 'use client';
 
 import { useState } from 'react';
+import Link from 'next/link';
 import { applyMerchant } from '@/lib/api';
 
 const C = {
@@ -104,9 +105,9 @@ export default function ApplyPage() {
             ) : (
               <>
                 <div style={{ marginBottom: '1.75rem', textAlign: 'center' as const }}>
-                  <p style={{ ...font, fontSize: '0.6rem', fontWeight: 300, letterSpacing: '0.2em', color: C.slate, textTransform: 'uppercase' as const, marginBottom: '0.4rem' }}>
+                  <Link href="/" style={{ ...font, fontSize: '0.6rem', fontWeight: 300, letterSpacing: '0.2em', color: C.slate, textTransform: 'uppercase' as const, marginBottom: '0.4rem', textDecoration: 'none', display: 'block' }}>
                     FIDELIO
-                  </p>
+                  </Link>
                   <h1 style={{ ...font, fontSize: '1.2rem', fontWeight: 300, color: C.white, letterSpacing: '0.04em' }}>
                     Aplica como comercio
                   </h1>

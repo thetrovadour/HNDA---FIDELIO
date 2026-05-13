@@ -416,6 +416,45 @@
         "IERC20Errors",
         "IERC721Errors"
       ]
+    },
+    "/home/nait/proyectos/HNDA---FIDELIO/packages/contracts/contracts/GCAToken.sol": {
+      "lastModificationDate": 1778642881349,
+      "contentHash": "eb3fec6fa8dde9edd9b92803f150ecc7",
+      "sourceName": "contracts/GCAToken.sol",
+      "solcConfig": {
+        "version": "0.8.20",
+        "settings": {
+          "optimizer": {
+            "enabled": true,
+            "runs": 200
+          },
+          "evmVersion": "paris",
+          "outputSelection": {
+            "*": {
+              "*": [
+                "abi",
+                "evm.bytecode",
+                "evm.deployedBytecode",
+                "evm.methodIdentifiers",
+                "metadata"
+              ],
+              "": [
+                "ast"
+              ]
+            }
+          }
+        }
+      },
+      "imports": [
+        "@openzeppelin/contracts/token/ERC20/extensions/ERC20Capped.sol",
+        "@openzeppelin/contracts/access/AccessControl.sol"
+      ],
+      "versionPragmas": [
+        "^0.8.20"
+      ],
+      "artifacts": [
+        "GCAToken"
+      ]
     }
   }
 }

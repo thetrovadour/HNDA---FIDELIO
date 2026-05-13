@@ -4,7 +4,8 @@ import { Decimal } from '@prisma/client/runtime/client';
 import { PrismaClient } from '@prisma/client';
 import { adminAuth } from '../middleware/auth';
 import { validate } from '../middleware/validate';
-import { currentPriceFloor, evaluateGcaVesting } from '../services/gca_service';
+import { currentPriceFloor, evaluateGcaVesting, approveGcaGift } from '../services/gca_service';
+import { burnGca } from '../services/gca_chain';
 
 const TradeSchema = z.object({
   from_merchant_id: z.string().uuid(),
@@ -164,6 +165,20 @@ export function gcaRouter(db: PrismaClient): Router {
     res.status(200).json({ data });
   });
 
+  // POST /api/gca/admin/gift/:merchant_id — approve welcome gift (1,200 GCA)
+  router.post('/admin/gift/:merchant_id', adminAuth, async (req: Request, res: Response) => {
+    try {
+      const txHash = await approveGcaGift(db, req.params.merchant_id as string);
+      const updated = await db.merchantGcaAllocation.findUnique({
+        where: { merchant_id: req.params.merchant_id as string },
+      });
+      res.status(200).json({ data: { ok: true, gca_balance: updated?.gca_balance, gift_claimed: true, tx_hash: txHash } });
+    } catch (err: any) {
+      const alreadyClaimed = err.message?.includes('already claimed');
+      res.status(alreadyClaimed ? 409 : 404).json({ error: err.message, code: alreadyClaimed ? 'ALREADY_CLAIMED' : 'NOT_FOUND' });
+    }
+  });
+
   // POST /api/gca/admin/vest/:merchant_id — manually trigger vesting evaluation
   router.post('/admin/vest/:merchant_id', adminAuth, async (req: Request, res: Response) => {
     const allocation = await db.merchantGcaAllocation.findUnique({
@@ -192,9 +207,16 @@ export function gcaRouter(db: PrismaClient): Router {
 
   // PATCH /api/gca/admin/redemptions/:id/approve
   router.patch('/admin/redemptions/:id/approve', adminAuth, async (req: Request, res: Response) => {
-    const entry = await db.gcaRedemptionRequest.findUnique({ where: { id: req.params.id as string } });
+    const entry = await db.gcaRedemptionRequest.findUnique({
+      where: { id: req.params.id as string },
+      include: { merchant: { select: { wallet_address: true } } },
+    });
     if (!entry || entry.status !== 'PENDING') {
       res.status(404).json({ error: 'Request not found or already processed', code: 'NOT_FOUND' });
+      return;
+    }
+    if (!entry.merchant.wallet_address) {
+      res.status(400).json({ error: 'Merchant has no wallet address — cannot burn on-chain', code: 'NO_WALLET' });
       return;
     }
 
@@ -204,27 +226,36 @@ export function gcaRouter(db: PrismaClient): Router {
       return;
     }
 
+    // DB-first: mark approved before hitting the chain
+    let gcaTxId: string;
     await db.$transaction(async (tx) => {
       await tx.merchantGcaAllocation.update({
         where: { merchant_id: entry.merchant_id },
         data: { gca_balance: { decrement: entry.amount_gca } },
       });
-      await tx.gcaTransaction.create({
+      const gcaTx = await tx.gcaTransaction.create({
         data: {
           allocation_id: alloc.id,
           merchant_id: entry.merchant_id,
           type: 'REDEEM',
           amount_gca: entry.amount_gca,
-          notes: `Redeemed for ~L. ${entry.amount_hnl_estimated} at floor L. ${entry.price_floor_hnl}/GCA`,
+          notes: `Redeemed for ~L. ${entry.amount_hnl_estimated} at floor L. ${entry.price_floor_hnl}/GCA — awaiting on-chain burn`,
         },
       });
+      gcaTxId = gcaTx.id;
       await tx.gcaRedemptionRequest.update({
         where: { id: req.params.id as string },
         data: { status: 'APPROVED', approved_by: (req as any).admin?.sub ?? 'admin' },
       });
     });
 
-    res.status(200).json({ data: { id: req.params.id, status: 'APPROVED' } });
+    const txHash = await burnGca(entry.merchant.wallet_address, new Decimal(entry.amount_gca).toNumber());
+    await db.gcaTransaction.update({
+      where: { id: gcaTxId! },
+      data: { notes: `Redeemed for ~L. ${entry.amount_hnl_estimated} at floor L. ${entry.price_floor_hnl}/GCA | burn tx: ${txHash}` },
+    });
+
+    res.status(200).json({ data: { id: req.params.id, status: 'APPROVED', tx_hash: txHash } });
   });
 
   // PATCH /api/gca/admin/redemptions/:id/reject

@@ -2,6 +2,8 @@
 
 import { FidelioIntro } from '@/components/FidelioIntro';
 import { useState, useEffect } from 'react';
+import { useRouter } from 'next/navigation';
+import Link from 'next/link';
 import { t } from '@/lib/i18n';
 import { useInactivityLogout } from '@/hooks/useInactivityLogout';
 import {
@@ -337,7 +339,7 @@ function TopBar({ merchant, balance, onLogout }: { merchant: Merchant; balance: 
       />
 
       <div className="flex items-center justify-between mb-5">
-        <span className="text-base font-black tracking-widest" style={{ color: C.gold }}>FIDELIO</span>
+        <Link href="/" className="text-base font-black tracking-widest" style={{ color: C.gold, textDecoration: 'none' }}>FIDELIO</Link>
         <button
           onClick={onLogout}
           className="text-xs font-semibold px-3 py-1.5 rounded-lg transition-all active:scale-95"
@@ -371,7 +373,7 @@ function TopBar({ merchant, balance, onLogout }: { merchant: Merchant; balance: 
 
       <div className="flex items-baseline gap-2">
         <span style={{ fontSize: '3.5rem', lineHeight: 1, color: C.white, fontFamily: 'var(--font-body)', fontWeight: 200 }}>
-          {balance ? parseFloat(balance.catr_balance).toFixed(2) : '—'}
+          {balance ? parseFloat(balance.catr_balance).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) : '—'}
         </span>
         <span style={{ fontSize: '1rem', fontFamily: 'var(--font-body)', fontWeight: 300, color: C.slateHi }}>pts</span>
       </div>
@@ -620,7 +622,7 @@ function CanjearTab({ merchant }: { merchant: Merchant }) {
               >
                 <div>
                   <p className="text-sm font-semibold" style={{ color: C.white }}>
-                    {parseFloat(r.amount_catr).toFixed(2)} CATR
+                    {parseFloat(r.amount_catr).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} CATR
                   </p>
                   <p className="text-xs" style={{ color: C.slate }}>
                     {TIER_LABELS[r.tier] ?? r.tier} ·{' '}
@@ -770,11 +772,11 @@ function GcaTab({ merchant }: { merchant: Merchant }) {
             <div className="grid grid-cols-2 gap-2">
               <div className="rounded-xl px-4 py-3" style={{ background: C.surfaceHi, border: `1px solid ${C.border}` }}>
                 <p className="text-xs font-bold uppercase tracking-widest mb-0.5" style={{ color: C.slate }}>Balance GCA</p>
-                <p className="text-lg font-semibold" style={{ color: C.gold }}>{parseFloat(gca.gca_balance).toFixed(2)}</p>
+                <p className="text-lg font-semibold" style={{ color: C.gold }}>{parseFloat(gca.gca_balance).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</p>
               </div>
               <div className="rounded-xl px-4 py-3" style={{ background: C.surfaceHi, border: `1px solid ${C.border}` }}>
                 <p className="text-xs font-bold uppercase tracking-widest mb-0.5" style={{ color: C.slate }}>Valor est. HNL</p>
-                <p className="text-lg font-semibold" style={{ color: C.white }}>L. {parseFloat(gca.estimated_hnl_value).toFixed(2)}</p>
+                <p className="text-lg font-semibold" style={{ color: C.white }}>L. {parseFloat(gca.estimated_hnl_value).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</p>
               </div>
               <div className="rounded-xl px-4 py-3" style={{ background: C.surfaceHi, border: `1px solid ${C.border}` }}>
                 <p className="text-xs font-bold uppercase tracking-widest mb-0.5" style={{ color: C.slate }}>Hitos</p>
@@ -782,7 +784,7 @@ function GcaTab({ merchant }: { merchant: Merchant }) {
               </div>
               <div className="rounded-xl px-4 py-3" style={{ background: C.surfaceHi, border: `1px solid ${C.border}` }}>
                 <p className="text-xs font-bold uppercase tracking-widest mb-0.5" style={{ color: C.slate }}>Precio piso</p>
-                <p className="text-lg font-semibold" style={{ color: C.white }}>L. {parseFloat(gca.price_floor_hnl).toFixed(4)}</p>
+                <p className="text-lg font-semibold" style={{ color: C.white }}>L. {parseFloat(gca.price_floor_hnl).toLocaleString('en-US', { minimumFractionDigits: 4, maximumFractionDigits: 4 })}</p>
               </div>
             </div>
 
@@ -1174,6 +1176,7 @@ function AjustesTab({ merchant, onUpdate }: { merchant: Merchant; onUpdate: (m: 
 const SESSION_KEY = 'fidelio_merchant_session';
 
 export default function MerchantPage() {
+  const router = useRouter();
   const [introComplete, setIntroComplete] = useState(false);
   const [merchant, setMerchant] = useState<Merchant | null>(null);
   const [balance, setBalance] = useState<MerchantBalance | null>(null);
@@ -1228,6 +1231,7 @@ export default function MerchantPage() {
   function handleLogout(reason?: 'inactivity') {
     logout().catch(() => {});
     localStorage.removeItem(SESSION_KEY);
+    router.push('/fidelio');
     setMerchant(null);
     setBalance(null);
     setActiveTab('negocio');

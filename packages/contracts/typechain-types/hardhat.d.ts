@@ -61,6 +61,10 @@ declare module "hardhat/types/runtime" {
       name: "CATRToken",
       signerOrOptions?: ethers.Signer | FactoryOptions
     ): Promise<Contracts.CATRToken__factory>;
+    getContractFactory(
+      name: "GCAToken",
+      signerOrOptions?: ethers.Signer | FactoryOptions
+    ): Promise<Contracts.GCAToken__factory>;
 
     getContractAt(
       name: "AccessControl",
@@ -122,6 +126,11 @@ declare module "hardhat/types/runtime" {
       address: string | ethers.Addressable,
       signer?: ethers.Signer
     ): Promise<Contracts.CATRToken>;
+    getContractAt(
+      name: "GCAToken",
+      address: string | ethers.Addressable,
+      signer?: ethers.Signer
+    ): Promise<Contracts.GCAToken>;
 
     deployContract(
       name: "AccessControl",
@@ -171,6 +180,10 @@ declare module "hardhat/types/runtime" {
       name: "CATRToken",
       signerOrOptions?: ethers.Signer | DeployContractOptions
     ): Promise<Contracts.CATRToken>;
+    deployContract(
+      name: "GCAToken",
+      signerOrOptions?: ethers.Signer | DeployContractOptions
+    ): Promise<Contracts.GCAToken>;
 
     deployContract(
       name: "AccessControl",
@@ -232,6 +245,11 @@ declare module "hardhat/types/runtime" {
       args: any[],
       signerOrOptions?: ethers.Signer | DeployContractOptions
     ): Promise<Contracts.CATRToken>;
+    deployContract(
+      name: "GCAToken",
+      args: any[],
+      signerOrOptions?: ethers.Signer | DeployContractOptions
+    ): Promise<Contracts.GCAToken>;
 
     // default types
     getContractFactory(

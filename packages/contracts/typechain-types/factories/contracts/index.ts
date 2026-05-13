@@ -2,3 +2,4 @@
 /* tslint:disable */
 /* eslint-disable */
 export { CATRToken__factory } from "./CATRToken__factory";
+export { GCAToken__factory } from "./GCAToken__factory";
