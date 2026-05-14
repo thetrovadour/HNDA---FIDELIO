@@ -1520,3 +1520,64 @@ dotenv 17 dropped the `import * as dotenv` namespace default — named imports a
 - Implement GCA reserve tracking: deposit slice on every CATR transaction, deduct on redemption payout, compute floor automatically
 - Merchant balance display: if merchant has GCA, show combined balance (CATR + GCA×price_floor) in HNL — need to define unit and UI layout
 - Run full vesting test cycle with Faraday end-to-end
+
+---
+
+### Session — 2026-05-14 (Part 3)
+**Focus:** GCA reserve tracking, merchant balance display, GCA application flow, admin panel cleanup
+
+#### What happened
+
+**GCA Reserve tracking — implemented**
+- New `GcaReserve` model (single-row singleton `gca-reserve-singleton`) — migration applied
+- Every CATR spend deposits `commission × 65% × 15% = 0.351%` of amount into reserve (inside DB transaction)
+- Every redemption approval deducts `amount_hnl_estimated` from reserve (HNDA paying out)
+- `currentPriceFloor()` now dynamic: `reserve_balance ÷ total_circulating_gca`. Manual floor (set via CLI) acts as minimum guarantee
+- New `GET /api/gca/reserve` endpoint — returns `{ balance_hnl, circulating_gca, price_floor_hnl }`
+
+**Merchant balance display — redesigned**
+- TopBar white (big) number: total HNL value = CATR + GCA×price_floor
+- Two gold lines below: CATR balance in CATR | GCA balance in GCA · L. estimated HNL
+- Merchants without GCA allocation: only CATR balance shown, no GCA line
+- GCA fetched at root level on login, refreshed every 15s alongside CATR balance
+
+**"pts" → "CATR" rename**
+- All instances of "pts" changed to "CATR" across merchant and client pages and i18n
+- `1 pt = 1 HNL` label removed from both merchant and client balance labels
+
+**GCA Application flow — new**
+- New `GcaApplication` model: `{ merchant_id, status (PENDING/APPROVED/REJECTED), notes, reviewed_by, reviewed_at }`
+- `POST /api/gca/apply` — merchant submits application (blocked if already allocated or pending)
+- `GET /api/gca/application/:merchant_id` — returns latest application status
+- Admin: `GET /api/gca/admin/applications`, `PATCH .../approve`, `PATCH .../reject`
+- Merchant GCA tab — four states: apply button | pending message | approved card (green) | GCA dashboard
+- Apply card placed immediately after "¿Qué es GCA?" section
+- Both GCA balance and application status fetched in parallel on tab load
+
+**Admin GCA panel — cleaned up**
+- `PriceFloorSection` removed from UI — price floor is now CLI-only (`set-floor` command already existed)
+- New `GcaApplicationsSection` at top: shows pending applications with merchant name, category, date, Aprobar/Rechazar buttons
+- Gift button added to each merchant row: editable amount (default 1200), only shown when `gift_claimed = false`, shows tx hash on success
+- `gift_claimed` added to backend merchant allocation response
+
+**GCA stdout logging**
+- `[GCA] GIFT`, `[GCA] VEST`, `[GCA] REDEEM` logs added to backend — appear in `npm run dev` terminal with merchant, amount, and tx hash
+
+**End-to-end test — passed**
+- Gift: 1,200 GCA minted to comidas via admin UI Gift button
+- Vest: minted 25,000 CATR to client → client spent at comidas → vest triggered 2 milestones (×2.0 multiplier) → +200 GCA on-chain
+- Redeem: merchant submitted redemption → admin approved → burn tx confirmed on Base Sepolia (`0xd2b9fbbc...`)
+- Price floor changed via CLI (`set-floor 5`) — reflected live in merchant UI and reserve calculations
+
+#### Key decisions
+- GCA reserve is in HNL (1 CATR = 1 HNL at mint rate) — deposit and deduct in HNL directly
+- Manual price floor is a minimum guarantee, not a fixed price — dynamic formula wins above it
+- GCA application is a separate opt-in step after merchant activation — not auto-granted
+- Price floor setter removed from admin UI — access restricted to CLI only (Cristian's decision)
+- `set-floor` CLI command already existed in `gca-admin.ts` — no new code needed
+
+#### Pending / next up
+- Email notification to merchant on GCA gift/vest/redemption approval
+- Admin UI panel for GCA reserve status (balance, circulating, floor) — currently CLI/API only
+- Faraday full vesting test end-to-end
+- Reconciliation alerting for FAILED PendingTransfer rows
