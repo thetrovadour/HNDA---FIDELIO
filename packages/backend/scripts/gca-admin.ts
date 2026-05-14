@@ -170,22 +170,32 @@ async function cmdSetFloor(arg?: string) {
   hr();
 }
 
-async function cmdGift(arg?: string) {
+async function cmdGift(arg?: string, amountArg?: string) {
   if (!arg) {
-    console.error('Usage: gca gift <merchant_id|name>');
+    console.error('Usage: gca gift <merchant_id|name> [amount_gca]');
     process.exit(1);
+  }
+
+  let amountGca: number | undefined;
+  if (amountArg !== undefined) {
+    amountGca = Number(amountArg);
+    if (isNaN(amountGca) || amountGca <= 0) {
+      console.error('✗ amount_gca must be a positive number');
+      process.exit(1);
+    }
   }
 
   const merchant = await resolveMerchant(arg);
 
   try {
-    const txHash = await approveGcaGift(db, merchant.id);
+    const txHash = await approveGcaGift(db, merchant.id, amountGca);
     const alloc  = await db.merchantGcaAllocation.findUnique({ where: { merchant_id: merchant.id } });
+    const awarded = amountGca ?? 1200;
     hr();
     console.log('  WELCOME GIFT APPROVED');
     hr();
     fmt('Merchant', merchant.name);
-    fmt('GCA awarded', '1,200.0000 GCA');
+    fmt('GCA awarded', `${awarded.toLocaleString('en-US', { minimumFractionDigits: 4 })} GCA`);
     fmt('New GCA balance', `${new Decimal(alloc!.gca_balance).toFixed(4)} GCA`);
     if (txHash) fmt('On-chain tx', txHash);
     console.log('\n  ✓ Gift approved and minted on Base Sepolia.');
@@ -240,7 +250,7 @@ async function cmdListRedemptions(arg?: string) {
 // ─── Entry point ──────────────────────────────────────────────────────────────
 
 async function main() {
-  const [, , subcommand, arg] = process.argv;
+  const [, , subcommand, arg, arg2] = process.argv;
 
   const usage = `
 FIDELIO GCA Admin Script
@@ -248,7 +258,7 @@ Usage: npm run gca -- <subcommand> [arg]
 
 Subcommands:
   status [merchant_id|name]       GCA balance and milestones (all or single merchant)
-  gift <merchant_id|name>         Approve the 1,200 GCA welcome gift for a merchant
+  gift <merchant_id|name> [amount] Approve evaluated GCA welcome gift (default: 1,200)
   vest <merchant_id|name>         Manually trigger vesting evaluation
   set-floor <price_hnl>           Set a new active GCA price floor
   list-redemptions [status]       List redemption requests (default: PENDING)
@@ -257,7 +267,7 @@ Subcommands:
   try {
     switch (subcommand) {
       case 'status':           await cmdStatus(arg); break;
-      case 'gift':             await cmdGift(arg); break;
+      case 'gift':             await cmdGift(arg, arg2); break;
       case 'vest':             await cmdVest(arg); break;
       case 'set-floor':        await cmdSetFloor(arg); break;
       case 'list-redemptions': await cmdListRedemptions(arg); break;

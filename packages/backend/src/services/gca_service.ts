@@ -2,7 +2,7 @@ import { PrismaClient } from '@prisma/client';
 import { Decimal } from '@prisma/client/runtime/client';
 import { mintGca } from './gca_chain';
 
-const GCA_GIFT          = new Decimal('1200');
+const GCA_GIFT_DEFAULT  = new Decimal('1200');
 const GCA_PER_MILESTONE = new Decimal('100');
 const CATR_PER_MILESTONE = new Decimal('25000');
 const MAX_MILESTONES    = 10;
@@ -20,7 +20,7 @@ export async function initGcaAllocation(db: PrismaClient, merchantId: string): P
   });
 }
 
-export async function approveGcaGift(db: PrismaClient, merchantId: string): Promise<string | null> {
+export async function approveGcaGift(db: PrismaClient, merchantId: string, amountGca?: number): Promise<string | null> {
   const allocation = await db.merchantGcaAllocation.findUnique({ where: { merchant_id: merchantId } });
   if (!allocation) throw new Error('No GCA allocation found for merchant');
   if (allocation.gift_claimed) throw new Error('Welcome gift already claimed');
@@ -28,30 +28,33 @@ export async function approveGcaGift(db: PrismaClient, merchantId: string): Prom
   const merchant = await db.merchant.findUnique({ where: { id: merchantId } });
   if (!merchant?.wallet_address) throw new Error('Merchant has no wallet address — cannot mint on-chain');
 
+  const giftAmount = amountGca ? new Decimal(amountGca) : GCA_GIFT_DEFAULT;
+  if (giftAmount.lte(0)) throw new Error('Gift amount must be positive');
+
   // DB-first: mark claimed before hitting the chain (prevents double-gift on retry)
   let gcaTxId: string;
   await db.$transaction(async (tx) => {
     await tx.merchantGcaAllocation.update({
       where: { merchant_id: merchantId },
-      data: { gca_balance: { increment: GCA_GIFT }, gift_claimed: true },
+      data: { gca_balance: { increment: giftAmount }, gift_claimed: true },
     });
     const gcaTx = await tx.gcaTransaction.create({
       data: {
         allocation_id: allocation.id,
         merchant_id: merchantId,
         type: 'GIFT',
-        amount_gca: GCA_GIFT,
-        notes: 'Welcome gift approved by admin — awaiting on-chain confirmation',
+        amount_gca: giftAmount,
+        notes: `Welcome gift of ${giftAmount.toFixed(0)} GCA approved by admin — awaiting on-chain confirmation`,
       },
     });
     gcaTxId = gcaTx.id;
   });
 
-  // Mint on-chain; update notes with tx_hash when confirmed
-  const txHash = await mintGca(merchant.wallet_address, GCA_GIFT.toNumber());
+  const txHash = await mintGca(merchant.wallet_address, giftAmount.toNumber());
+  console.log(`[GCA] GIFT  merchant=${merchant.name} amount=${giftAmount.toFixed(0)} GCA  tx=${txHash}`);
   await db.gcaTransaction.update({
     where: { id: gcaTxId! },
-    data: { notes: `Welcome gift — 1,200 GCA minted on-chain | tx: ${txHash}` },
+    data: { notes: `Welcome gift — ${giftAmount.toFixed(0)} GCA minted on-chain | tx: ${txHash}` },
   });
 
   return txHash;
@@ -60,6 +63,9 @@ export async function approveGcaGift(db: PrismaClient, merchantId: string): Prom
 export async function evaluateGcaVesting(db: PrismaClient, merchantId: string): Promise<void> {
   const allocation = await db.merchantGcaAllocation.findUnique({ where: { merchant_id: merchantId } });
   if (!allocation || allocation.milestones_claimed >= MAX_MILESTONES) return;
+
+  const merchant = await db.merchant.findUnique({ where: { id: merchantId } });
+  if (!merchant?.wallet_address) throw new Error('Merchant has no wallet address — cannot mint GCA on-chain');
 
   // Compute total CATR processed by this merchant
   const volumeAgg = await db.transaction.aggregate({
@@ -90,6 +96,8 @@ export async function evaluateGcaVesting(db: PrismaClient, merchantId: string): 
 
   const gcaEarned = GCA_PER_MILESTONE.mul(newMilestones);
 
+  // DB-first: record vesting before hitting the chain
+  let gcaTxId: string;
   await db.$transaction(async (tx) => {
     await tx.merchantGcaAllocation.update({
       where: { merchant_id: merchantId },
@@ -99,19 +107,54 @@ export async function evaluateGcaVesting(db: PrismaClient, merchantId: string): 
         milestones_claimed:      newMilestonesTotal,
       },
     });
-    await tx.gcaTransaction.create({
+    const gcaTx = await tx.gcaTransaction.create({
       data: {
         allocation_id: allocation.id,
         merchant_id: merchantId,
         type: 'VEST',
         amount_gca: gcaEarned,
-        notes: `Milestone ${allocation.milestones_claimed + 1}–${newMilestonesTotal}: ${effectiveCatr.toFixed(2)} effective CATR (×${multiplier} multiplier, ${(ratio * 100).toFixed(0)}% unique clients)`,
+        notes: `Milestone ${allocation.milestones_claimed + 1}–${newMilestonesTotal}: ${effectiveCatr.toFixed(2)} effective CATR (×${multiplier} multiplier, ${(ratio * 100).toFixed(0)}% unique clients) — awaiting on-chain mint`,
       },
     });
+    gcaTxId = gcaTx.id;
+  });
+
+  const txHash = await mintGca(merchant.wallet_address, gcaEarned.toNumber());
+  console.log(`[GCA] VEST  merchant=${merchant.name} milestones=${allocation.milestones_claimed + 1}–${newMilestonesTotal} amount=${gcaEarned.toFixed(0)} GCA  tx=${txHash}`);
+  await db.gcaTransaction.update({
+    where: { id: gcaTxId! },
+    data: { notes: `Milestone ${allocation.milestones_claimed + 1}–${newMilestonesTotal}: ${effectiveCatr.toFixed(2)} effective CATR (×${multiplier} multiplier, ${(ratio * 100).toFixed(0)}% unique clients) | vest tx: ${txHash}` },
   });
 }
 
 export async function currentPriceFloor(db: PrismaClient): Promise<Decimal> {
-  const floor = await db.gcaPriceFloor.findFirst({ where: { active: true }, orderBy: { set_at: 'desc' } });
-  return floor ? new Decimal(floor.price_hnl) : new Decimal('1');
+  const [reserve, circulatingAgg, manualFloor] = await Promise.all([
+    db.gcaReserve.findUnique({ where: { id: 'gca-reserve-singleton' } }),
+    db.merchantGcaAllocation.aggregate({ _sum: { gca_balance: true } }),
+    db.gcaPriceFloor.findFirst({ where: { active: true }, orderBy: { set_at: 'desc' } }),
+  ]);
+
+  const minimum = manualFloor ? new Decimal(manualFloor.price_hnl) : new Decimal('1');
+  const circulating = new Decimal(circulatingAgg._sum.gca_balance ?? 0);
+  if (circulating.lte(0) || !reserve) return minimum;
+
+  const dynamic = new Decimal(reserve.balance_hnl).div(circulating);
+  return dynamic.gt(minimum) ? dynamic : minimum;
+}
+
+export async function gcaReserveStatus(db: PrismaClient): Promise<{
+  balance_hnl: string;
+  circulating_gca: string;
+  price_floor_hnl: string;
+}> {
+  const [floor, reserve, circulatingAgg] = await Promise.all([
+    currentPriceFloor(db),
+    db.gcaReserve.findUnique({ where: { id: 'gca-reserve-singleton' } }),
+    db.merchantGcaAllocation.aggregate({ _sum: { gca_balance: true } }),
+  ]);
+  return {
+    balance_hnl:     new Decimal(reserve?.balance_hnl ?? 0).toFixed(4),
+    circulating_gca: new Decimal(circulatingAgg._sum.gca_balance ?? 0).toFixed(4),
+    price_floor_hnl: floor.toFixed(4),
+  };
 }

@@ -14,6 +14,8 @@ import {
   getMerchantRedemptions,
   createMerchantRedemption,
   getGcaBalance,
+  getGcaApplication,
+  applyForGca,
   redeemGca,
   updateMerchantProfile,
   updateMerchantNotifications,
@@ -28,6 +30,7 @@ import {
   type MerchantTransaction,
   type RedemptionRequest,
   type GcaBalance,
+  type GcaApplication,
 } from '@/lib/api';
 
 // ─── Design tokens ────────────────────────────────────────────────────────────
@@ -327,7 +330,12 @@ function LoginScreen({ onLogin, inactivity }: { onLogin: (merchant: Merchant) =>
 
 // ─── Top bar ──────────────────────────────────────────────────────────────────
 
-function TopBar({ merchant, balance, onLogout }: { merchant: Merchant; balance: MerchantBalance | null; onLogout: () => void }) {
+function TopBar({ merchant, balance, gca, onLogout }: { merchant: Merchant; balance: MerchantBalance | null; gca: GcaBalance | null; onLogout: () => void }) {
+  const catrHnl   = balance ? parseFloat(balance.catr_balance) : 0;
+  const gcaHnl    = gca ? parseFloat(gca.estimated_hnl_value) : 0;
+  const totalHnl  = catrHnl + gcaHnl;
+  const fmtHnl    = (n: number) => n.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+  const fmtCatr   = (n: number) => n.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
   return (
     <div
       className="px-5 pt-12 pb-6 relative overflow-hidden"
@@ -373,13 +381,25 @@ function TopBar({ merchant, balance, onLogout }: { merchant: Merchant; balance: 
 
       <div className="flex items-baseline gap-2">
         <span style={{ fontSize: '3.5rem', lineHeight: 1, color: C.white, fontFamily: 'var(--font-body)', fontWeight: 200 }}>
-          {balance ? parseFloat(balance.catr_balance).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) : '—'}
+          {balance ? fmtHnl(totalHnl) : '—'}
         </span>
-        <span style={{ fontSize: '1rem', fontFamily: 'var(--font-body)', fontWeight: 300, color: C.slateHi }}>pts</span>
+        <span style={{ fontSize: '1rem', fontFamily: 'var(--font-body)', fontWeight: 300, color: C.slateHi }}>HNL</span>
       </div>
       <p style={{ color: C.slate, fontFamily: 'var(--font-body)', fontSize: '0.65rem', fontWeight: 300, marginTop: '0.4rem', letterSpacing: '0.08em' }}>
         {t('merchant.balance_label')}
       </p>
+      <div className="flex flex-col gap-0.5 mt-1">
+        {balance && (
+          <p style={{ color: C.gold, fontFamily: 'var(--font-body)', fontSize: '0.72rem', fontWeight: 400, letterSpacing: '0.06em' }}>
+            {fmtCatr(catrHnl)} CATR
+          </p>
+        )}
+        {gca && (
+          <p style={{ color: C.gold, fontFamily: 'var(--font-body)', fontSize: '0.72rem', fontWeight: 400, letterSpacing: '0.06em' }}>
+            {parseFloat(gca.gca_balance).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} GCA = L. {fmtHnl(gcaHnl)}
+          </p>
+        )}
+      </div>
     </div>
   );
 }
@@ -664,17 +684,39 @@ function CanjearTab({ merchant }: { merchant: Merchant }) {
 
 function GcaTab({ merchant }: { merchant: Merchant }) {
   const [gca, setGca] = useState<GcaBalance | null>(null);
-  const [gcaError, setGcaError] = useState('');
+  const [application, setApplication] = useState<GcaApplication | null>(null);
+  const [gcaLoading, setGcaLoading] = useState(true);
   const [applying, setApplying] = useState(false);
   const [amount, setAmount] = useState('');
   const [applyState, setApplyState] = useState<'idle' | 'loading' | 'success' | 'error'>('idle');
   const [applyMsg, setApplyMsg] = useState('');
+  const [applyingGca, setApplyingGca] = useState(false);
+  const [applyGcaMsg, setApplyGcaMsg] = useState('');
 
   useEffect(() => {
-    getGcaBalance(merchant.id)
-      .then((r) => setGca(r.data))
-      .catch((err) => setGcaError(err instanceof Error ? err.message : 'Error al cargar GCA.'));
+    setGcaLoading(true);
+    Promise.allSettled([
+      getGcaBalance(merchant.id),
+      getGcaApplication(merchant.id),
+    ]).then(([balanceResult, appResult]) => {
+      setGca(balanceResult.status === 'fulfilled' ? balanceResult.value.data : null);
+      setApplication(appResult.status === 'fulfilled' ? appResult.value.data : null);
+      setGcaLoading(false);
+    });
   }, [merchant.id]);
+
+  async function handleApplyGca() {
+    setApplyingGca(true);
+    setApplyGcaMsg('');
+    try {
+      const r = await applyForGca(merchant.id);
+      setApplication(r.data);
+    } catch (err) {
+      setApplyGcaMsg(err instanceof Error ? err.message : 'Error al enviar solicitud.');
+    } finally {
+      setApplyingGca(false);
+    }
+  }
 
   async function handleApply(e: React.FormEvent) {
     e.preventDefault();
@@ -703,11 +745,39 @@ function GcaTab({ merchant }: { merchant: Merchant }) {
       {/* Program description */}
       <Section title="¿Qué es GCA?">
         <p style={{ color: C.slateHi, fontSize: '0.85rem', fontWeight: 300, lineHeight: 1.6 }}>
-          Guacacoin (GCA) es el token de participación de la red FIDELIO.
-          Los comercios lo reciben como reconocimiento por el volumen de transacciones
-          que procesan dentro de la red y pueden canjearlo por Lempiras.
+          Guacacoin (GCA) es el token de participacion que se regala al comerciante por su actividad en la red FIDELIO. Este token crece en valor a medida todos los comercios afiliados a la red logran aumentar el volumen de transacciones. Este token es canjeable por lempiras con HNDA unicamente. Alentamos al comercio a crecer con nosotros en HNDA.
         </p>
       </Section>
+
+      {/* Current status */}
+      {gcaLoading ? (
+        <p className="text-sm text-center py-4" style={{ color: C.slate }}>Cargando…</p>
+      ) : !gca && application?.status === 'PENDING' ? (
+        <div className="rounded-xl px-5 py-6 flex flex-col items-center gap-3 text-center" style={{ background: C.surfaceHi, border: `1px solid ${C.border}` }}>
+          <p className="text-sm font-semibold" style={{ color: C.gold }}>Solicitud en revisión</p>
+          <p className="text-xs" style={{ color: C.slate }}>Tu solicitud para el programa GCA está siendo evaluada por HNDA. Te notificaremos cuando esté aprobada.</p>
+          <p className="text-xs" style={{ color: C.slate }}>Enviada el {new Date(application.created_at).toLocaleDateString('es-HN', { day: 'numeric', month: 'long', year: 'numeric' })}</p>
+        </div>
+      ) : application?.status === 'APPROVED' ? (
+        <div className="rounded-xl px-5 py-6 flex flex-col items-center gap-3 text-center" style={{ background: 'rgba(16,185,129,0.06)', border: '1px solid rgba(16,185,129,0.25)' }}>
+          <p className="text-sm font-semibold" style={{ color: C.success }}>Aprobado para GCA</p>
+          <p className="text-xs" style={{ color: C.slate }}>Tu solicitud fue aprobada por HNDA. Tu balance GCA aparece abajo.</p>
+        </div>
+      ) : !gca ? (
+        <div className="rounded-xl px-5 py-6 flex flex-col items-center gap-3 text-center" style={{ background: C.surfaceHi, border: `1px solid ${C.border}` }}>
+          <p className="text-sm font-semibold" style={{ color: C.white }}>¿Quieres participar en GCA?</p>
+          <p className="text-xs" style={{ color: C.slate }}>HNDA evaluará el volumen de tu negocio y te asignará GCA de bienvenida. El programa GCA te permite acumular valor con cada transacción procesada en FIDELIO.</p>
+          {applyGcaMsg && <p className="text-xs" style={{ color: C.error }}>{applyGcaMsg}</p>}
+          <button
+            onClick={handleApplyGca}
+            disabled={applyingGca}
+            className="mt-1 px-6 py-2.5 rounded-xl text-sm font-semibold transition-all active:scale-95"
+            style={{ background: 'rgba(201,168,76,0.12)', border: '1px solid rgba(201,168,76,0.35)', color: C.gold, opacity: applyingGca ? 0.5 : 1 }}
+          >
+            {applyingGca ? 'Enviando…' : 'Aplicar a Vesting GCA'}
+          </button>
+        </div>
+      ) : null}
 
       {/* Earning rules */}
       <Section title="Cómo se gana GCA">
@@ -719,7 +789,7 @@ function GcaTab({ merchant }: { merchant: Merchant }) {
             <span style={{ width: 6, height: 6, borderRadius: '50%', background: C.gold, display: 'inline-block', flexShrink: 0, marginTop: 6 }} />
             <div>
               <p className="text-sm font-bold" style={{ color: C.gold }}>Regalo de bienvenida</p>
-              <p className="text-xs" style={{ color: C.slate }}>200 GCA al unirte a la red FIDELIO</p>
+              <p className="text-xs" style={{ color: C.slate }}>Al unirte a FIDELIO, puedes aplicar a la evaluacion de tu empresa para GCA. Nosotros en HNDA evaluaremos el volumen de lempiras mensual que el comercio aplicante mueve, y la proyeccion de cuanto CATR podrian llegar a mover. De acuerdo con esto, se le regalara un porcentaje de GCA al comercio. </p>
             </div>
           </div>
           <div
@@ -730,7 +800,7 @@ function GcaTab({ merchant }: { merchant: Merchant }) {
             <div>
               <p className="text-sm font-bold" style={{ color: C.gold }}>Hitos de volumen</p>
               <p className="text-xs" style={{ color: C.slate }}>
-                +100 GCA por cada 25,000 CATR efectivos procesados · máximo 10 hitos
+                De acuerdo al volumen que la empresa maneja, haremos una proyeccion de tus posibles movimientos mensuales, y dependiendo de tal volumen te dariamos un porcentaje de GCA. Pra ilustrarte, para 25,000 HNL de volumen de transaccion se dan 100 GCA si el valor del GCA es de 25 CATR.
               </p>
             </div>
           </div>
@@ -740,7 +810,7 @@ function GcaTab({ merchant }: { merchant: Merchant }) {
       {/* Multiplier table */}
       <Section title="Multiplicador por clientes únicos">
         <p className="text-xs mb-3" style={{ color: C.slate, fontWeight: 300 }}>
-          El CATR efectivo se multiplica según la diversidad de clientes que te visitan.
+          El CATR efectivo es la medida en la cual HNDA entrega el GCA. Este es una medida de cuan efectivo tu negocio es. Este CATR efectivo se multiplica según la diversidad de clientes que te visitan.
         </p>
         <div className="flex flex-col gap-1.5">
           {[
@@ -761,12 +831,7 @@ function GcaTab({ merchant }: { merchant: Merchant }) {
         </div>
       </Section>
 
-      {/* Current status */}
-      {gcaError ? (
-        <StatusMsg type="error" msg={gcaError} />
-      ) : !gca ? (
-        <p className="text-sm text-center py-4" style={{ color: C.slate }}>Cargando balance GCA…</p>
-      ) : (
+      {gca && (
         <Section title="Tu estado actual">
           <div className="flex flex-col gap-3">
             <div className="grid grid-cols-2 gap-2">
@@ -1187,6 +1252,7 @@ export default function MerchantPage() {
   const [introComplete, setIntroComplete] = useState(false);
   const [merchant, setMerchant] = useState<Merchant | null>(null);
   const [balance, setBalance] = useState<MerchantBalance | null>(null);
+  const [gcaSummary, setGcaSummary] = useState<GcaBalance | null>(null);
   const [activeTab, setActiveTab] = useState<Tab>('negocio');
   const [inactivity, setInactivity] = useState(false);
 
@@ -1208,11 +1274,17 @@ export default function MerchantPage() {
     getMerchantBalance(merchant.id)
       .then((r) => setBalance(r.data))
       .catch((err) => { if (err instanceof AuthError) handleLogout(); });
+    getGcaBalance(merchant.id)
+      .then((r) => setGcaSummary(r.data))
+      .catch(() => setGcaSummary(null)); // 404 = no allocation, show nothing
 
     const interval = setInterval(() => {
       getMerchantBalance(merchant.id)
         .then((r) => setBalance(r.data))
         .catch((err) => { if (err instanceof AuthError) handleLogout(); });
+      getGcaBalance(merchant.id)
+        .then((r) => setGcaSummary(r.data))
+        .catch(() => setGcaSummary(null));
       getMerchantPublic(merchant.id)
         .then((r) => {
           if (r.data.merchant_status !== merchant.merchant_status) {
@@ -1241,6 +1313,7 @@ export default function MerchantPage() {
     router.push('/fidelio');
     setMerchant(null);
     setBalance(null);
+    setGcaSummary(null);
     setActiveTab('negocio');
     setInactivity(reason === 'inactivity');
   }
@@ -1252,7 +1325,7 @@ export default function MerchantPage() {
 
   return (
     <div className="min-h-screen" style={{ background: C.bg }}>
-      <TopBar merchant={merchant} balance={balance} onLogout={handleLogout} />
+      <TopBar merchant={merchant} balance={balance} gca={gcaSummary} onLogout={handleLogout} />
       <main className="px-4 pt-5 pb-28 flex flex-col gap-4">
         {activeTab === 'negocio'     && <NegocioTab     merchant={merchant} />}
         {activeTab === 'canjear'     && <CanjearTab     merchant={merchant} />}

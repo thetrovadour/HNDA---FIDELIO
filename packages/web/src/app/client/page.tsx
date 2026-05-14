@@ -805,7 +805,7 @@ function RedTab({ user, onSpend }: { user: UserRecord; onSpend: () => void }) {
     try {
       await spendCATR({ user_id: user.id, merchant_id: selected.id, amount_catr: amount });
       setState('success');
-      setMsg(`${parseFloat(amount).toFixed(2)} pts enviados a ${selected.name}.`);
+      setMsg(`${parseFloat(amount).toFixed(2)} CATR enviados a ${selected.name}.`);
       setAmount('');
       onSpend();
     } catch (err) {

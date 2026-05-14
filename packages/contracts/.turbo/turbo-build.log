@@ -2,6 +2,6 @@
 > @hnda/contracts@1.0.0 build
 > npx hardhat compile
 
-◇ injected env (10) from .env // tip: ⌘ override existing { override: true }
+◇ injected env (10) from .env // tip: ⌘ suppress logs { quiet: true }
 Nothing to compile
 No need to generate any newer typings.

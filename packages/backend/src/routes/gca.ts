@@ -4,15 +4,8 @@ import { Decimal } from '@prisma/client/runtime/client';
 import { PrismaClient } from '@prisma/client';
 import { adminAuth } from '../middleware/auth';
 import { validate } from '../middleware/validate';
-import { currentPriceFloor, evaluateGcaVesting, approveGcaGift } from '../services/gca_service';
+import { currentPriceFloor, evaluateGcaVesting, approveGcaGift, gcaReserveStatus } from '../services/gca_service';
 import { burnGca } from '../services/gca_chain';
-
-const TradeSchema = z.object({
-  from_merchant_id: z.string().uuid(),
-  to_merchant_id:   z.string().uuid(),
-  amount_gca:       z.number().positive(),
-  catr_paid:        z.number().positive(),
-});
 
 const RedeemSchema = z.object({
   merchant_id: z.string().uuid(),
@@ -60,60 +53,6 @@ export function gcaRouter(db: PrismaClient): Router {
     res.status(200).json({ data: history });
   });
 
-  // POST /api/gca/trade — merchant-to-merchant trade
-  router.post('/trade', validate(TradeSchema), async (req: Request, res: Response) => {
-    const { from_merchant_id, to_merchant_id, amount_gca, catr_paid } = req.body as z.infer<typeof TradeSchema>;
-
-    const fromAlloc = await db.merchantGcaAllocation.findUnique({ where: { merchant_id: from_merchant_id } });
-    if (!fromAlloc) {
-      res.status(404).json({ error: 'Sender has no GCA allocation', code: 'NOT_FOUND' });
-      return;
-    }
-    if (new Decimal(fromAlloc.gca_balance).lt(amount_gca)) {
-      res.status(400).json({ error: 'Insufficient GCA balance', code: 'INSUFFICIENT_GCA' });
-      return;
-    }
-
-    const toAlloc = await db.merchantGcaAllocation.findUnique({ where: { merchant_id: to_merchant_id } });
-    if (!toAlloc) {
-      res.status(404).json({ error: 'Recipient has no GCA allocation', code: 'NOT_FOUND' });
-      return;
-    }
-
-    await db.$transaction(async (tx) => {
-      await tx.merchantGcaAllocation.update({
-        where: { merchant_id: from_merchant_id },
-        data: { gca_balance: { decrement: amount_gca } },
-      });
-      await tx.merchantGcaAllocation.update({
-        where: { merchant_id: to_merchant_id },
-        data: { gca_balance: { increment: amount_gca } },
-      });
-      await tx.gcaTransaction.create({
-        data: {
-          allocation_id: fromAlloc.id,
-          merchant_id: from_merchant_id,
-          type: 'TRADE_OUT',
-          amount_gca,
-          counterpart_merchant_id: to_merchant_id,
-          catr_paid,
-        },
-      });
-      await tx.gcaTransaction.create({
-        data: {
-          allocation_id: toAlloc.id,
-          merchant_id: to_merchant_id,
-          type: 'TRADE_IN',
-          amount_gca,
-          counterpart_merchant_id: from_merchant_id,
-          catr_paid,
-        },
-      });
-    });
-
-    res.status(200).json({ data: { from_merchant_id, to_merchant_id, amount_gca, catr_paid } });
-  });
-
   // POST /api/gca/redeem — submit redemption request (goes to admin queue)
   router.post('/redeem', validate(RedeemSchema), async (req: Request, res: Response) => {
     const { merchant_id, amount_gca } = req.body as z.infer<typeof RedeemSchema>;
@@ -143,6 +82,51 @@ export function gcaRouter(db: PrismaClient): Router {
     res.status(201).json({ data: request });
   });
 
+  // POST /api/gca/apply — merchant submits GCA application
+  router.post('/apply', async (req: Request, res: Response) => {
+    const { merchant_id } = req.body as { merchant_id?: string };
+    if (!merchant_id) {
+      res.status(400).json({ error: 'merchant_id is required', code: 'MISSING_FIELD' });
+      return;
+    }
+    const merchant = await db.merchant.findUnique({ where: { id: merchant_id } });
+    if (!merchant || merchant.merchant_status !== 'ACTIVE') {
+      res.status(404).json({ error: 'Merchant not found or not active', code: 'NOT_FOUND' });
+      return;
+    }
+    const existing = await db.merchantGcaAllocation.findUnique({ where: { merchant_id } });
+    if (existing) {
+      res.status(409).json({ error: 'Merchant already has a GCA allocation', code: 'ALREADY_ALLOCATED' });
+      return;
+    }
+    const pending = await db.gcaApplication.findFirst({ where: { merchant_id, status: 'PENDING' } });
+    if (pending) {
+      res.status(409).json({ error: 'Application already pending', code: 'ALREADY_PENDING' });
+      return;
+    }
+    const app = await db.gcaApplication.create({ data: { merchant_id } });
+    res.status(201).json({ data: { id: app.id, status: app.status, created_at: app.created_at } });
+  });
+
+  // GET /api/gca/application/:merchant_id — latest application for this merchant
+  router.get('/application/:merchant_id', async (req: Request, res: Response) => {
+    const app = await db.gcaApplication.findFirst({
+      where: { merchant_id: req.params.merchant_id as string },
+      orderBy: { created_at: 'desc' },
+    });
+    if (!app) {
+      res.status(404).json({ error: 'No application found', code: 'NOT_FOUND' });
+      return;
+    }
+    res.status(200).json({ data: { id: app.id, status: app.status, notes: app.notes, created_at: app.created_at } });
+  });
+
+  // GET /api/gca/reserve — live reserve status (public — used by merchant balance display)
+  router.get('/reserve', async (_req: Request, res: Response) => {
+    const status = await gcaReserveStatus(db);
+    res.status(200).json({ data: status });
+  });
+
   // ── Admin endpoints ──────────────────────────────────────────────────────────
 
   // GET /api/gca/admin/merchants — all merchants' GCA allocations
@@ -161,14 +145,21 @@ export function gcaRouter(db: PrismaClient): Router {
       next_milestone_at:       new Decimal((a.milestones_claimed + 1) * 25000).toFixed(2),
       estimated_hnl_value:     new Decimal(a.gca_balance).mul(priceFloor).toFixed(2),
       price_floor_hnl:         priceFloor.toFixed(4),
+      gift_claimed:            a.gift_claimed,
     }));
     res.status(200).json({ data });
   });
 
-  // POST /api/gca/admin/gift/:merchant_id — approve welcome gift (1,200 GCA)
+  // POST /api/gca/admin/gift/:merchant_id — approve evaluated welcome gift
+  // Body: { amount_gca: number } — HNDA evaluates the amount per merchant
   router.post('/admin/gift/:merchant_id', adminAuth, async (req: Request, res: Response) => {
+    const amountGca = req.body?.amount_gca;
+    if (amountGca !== undefined && (typeof amountGca !== 'number' || amountGca <= 0)) {
+      res.status(400).json({ error: 'amount_gca must be a positive number', code: 'INVALID_AMOUNT' });
+      return;
+    }
     try {
-      const txHash = await approveGcaGift(db, req.params.merchant_id as string);
+      const txHash = await approveGcaGift(db, req.params.merchant_id as string, amountGca);
       const updated = await db.merchantGcaAllocation.findUnique({
         where: { merchant_id: req.params.merchant_id as string },
       });
@@ -247,15 +238,73 @@ export function gcaRouter(db: PrismaClient): Router {
         where: { id: req.params.id as string },
         data: { status: 'APPROVED', approved_by: (req as any).admin?.sub ?? 'admin' },
       });
+      // Deduct payout amount from GCA reserve (HNDA is paying this out in HNL)
+      await tx.gcaReserve.upsert({
+        where:  { id: 'gca-reserve-singleton' },
+        update: { balance_hnl: { decrement: new Decimal(entry.amount_hnl_estimated) } },
+        create: { id: 'gca-reserve-singleton', balance_hnl: 0 },
+      });
     });
 
     const txHash = await burnGca(entry.merchant.wallet_address, new Decimal(entry.amount_gca).toNumber());
+    console.log(`[GCA] REDEEM  merchant=${entry.merchant_id} amount=${entry.amount_gca} GCA  hnl=~L.${entry.amount_hnl_estimated}  tx=${txHash}`);
     await db.gcaTransaction.update({
       where: { id: gcaTxId! },
       data: { notes: `Redeemed for ~L. ${entry.amount_hnl_estimated} at floor L. ${entry.price_floor_hnl}/GCA | burn tx: ${txHash}` },
     });
 
     res.status(200).json({ data: { id: req.params.id, status: 'APPROVED', tx_hash: txHash } });
+  });
+
+  // GET /api/gca/admin/applications — pending GCA applications
+  router.get('/admin/applications', adminAuth, async (_req: Request, res: Response) => {
+    const apps = await db.gcaApplication.findMany({
+      where: { status: 'PENDING' },
+      include: { merchant: { select: { id: true, name: true, category: true } } },
+      orderBy: { created_at: 'asc' },
+    });
+    res.status(200).json({ data: apps });
+  });
+
+  // PATCH /api/gca/admin/applications/:id/approve — approve + init allocation
+  router.patch('/admin/applications/:id/approve', adminAuth, async (req: Request, res: Response) => {
+    const app = await db.gcaApplication.findUnique({ where: { id: req.params.id as string } });
+    if (!app || app.status !== 'PENDING') {
+      res.status(404).json({ error: 'Application not found or already processed', code: 'NOT_FOUND' });
+      return;
+    }
+    const existing = await db.merchantGcaAllocation.findUnique({ where: { merchant_id: app.merchant_id } });
+    await db.$transaction(async (tx) => {
+      if (!existing) {
+        await tx.merchantGcaAllocation.create({
+          data: { merchant_id: app.merchant_id, gca_balance: 0, milestones_claimed: 0, gift_claimed: false },
+        });
+      }
+      await tx.gcaApplication.update({
+        where: { id: app.id },
+        data: { status: 'APPROVED', reviewed_by: (req as any).admin?.sub ?? 'admin', reviewed_at: new Date() },
+      });
+    });
+    res.status(200).json({ data: { id: app.id, status: 'APPROVED', merchant_id: app.merchant_id } });
+  });
+
+  // PATCH /api/gca/admin/applications/:id/reject
+  router.patch('/admin/applications/:id/reject', adminAuth, async (req: Request, res: Response) => {
+    const app = await db.gcaApplication.findUnique({ where: { id: req.params.id as string } });
+    if (!app || app.status !== 'PENDING') {
+      res.status(404).json({ error: 'Application not found or already processed', code: 'NOT_FOUND' });
+      return;
+    }
+    const updated = await db.gcaApplication.update({
+      where: { id: app.id },
+      data: {
+        status: 'REJECTED',
+        notes: req.body?.notes ?? null,
+        reviewed_by: (req as any).admin?.sub ?? 'admin',
+        reviewed_at: new Date(),
+      },
+    });
+    res.status(200).json({ data: { id: updated.id, status: 'REJECTED' } });
   });
 
   // PATCH /api/gca/admin/redemptions/:id/reject

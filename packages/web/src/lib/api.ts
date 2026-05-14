@@ -494,6 +494,7 @@ export interface GcaMerchantAllocation {
   next_milestone_at: string;
   estimated_hnl_value: string;
   price_floor_hnl: string;
+  gift_claimed: boolean;
 }
 
 export interface GcaHistoryEntry {
@@ -511,6 +512,17 @@ export function getAdminGcaMerchants(token: string) {
   });
 }
 
+export function adminGiftMerchant(merchantId: string, token: string, amountGca?: number) {
+  return apiFetch<{ data: { ok: boolean; gca_balance: string; gift_claimed: boolean; tx_hash: string | null } }>(
+    `/api/gca/admin/gift/${merchantId}`,
+    {
+      method: 'POST',
+      headers: { ...authHeaders(token), ...jsonHeaders() },
+      body: JSON.stringify(amountGca !== undefined ? { amount_gca: amountGca } : {}),
+    }
+  );
+}
+
 export function adminVestMerchant(merchantId: string, token: string) {
   return apiFetch<{ data: { ok: boolean; new_balance: string; milestones_claimed: number } }>(
     `/api/gca/admin/vest/${merchantId}`,
@@ -522,8 +534,57 @@ export function getGcaHistory(merchantId: string) {
   return apiFetch<{ data: GcaHistoryEntry[] }>(`/api/gca/${merchantId}/history`);
 }
 
+export interface GcaApplication {
+  id: string;
+  status: 'PENDING' | 'APPROVED' | 'REJECTED';
+  notes: string | null;
+  created_at: string;
+}
+
+export interface GcaApplicationAdmin {
+  id: string;
+  merchant_id: string;
+  status: 'PENDING' | 'APPROVED' | 'REJECTED';
+  notes: string | null;
+  created_at: string;
+  merchant: { id: string; name: string; category: string };
+}
+
 export function getGcaBalance(merchantId: string) {
   return apiFetch<{ data: GcaBalance }>(`/api/gca/${merchantId}`);
+}
+
+export function getGcaApplication(merchantId: string) {
+  return apiFetch<{ data: GcaApplication }>(`/api/gca/application/${merchantId}`);
+}
+
+export function applyForGca(merchantId: string) {
+  return apiFetch<{ data: GcaApplication }>('/api/gca/apply', {
+    method: 'POST',
+    headers: jsonHeaders(),
+    body: JSON.stringify({ merchant_id: merchantId }),
+  });
+}
+
+export function getGcaApplicationsAdmin(token: string) {
+  return apiFetch<{ data: GcaApplicationAdmin[] }>('/api/gca/admin/applications', {
+    headers: authHeaders(token),
+  });
+}
+
+export function approveGcaApplication(id: string, token: string) {
+  return apiFetch<{ data: { id: string; status: string } }>(`/api/gca/admin/applications/${id}/approve`, {
+    method: 'PATCH',
+    headers: authHeaders(token),
+  });
+}
+
+export function rejectGcaApplication(id: string, token: string, notes?: string) {
+  return apiFetch<{ data: { id: string; status: string } }>(`/api/gca/admin/applications/${id}/reject`, {
+    method: 'PATCH',
+    headers: { ...authHeaders(token), ...jsonHeaders() },
+    body: JSON.stringify({ notes: notes ?? null }),
+  });
 }
 
 export function redeemGca(body: { merchant_id: string; amount_gca: number }) {

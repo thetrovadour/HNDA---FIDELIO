@@ -1473,3 +1473,50 @@ dotenv 17 dropped the `import * as dotenv` namespace default — named imports a
 #### Key decisions
 - Sender name is shown only for SPEND transactions (client → merchant). MINT entries (admin acreditations) show no sender — there is no individual person to attribute.
 - Time format is `toLocaleTimeString('es-HN', { hour: '2-digit', minute: '2-digit' })` — consistent with the Honduran locale already used throughout the app.
+
+---
+
+### Session — 2026-05-14 (Part 2)
+**Focus:** GCA vesting on-chain wiring, trade route removal, gift amount evaluation, GCA price design
+
+#### What happened
+
+**GCA vesting — on-chain mint wired**
+- `evaluateGcaVesting` in `gca_service.ts` was DB-only — milestones credited in DB but no `mintGca()` call
+- Fixed: now follows the same DB-first pattern as `approveGcaGift` — DB transaction commits first, then `mintGca()` fires, then notes updated with tx_hash
+- The full vesting cycle is now end-to-end: CATR spend → milestone → GCA minted on-chain
+
+**Faraday merchant — missing GCA allocation**
+- Faraday was approved before `initGcaAllocation` was wired into the approval flow
+- Manually inserted `MerchantGcaAllocation` row via psql for Faraday (`bf836b21`)
+
+**Trade route — removed**
+- `POST /api/gca/trade` (merchant-to-merchant GCA trade) removed from `gca.ts`
+- `TradeSchema` removed
+- Decision: GCA only flows in two directions — HNDA mints it, merchant redeems it with HNDA. Peer-to-peer trade creates an uncontrolled secondary market and decouples price from the floor HNDA guarantees.
+
+**GCA gift — dynamic amount**
+- Welcome gift was hardcoded at 1,200 GCA
+- Changed to accept an evaluated amount per merchant: `approveGcaGift(db, merchantId, amountGca?)`
+- Route `POST /api/gca/admin/gift/:merchant_id` now accepts optional `{ amount_gca: number }` body
+- CLI `gca gift <merchant> [amount]` — amount is optional second arg, defaults to 1,200
+- Rationale: HNDA evaluates each applying merchant's expected HNL volume and awards GCA proportionally. Flat gift dilutes unfairly.
+
+**GCA price design — architecture decision**
+- Whitepaper had no explicit price formula — only a maturity estimate (~$12 USD at 1,000 merchants)
+- Designed formula: `Price Floor = GCA Reserve Balance ÷ Total GCA in circulation`
+- GCA Reserve funded from 15% of HNDA's treasury slice (65% of 3.6% commission)
+- Reserve grows with every transaction, shrinks only on redemption payouts — honest and self-correcting
+- Dividends decision: removed from scope. GCA already rewards merchants through vesting (volume → milestones → GCA). Dividends would double-pay and drain the reserve prematurely.
+- Trade decision: removed from scope (see above)
+
+#### Key decisions
+- GCA flows only: HNDA → mint → merchant | merchant → burn → HNDA. No peer-to-peer.
+- Gift amount is now an HNDA evaluation, not a fixed constant
+- Price floor formula: GCA reserve balance ÷ circulating supply. Reserve = 15% of treasury commission (15% × 65% × 3.6% per transaction)
+- Commission is 3.6% (not 0.63% — corrected in session)
+
+#### Pending / next up
+- Implement GCA reserve tracking: deposit slice on every CATR transaction, deduct on redemption payout, compute floor automatically
+- Merchant balance display: if merchant has GCA, show combined balance (CATR + GCA×price_floor) in HNL — need to define unit and UI layout
+- Run full vesting test cycle with Faraday end-to-end

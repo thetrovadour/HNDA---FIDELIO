@@ -5,15 +5,17 @@ import {
   getGcaRedemptions,
   approveGcaRedemption,
   rejectGcaRedemption,
-  getGcaPriceFloor,
-  setGcaPriceFloor,
   getAdminGcaMerchants,
   adminVestMerchant,
+  adminGiftMerchant,
   getGcaHistory,
+  getGcaApplicationsAdmin,
+  approveGcaApplication,
+  rejectGcaApplication,
   type GcaRedemptionRequest,
-  type GcaPriceFloor,
   type GcaMerchantAllocation,
   type GcaHistoryEntry,
+  type GcaApplicationAdmin,
 } from '@/lib/api';
 
 // ─── Design tokens ────────────────────────────────────────────────────────────
@@ -82,37 +84,7 @@ function Btn({
   );
 }
 
-function Input({ label, value, onChange, placeholder, type = 'text', step }: {
-  label: string; value: string; onChange: (v: string) => void;
-  placeholder?: string; type?: string; step?: string;
-}) {
-  return (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: '0.4rem' }}>
-      <label style={{ ...font, fontSize: '0.6rem', fontWeight: 400, letterSpacing: '0.12em', color: C.slate, textTransform: 'uppercase' }}>
-        {label}
-      </label>
-      <input
-        type={type}
-        step={step}
-        value={value}
-        onChange={(e) => onChange(e.target.value)}
-        placeholder={placeholder}
-        style={{
-          ...font,
-          background: C.surfaceHi,
-          border: `1px solid ${C.border}`,
-          borderRadius: '0.6rem',
-          padding: '0.5rem 0.75rem',
-          color: C.white,
-          fontSize: '0.9rem',
-          fontWeight: 300,
-          outline: 'none',
-          width: '100%',
-        }}
-      />
-    </div>
-  );
-}
+
 
 function Pill({ label, color }: { label: string; color: string }) {
   return (
@@ -135,67 +107,74 @@ const TX_TYPE_COLORS: Record<string, string> = {
   REDEEM:    C.error,
 };
 
-// ─── Section: Price Floor ─────────────────────────────────────────────────────
+// ─── Section: GCA Applications ───────────────────────────────────────────────
 
-function PriceFloorSection({ token, onRefresh }: { token: string; onRefresh: () => void }) {
-  const [floor, setFloor] = useState<GcaPriceFloor | null>(null);
-  const [newPrice, setNewPrice] = useState('');
-  const [state, setState] = useState<'idle' | 'loading' | 'success' | 'error'>('idle');
-  const [msg, setMsg] = useState('');
+function GcaApplicationsSection({ token, onApproved }: { token: string; onApproved: () => void }) {
+  const [apps, setApps] = useState<GcaApplicationAdmin[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [actioning, setActioning] = useState<string | null>(null);
+  const [error, setError] = useState('');
 
-  useEffect(() => {
-    getGcaPriceFloor(token).then((r) => setFloor(r.data)).catch(() => {});
+  const load = useCallback(async () => {
+    try {
+      const r = await getGcaApplicationsAdmin(token);
+      setApps(r.data);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Error al cargar aplicaciones.');
+    } finally {
+      setLoading(false);
+    }
   }, [token]);
 
-  async function handleSet(e: React.FormEvent) {
-    e.preventDefault();
-    setState('loading');
-    setMsg('');
+  useEffect(() => { load(); }, [load]);
+
+  async function handle(id: string, action: 'approve' | 'reject') {
+    setActioning(id);
     try {
-      await setGcaPriceFloor({ price_hnl: parseFloat(newPrice) }, token);
-      const r = await getGcaPriceFloor(token);
-      setFloor(r.data);
-      setNewPrice('');
-      setState('success');
-      setMsg('Precio piso actualizado.');
-      onRefresh();
+      if (action === 'approve') await approveGcaApplication(id, token);
+      else await rejectGcaApplication(id, token);
+      await load();
+      if (action === 'approve') onApproved();
     } catch (err) {
-      setState('error');
-      setMsg(err instanceof Error ? err.message : 'Error al actualizar.');
+      setError(err instanceof Error ? err.message : 'Error.');
+    } finally {
+      setActioning(null);
     }
   }
 
   return (
-    <Card title="Precio Piso GCA">
-      <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
-        {floor && (
-          <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
-            <span style={{ ...font, fontSize: '0.8rem', color: C.slate }}>Activo:</span>
-            <span style={{ ...font, fontSize: '1.4rem', fontWeight: 200, color: C.gold }}>
-              L. {parseFloat(floor.price_hnl).toFixed(4)}
-            </span>
-            <span style={{ ...font, fontSize: '0.75rem', color: C.slate }}>/ GCA</span>
-          </div>
-        )}
-        <form onSubmit={handleSet} style={{ display: 'flex', gap: '0.75rem', alignItems: 'flex-end', maxWidth: 320 }}>
-          <div style={{ flex: 1 }}>
-            <Input
-              label="Nuevo precio (HNL / GCA)"
-              type="number"
-              step="0.0001"
-              value={newPrice}
-              onChange={setNewPrice}
-              placeholder="ej. 1.5000"
-            />
-          </div>
-          <Btn variant="gold" disabled={state === 'loading' || !newPrice}>
-            {state === 'loading' ? 'Guardando…' : 'Establecer'}
-          </Btn>
-        </form>
-        {msg && (
-          <p style={{ ...font, fontSize: '0.8rem', color: state === 'success' ? C.success : C.error }}>{msg}</p>
-        )}
-      </div>
+    <Card title={`Aplicaciones GCA — ${apps.length} pendientes`}>
+      {loading ? (
+        <p style={{ ...font, fontSize: '0.85rem', color: C.slate }}>Cargando…</p>
+      ) : error ? (
+        <p style={{ ...font, fontSize: '0.85rem', color: C.error }}>{error}</p>
+      ) : apps.length === 0 ? (
+        <p style={{ ...font, fontSize: '0.85rem', color: C.slate }}>Sin aplicaciones pendientes.</p>
+      ) : (
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
+          {apps.map((app) => (
+            <div
+              key={app.id}
+              style={{ background: C.surfaceHi, border: `1px solid ${C.border}`, borderRadius: '0.75rem', padding: '0.875rem 1rem', display: 'flex', alignItems: 'center', gap: '1rem', flexWrap: 'wrap' }}
+            >
+              <div style={{ flex: '1 1 140px' }}>
+                <p style={{ ...font, fontSize: '0.88rem', fontWeight: 600, color: C.white }}>{app.merchant.name}</p>
+                <p style={{ ...font, fontSize: '0.68rem', color: C.slate, marginTop: '0.1rem' }}>
+                  {app.merchant.category} · {new Date(app.created_at).toLocaleDateString('es-HN', { day: 'numeric', month: 'short', year: 'numeric' })}
+                </p>
+              </div>
+              <div style={{ display: 'flex', gap: '0.5rem', flexShrink: 0 }}>
+                <Btn variant="gold" onClick={() => handle(app.id, 'approve')} disabled={actioning === app.id}>
+                  Aprobar
+                </Btn>
+                <Btn variant="danger" onClick={() => handle(app.id, 'reject')} disabled={actioning === app.id}>
+                  Rechazar
+                </Btn>
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
     </Card>
   );
 }
@@ -209,12 +188,32 @@ function MerchantRow({ alloc, token, onVested }: {
   const [history, setHistory] = useState<GcaHistoryEntry[] | null>(null);
   const [vestState, setVestState] = useState<'idle' | 'loading' | 'done' | 'error'>('idle');
   const [vestMsg, setVestMsg] = useState('');
+  const [giftState, setGiftState] = useState<'idle' | 'loading' | 'done' | 'error'>('idle');
+  const [giftMsg, setGiftMsg] = useState('');
+  const [giftAmount, setGiftAmount] = useState('1200');
 
   async function loadHistory() {
     if (history) { setExpanded((v) => !v); return; }
     const r = await getGcaHistory(alloc.merchant_id);
     setHistory(r.data);
     setExpanded(true);
+  }
+
+  async function handleGift() {
+    const amount = parseFloat(giftAmount);
+    if (isNaN(amount) || amount <= 0) { setGiftMsg('Cantidad inválida.'); return; }
+    setGiftState('loading');
+    setGiftMsg('');
+    try {
+      const r = await adminGiftMerchant(alloc.merchant_id, token, amount);
+      setGiftMsg(`✓ ${amount.toFixed(0)} GCA regalados · tx: ${r.data.tx_hash?.slice(0, 10) ?? '—'}…`);
+      setGiftState('done');
+      setHistory(null);
+      onVested();
+    } catch (err) {
+      setGiftState('error');
+      setGiftMsg(err instanceof Error ? err.message : 'Error al entregar regalo.');
+    }
   }
 
   async function handleVest() {
@@ -280,6 +279,24 @@ function MerchantRow({ alloc, token, onVested }: {
           </p>
         </div>
       </div>
+
+      {/* Gift row */}
+      {!alloc.gift_claimed && (
+        <div style={{ borderTop: `1px solid ${C.border}`, padding: '0.6rem 1rem', display: 'flex', alignItems: 'center', gap: '0.6rem', flexWrap: 'wrap' }}>
+          <span style={{ ...font, fontSize: '0.68rem', color: C.slate }}>Regalo bienvenida:</span>
+          <input
+            type="number"
+            value={giftAmount}
+            onChange={(e) => setGiftAmount(e.target.value)}
+            style={{ ...font, width: 80, background: C.surface, border: `1px solid ${C.border}`, borderRadius: '0.4rem', padding: '0.25rem 0.5rem', color: C.white, fontSize: '0.8rem' }}
+          />
+          <span style={{ ...font, fontSize: '0.68rem', color: C.slate }}>GCA</span>
+          <Btn variant="gold" onClick={handleGift} disabled={giftState === 'loading'}>
+            {giftState === 'loading' ? 'Enviando…' : 'Gift'}
+          </Btn>
+          {giftMsg && <span style={{ ...font, fontSize: '0.72rem', color: giftState === 'done' ? C.success : C.error }}>{giftMsg}</span>}
+        </div>
+      )}
 
       {/* Vest feedback */}
       {vestMsg && (
@@ -449,7 +466,7 @@ export default function GcaAdminPanel({ token }: { token: string }) {
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem' }}>
-      <PriceFloorSection token={token} onRefresh={() => setRefreshKey((k) => k + 1)} />
+      <GcaApplicationsSection token={token} onApproved={() => setRefreshKey((k) => k + 1)} />
       <MerchantsSection  token={token} refreshKey={refreshKey} />
       <RedemptionsSection token={token} />
     </div>

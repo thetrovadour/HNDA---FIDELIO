@@ -54,8 +54,8 @@ export const esHN = {
 
   // Client — brand
   'client.brand_subtitle':  'Honduras Nativa Digital Answers',
-  'client.balance_label':   'Saldo disponible · 1 pt = 1 HNL',
-  'client.pts':             'pts',
+  'client.balance_label':   'Saldo disponible',
+  'client.pts':             'CATR',
 
   // Client — login
   'client.label_full_name':     'Nombre completo',
@@ -148,7 +148,7 @@ export const esHN = {
   'merchant.client_link':     'Cliente —',
 
   // Merchant — top bar
-  'merchant.balance_label':   'Balance disponible · 1 pt = 1 HNL',
+  'merchant.balance_label':   'Balance disponible',
 
   // Merchant — negocio tab
   'merchant.section_wallet':  'Wallet',
@@ -265,8 +265,8 @@ export const enUS: Record<keyof typeof esHN, string> = {
 
   // Client — brand
   'client.brand_subtitle':  'Honduras Nativa Digital Answers',
-  'client.balance_label':   'Available balance · 1 pt = 1 HNL',
-  'client.pts':             'pts',
+  'client.balance_label':   'Available balance',
+  'client.pts':             'CATR',
 
   // Client — login
   'client.label_full_name':     'Full name',
@@ -359,7 +359,7 @@ export const enUS: Record<keyof typeof esHN, string> = {
   'merchant.client_link':     'Client —',
 
   // Merchant — top bar
-  'merchant.balance_label':   'Available balance · 1 pt = 1 HNL',
+  'merchant.balance_label':   'Available balance',
 
   // Merchant — negocio tab
   'merchant.section_wallet':  'Wallet',

@@ -31,6 +31,8 @@ export class TransactionService {
     if (wallet.catr_balance.lessThan(amount)) throw new Error('Insufficient CATR balance');
 
     const commission = amount.mul('0.036');
+    // 3.6% × 65% treasury × 15% GCA reserve slice = 0.351% of amount
+    const gcaReserveDeposit = commission.mul('0.65').mul('0.15');
 
     const transaction = await this.db.$transaction(async (tx: TxClient) => {
       const txRecord = await tx.transaction.create({
@@ -54,6 +56,12 @@ export class TransactionService {
       await tx.wallet.update({
         where: { user_id: params.user_id },
         data: { catr_balance: { decrement: amount } },
+      });
+
+      await tx.gcaReserve.upsert({
+        where:  { id: 'gca-reserve-singleton' },
+        update: { balance_hnl: { increment: gcaReserveDeposit } },
+        create: { id: 'gca-reserve-singleton', balance_hnl: gcaReserveDeposit },
       });
 
       return txRecord;
