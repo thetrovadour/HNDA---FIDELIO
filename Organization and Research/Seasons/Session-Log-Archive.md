@@ -1449,3 +1449,27 @@ dotenv 17 dropped the `import * as dotenv` namespace default — named imports a
 - Email notification on gift/vesting/redemption events
 - Admin UI panel for GCA management
 - Reconciliation currently runs at 08:00 UTC daily — consider adding alerting for FAILED rows
+
+---
+
+### Session — 2026-05-13 (Part 2)
+**Focus:** Transaction history — sender name, date and time display
+
+#### What happened
+
+**Merchant Movimientos — sender name + time — COMPLETE**
+- Backend (`merchants.ts`): joined SPEND transactions with `User` via `include: { user: { select: { full_name: true } } }`; mapped result to `sender_name` field; MINT entries get `sender_name: null`
+- `api.ts`: added `sender_name: string | null` to `MerchantTransaction` interface
+- `merchant/page.tsx`: renders `sender_name` below the transaction type label (conditionally, only when present); date now shows day · month · year · HH:MM
+
+**Client Actividad — time — COMPLETE**
+- `client/page.tsx`: date now shows day · month · year · HH:MM (was day · month only)
+
+**Bridge tsconfig fix**
+- `moduleResolution: node10` became a hard error in TypeScript 6.x; fixed by adding `"ignoreDeprecations": "6.0"` to `packages/merlink/bridge/tsconfig.json` — was blocking the full monorepo build
+
+**Build result:** 4/4 packages passing
+
+#### Key decisions
+- Sender name is shown only for SPEND transactions (client → merchant). MINT entries (admin acreditations) show no sender — there is no individual person to attribute.
+- Time format is `toLocaleTimeString('es-HN', { hour: '2-digit', minute: '2-digit' })` — consistent with the Honduran locale already used throughout the app.
