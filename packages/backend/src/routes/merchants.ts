@@ -101,6 +101,7 @@ export function merchantsRouter(redemptionService: RedemptionService): Router {
         where: { merchant_id: req.params.id as string, status: 'CONFIRMED' },
         orderBy: { created_at: 'desc' },
         take: 100,
+        include: { user: { select: { full_name: true } } },
       }),
       merchant.wallet_address
         ? db.pendingMint.findMany({
@@ -114,6 +115,7 @@ export function merchantsRouter(redemptionService: RedemptionService): Router {
     const mintEntries = mints.map((m) => ({
       id: m.id,
       user_id: null,
+      sender_name: null,
       amount_catr: m.amount_lempiras.toString(),
       type: 'MINT',
       status: 'CONFIRMED',
@@ -121,7 +123,12 @@ export function merchantsRouter(redemptionService: RedemptionService): Router {
       created_at: m.resolved_at ?? m.created_at,
     }));
 
-    const all = [...transactions, ...mintEntries].sort(
+    const txEntries = transactions.map(({ user, ...tx }) => ({
+      ...tx,
+      sender_name: user?.full_name ?? null,
+    }));
+
+    const all = [...txEntries, ...mintEntries].sort(
       (a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
     ).slice(0, 100);
 

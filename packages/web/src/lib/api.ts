@@ -437,6 +437,7 @@ export interface MerchantBalance {
 export interface MerchantTransaction {
   id: string;
   user_id: string | null;
+  sender_name: string | null;
   amount_catr: string;
   type: string;
   status: string;

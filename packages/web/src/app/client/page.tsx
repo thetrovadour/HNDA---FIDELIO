@@ -562,7 +562,9 @@ function ActividadTab({ transactions, milestones }: { transactions: Transaction[
                         {isMint ? t('client.tx_earned') : t('client.tx_sent')}
                       </p>
                       <p className="text-xs" style={{ color: C.slate }}>
-                        {new Date(tx.created_at).toLocaleDateString('es-HN', { day: 'numeric', month: 'short' })}
+                        {new Date(tx.created_at).toLocaleDateString('es-HN', { day: 'numeric', month: 'short', year: 'numeric' })}
+                        {' · '}
+                        {new Date(tx.created_at).toLocaleTimeString('es-HN', { hour: '2-digit', minute: '2-digit' })}
                       </p>
                     </div>
                   </div>

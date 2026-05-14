@@ -915,8 +915,15 @@ function MovimientosTab({ merchant }: { merchant: Merchant }) {
                         ? tx.source === 'ADMIN' ? t('merchant.tx_admin') : `Acreditación (${tx.source ?? 'sistema'})`
                         : 'Puntos recibidos'}
                     </p>
+                    {tx.sender_name && (
+                      <p className="text-xs" style={{ color: C.slateHi }}>
+                        {tx.sender_name}
+                      </p>
+                    )}
                     <p className="text-xs" style={{ color: C.slate }}>
                       {new Date(tx.created_at).toLocaleDateString('es-HN', { day: 'numeric', month: 'short', year: 'numeric' })}
+                      {' · '}
+                      {new Date(tx.created_at).toLocaleTimeString('es-HN', { hour: '2-digit', minute: '2-digit' })}
                     </p>
                   </div>
                 </div>
