@@ -176,7 +176,7 @@ import { IconStore, IconSwap, IconGem, IconList, IconCopy, IconSettings } from '
 // ─── Login screen ─────────────────────────────────────────────────────────────
 
 function LoginScreen({ onLogin, inactivity }: { onLogin: (merchant: Merchant) => void; inactivity?: boolean }) {
-  const [fullName, setFullName] = useState('');
+  const [username, setUsername] = useState('');
   const [credential, setCredential] = useState('');
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
@@ -190,11 +190,11 @@ function LoginScreen({ onLogin, inactivity }: { onLogin: (merchant: Merchant) =>
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
-    if (!fullName.trim() || !credential.trim()) return;
+    if (!username.trim() || !credential.trim()) return;
     setLoading(true);
     setError('');
     try {
-      const res = await merchantLogin({ full_name: fullName.trim(), credential: credential.trim() });
+      const res = await merchantLogin({ username: username.trim(), credential: credential.trim() });
       onLogin(res.data.merchant);
     } catch {
       setError(t('merchant.error_not_found'));
@@ -297,13 +297,13 @@ function LoginScreen({ onLogin, inactivity }: { onLogin: (merchant: Merchant) =>
       {header}
       <div className="shimmer-border rounded-2xl p-px w-full max-w-sm">
         <form onSubmit={handleSubmit} className="rounded-2xl px-6 py-7 flex flex-col gap-5" style={{ background: C.surface }}>
-          <Input label="Nombre completo" value={fullName} onChange={(e) => setFullName(e.target.value)} placeholder="Tu nombre completo" autoComplete="name" />
+          <Input label="Usuario" value={username} onChange={(e) => setUsername(e.target.value)} placeholder="tu_usuario" autoComplete="username" />
           <Input label="PIN o contraseña" type="password" value={credential} onChange={(e) => setCredential(e.target.value)} placeholder="PIN o contraseña" autoComplete="current-password" />
 
           {inactivity && <StatusMsg type="error" msg="Sesión cerrada por inactividad." />}
           {error && <StatusMsg type={error.includes('actualizada') ? 'success' : 'error'} msg={error} />}
 
-          <PrimaryBtn type="submit" disabled={loading || !fullName.trim() || !credential.trim()}>
+          <PrimaryBtn type="submit" disabled={loading || !username.trim() || !credential.trim()}>
             {loading ? t('common.verifying') : t('common.access')}
           </PrimaryBtn>
 

@@ -94,6 +94,10 @@ export function redemptionsRouter(redemptionService: RedemptionService): Router 
       if (!bridgeRes.ok) {
         const errText = await bridgeRes.text();
         console.error('[redemptions/force-burn] Bridge error:', errText);
+        await db.redemptionRequest.update({
+          where: { id: request.id },
+          data: { status: 'PENDING_BURN' },
+        });
         res.status(502).json({ error: `Bridge error: ${errText}`, code: 'BRIDGE_ERROR' });
         return;
       }
@@ -102,6 +106,27 @@ export function redemptionsRouter(redemptionService: RedemptionService): Router 
       res.status(200).json({ data: { redemption_id: request.id, tx_hash: bridgeData.tx_hash } });
     } catch (err: any) {
       res.status(400).json({ error: err.message, code: 'BAD_REQUEST' });
+    }
+  });
+
+  router.patch('/:id/reset', adminAuth, async (req: Request, res: Response) => {
+    try {
+      const request = await db.redemptionRequest.findUnique({ where: { id: req.params.id as string } });
+      if (!request) {
+        res.status(404).json({ error: 'Redemption not found', code: 'NOT_FOUND' });
+        return;
+      }
+      if (request.status !== 'BURN_SUBMITTED') {
+        res.status(400).json({ error: `Cannot reset a redemption in status ${request.status}`, code: 'INVALID_STATUS' });
+        return;
+      }
+      const updated = await db.redemptionRequest.update({
+        where: { id: req.params.id as string },
+        data: { status: 'PENDING_BURN' },
+      });
+      res.status(200).json({ data: updated });
+    } catch (err: any) {
+      res.status(500).json({ error: err.message, code: 'INTERNAL_ERROR' });
     }
   });
 

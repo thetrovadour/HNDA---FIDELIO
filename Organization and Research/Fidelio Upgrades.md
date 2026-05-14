@@ -14,6 +14,9 @@ These are the following upgrades to be considered for FIDELIO. They create a bet
 - Dual-role UI — a merchant who is also registered as a client can switch between both views from a single session. Two main tabs at the top: "Cliente" and "Comercio". Each tab loads its respective dashboard. No need to log in twice.
 - Merchant auto-activation — when a merchant registers, define a checklist of requirements that must be met before the account activates (e.g. wallet assigned, contact email verified, category set). Once all requirements pass, the merchant activates automatically without admin intervention.
 - Merchant deactivation rules — define conditions that trigger automatic deactivation (e.g. inactivity threshold, failed redemptions, compliance flag). Admin can also manually deactivate with a required reason. Deactivated merchants see a clear status message explaining why and what to do next.
+- In Moviemientos for CLients and Merchants, add the name of the client or merchant who sent the points, date and time.
+- In GCA for admin tab, show the transactions of GCA, who requested, date and time. Same for minting and same for redemptions. In general, add a date, time and identification for redemption and minting for GCA and CATR, even in GCA vesting.
+- 
 
 ---
 

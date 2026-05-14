@@ -71,4 +71,19 @@ export class Minter {
       return { success: false, reason };
     }
   }
+
+  async transfer(fromWallet: string, toWallet: string, amountCATR: string): Promise<MintOutcome> {
+    try {
+      const amount = ethers.parseUnits(amountCATR, 18);
+      const burnTx = await (this.contract as any).burn(fromWallet, amount, { gasLimit: 100_000 });
+      await burnTx.wait();
+      const mintTx = await (this.contract as any).mint(toWallet, amount, { gasLimit: 100_000 });
+      const receipt = await mintTx.wait() as { hash?: string } | null;
+      const tx_hash = (mintTx as unknown as { hash: string }).hash ?? receipt?.hash ?? '';
+      return { success: true, tx_hash };
+    } catch (err) {
+      const reason = err instanceof Error ? err.message : String(err);
+      return { success: false, reason };
+    }
+  }
 }

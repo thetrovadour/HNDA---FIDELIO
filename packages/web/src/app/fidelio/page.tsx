@@ -31,11 +31,11 @@ function useLoginPanel() {
     setLoading(true); setError('')
     try {
       if (panel === 'client') {
-        const res = await pilotLogin({ full_name: name.trim(), credential: cred })
+        const res = await pilotLogin({ username: name.trim(), credential: cred })
         localStorage.setItem('fidelio_session', JSON.stringify(res.data))
         router.push('/client')
       } else {
-        const res = await merchantLogin({ full_name: name.trim(), credential: cred })
+        const res = await merchantLogin({ username: name.trim(), credential: cred })
         localStorage.setItem('fidelio_merchant_session', JSON.stringify(res.data))
         router.push('/merchant')
       }
@@ -66,12 +66,15 @@ function LoginForm({ panel, name, setName, cred, setCred, loading, error, handle
 }) {
   return (
     <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
-      <input style={loginInput} placeholder="Nombre completo" value={name} onChange={e => setName(e.target.value)} required />
+      <input style={loginInput} placeholder="Usuario" value={name} onChange={e => setName(e.target.value)} required autoComplete="username" />
       <input style={loginInput} type="password" placeholder={panel === 'client' ? 'Contraseña o PIN' : 'Contraseña'} value={cred} onChange={e => setCred(e.target.value)} required />
       {error && <p style={{ fontSize: '0.68rem', color: '#EF4444', margin: 0 }}>{error}</p>}
       <button type="submit" disabled={loading} style={{ width: '100%', padding: '0.5rem', background: 'rgba(201,168,76,0.1)', border: '1px solid rgba(201,168,76,0.35)', borderRadius: '0.4rem', color: '#C9A84C', fontSize: '0.75rem', fontWeight: 500, cursor: 'pointer', fontFamily: 'var(--font-body)' }}>
         {loading ? 'Entrando...' : 'Entrar'}
       </button>
+      <p style={{ fontSize: '0.68rem', color: '#64748B', textAlign: 'center' as const, margin: 0 }}>
+        <Link href="/forgot-password" style={{ color: '#64748B', textDecoration: 'none' }}>¿Olvidaste tu contraseña?</Link>
+      </p>
       <p style={{ fontSize: '0.68rem', color: '#64748B', textAlign: 'center' as const, margin: 0 }}>
         {panel === 'client' ? (
           <>¿No tienes cuenta?{' '}<Link href="/register" style={{ color: '#C9A84C', textDecoration: 'none' }}>Regístrate</Link></>

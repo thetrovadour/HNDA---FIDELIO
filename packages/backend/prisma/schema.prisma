@@ -8,6 +8,7 @@ datasource db {
 
 model User {
   id              String            @id @default(uuid())
+  username        String            @unique
   full_name       String
   email           String            @unique
   phone           String?
@@ -89,6 +90,7 @@ model Transaction {
   confirmed_at       DateTime?
   cashback_processed Boolean           @default(false)
   pending_mint       PendingMint?
+  pending_transfer   PendingTransfer?
   merchant           Merchant?         @relation(fields: [merchant_id], references: [id])
   user               User              @relation(fields: [user_id], references: [id])
 
@@ -119,6 +121,25 @@ model PendingMint {
   @@index([status])
   @@index([created_at])
   @@index([reference_code])
+}
+
+model PendingTransfer {
+  id              String         @id @default(uuid())
+  transaction_id  String         @unique
+  from_wallet     String
+  to_wallet       String
+  amount_catr     Decimal        @db.Decimal(36, 18)
+  status          TransferStatus @default(PENDING)
+  tx_hash         String?
+  attempts        Int            @default(0)
+  last_attempt_at DateTime?
+  resolved_at     DateTime?
+  created_at      DateTime       @default(now())
+  updated_at      DateTime       @updatedAt
+  transaction     Transaction    @relation(fields: [transaction_id], references: [id])
+
+  @@index([status])
+  @@index([created_at])
 }
 
 model ProcessedReference {
@@ -297,6 +318,12 @@ enum TransactionStatus {
   FAILED
 }
 
+enum TransferStatus {
+  PENDING
+  CONFIRMED
+  FAILED
+}
+
 enum PendingMintStatus {
   PENDING
   SENT
@@ -390,6 +417,7 @@ model MerchantApplication {
   contact_name   String
   contact_email  String
   contact_phone  String
+  username       String?
   notes          String?
   status         ApplicationStatus @default(PENDING)
   reviewed_by    String?

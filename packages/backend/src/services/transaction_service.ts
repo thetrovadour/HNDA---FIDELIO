@@ -3,6 +3,9 @@ import { Decimal } from '@prisma/client/runtime/client';
 
 type TxClient = Omit<PrismaClient, '$connect' | '$disconnect' | '$on' | '$transaction' | '$use' | '$extends'>;
 
+const BRIDGE_HTTP_URL = process.env.BRIDGE_HTTP_URL ?? 'http://localhost:3002';
+const BRIDGE_SECRET = process.env.BRIDGE_SECRET ?? 'change_me_in_production';
+
 export class TransactionService {
   constructor(
     private db: PrismaClient,
@@ -60,6 +63,47 @@ export class TransactionService {
       this.rewardService?.evaluateAfterSpend(params.user_id),
       this.gcaEvaluate?.(this.db, params.merchant_id),
     ]);
+
+    if (wallet.address && merchant.wallet_address) {
+      const pending = await this.db.pendingTransfer.create({
+        data: {
+          transaction_id: transaction.id,
+          from_wallet: wallet.address,
+          to_wallet: merchant.wallet_address,
+          amount_catr: amount,
+        },
+      });
+
+      fetch(`${BRIDGE_HTTP_URL}/transfer`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'x-bridge-secret': BRIDGE_SECRET },
+        body: JSON.stringify({
+          from_wallet: wallet.address,
+          to_wallet: merchant.wallet_address,
+          amount_catr: amount.toString(),
+        }),
+      }).then(async (res) => {
+        const data = await res.json().catch(() => ({}));
+        if (res.ok && data.tx_hash) {
+          await this.db.pendingTransfer.update({
+            where: { id: pending.id },
+            data: { status: 'CONFIRMED', tx_hash: data.tx_hash, resolved_at: new Date(), attempts: 1 },
+          });
+        } else {
+          await this.db.pendingTransfer.update({
+            where: { id: pending.id },
+            data: { attempts: 1, last_attempt_at: new Date() },
+          });
+          console.error('[spend/transfer] Bridge error:', data);
+        }
+      }).catch(async (err) => {
+        await this.db.pendingTransfer.update({
+          where: { id: pending.id },
+          data: { attempts: 1, last_attempt_at: new Date() },
+        });
+        console.error('[spend/transfer] Bridge unreachable:', err);
+      });
+    }
 
     return transaction;
   }

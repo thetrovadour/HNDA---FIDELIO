@@ -3,7 +3,7 @@ import { PrismaClient, User, Wallet } from '@prisma/client';
 export class UserService {
   constructor(private db: PrismaClient) {}
 
-  async createUser(data: { full_name: string; email: string; phone?: string }): Promise<User> {
+  async createUser(data: { username: string; full_name: string; email: string; phone?: string }): Promise<User> {
     return this.db.user.create({ data });
   }
 

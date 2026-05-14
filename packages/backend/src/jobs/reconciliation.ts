@@ -6,6 +6,9 @@ export interface ReconciliationResult {
   retried: number;
   failed: number;
   already_minted: number;
+  transfers_checked: number;
+  transfers_retried: number;
+  transfers_failed: number;
 }
 
 export class ReconciliationJob {
@@ -33,6 +36,9 @@ export class ReconciliationJob {
       retried: 0,
       failed: 0,
       already_minted: 0,
+      transfers_checked: 0,
+      transfers_retried: 0,
+      transfers_failed: 0,
     };
 
     for (const row of staleRows) {
@@ -76,6 +82,60 @@ export class ReconciliationJob {
         data: { attempts: newAttempts, last_attempt_at: new Date() },
       });
       result.retried++;
+    }
+
+    // ── PendingTransfer retry loop ─────────────────────────────────────────────
+    const staleTransfers = await this.db.pendingTransfer.findMany({
+      where: {
+        status: 'PENDING',
+        updated_at: { lt: cutoff },
+        attempts: { lt: this.maxAttempts },
+      },
+    });
+
+    result.transfers_checked = staleTransfers.length;
+
+    for (const pt of staleTransfers) {
+      const newAttempts = pt.attempts + 1;
+
+      if (newAttempts >= this.maxAttempts) {
+        await this.db.pendingTransfer.update({
+          where: { id: pt.id },
+          data: { status: 'FAILED', attempts: newAttempts, last_attempt_at: new Date() },
+        });
+        result.transfers_failed++;
+        continue;
+      }
+
+      try {
+        const res = await fetch(`${this.bridgeUrl}/transfer`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            from_wallet: pt.from_wallet,
+            to_wallet: pt.to_wallet,
+            amount_catr: pt.amount_catr.toString(),
+          }),
+        });
+        const data = await res.json().catch(() => ({}));
+        if (res.ok && data.tx_hash) {
+          await this.db.pendingTransfer.update({
+            where: { id: pt.id },
+            data: { status: 'CONFIRMED', tx_hash: data.tx_hash, resolved_at: new Date(), attempts: newAttempts },
+          });
+        } else {
+          await this.db.pendingTransfer.update({
+            where: { id: pt.id },
+            data: { attempts: newAttempts, last_attempt_at: new Date() },
+          });
+        }
+      } catch {
+        await this.db.pendingTransfer.update({
+          where: { id: pt.id },
+          data: { attempts: newAttempts, last_attempt_at: new Date() },
+        });
+      }
+      result.transfers_retried++;
     }
 
     return result;

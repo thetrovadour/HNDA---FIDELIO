@@ -34,6 +34,14 @@ export function merchantsRouter(redemptionService: RedemptionService): Router {
 
   // ── Public merchant-facing routes (no auth) ──────────────────────────────────
 
+  router.get('/active', async (_req: Request, res: Response) => {
+    const merchants = await db.merchant.findMany({
+      where: { merchant_status: 'ACTIVE' },
+      select: { id: true, name: true, category: true, merchant_status: true },
+    });
+    res.status(200).json({ data: merchants });
+  });
+
   router.get('/:id/public', async (req: Request, res: Response) => {
     const merchant = await db.merchant.findUnique({ where: { id: req.params.id as string } });
     if (!merchant) {

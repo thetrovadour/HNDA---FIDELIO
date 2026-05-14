@@ -7,6 +7,7 @@ import { useInactivityLogout } from '@/hooks/useInactivityLogout';
 import {
   pilotLogin,
   spendCATR,
+  getActiveMerchants,
   getUser,
   getUserTransactions,
   updateUser,
@@ -176,7 +177,7 @@ function LoginScreen({ onLogin, inactivity }: LoginProps) {
     setLoading(true);
     setError('');
     try {
-      const res = await pilotLogin({ full_name: name.trim(), credential });
+      const res = await pilotLogin({ username: name.trim(), credential });
       onLogin(res.data);
     } catch (err) {
       const msg = err instanceof Error ? err.message : String(err);
@@ -240,7 +241,7 @@ function LoginScreen({ onLogin, inactivity }: LoginProps) {
         {/* ── Login ── */}
         {screen === 'login' && (
           <form onSubmit={handleLogin} className="rounded-2xl px-6 py-7 flex flex-col gap-5" style={{ background: C.surface }}>
-            <Input label={t('client.label_full_name')} value={name} onChange={(e) => setName(e.target.value)} placeholder="María García" autoComplete="name" />
+            <Input label="Usuario" value={name} onChange={(e) => setName(e.target.value)} placeholder="maria_garcia" autoComplete="username" />
             <Input label={t('client.label_credential')} type="password" value={credential} onChange={(e) => setCredential(e.target.value)} placeholder="••••" autoComplete="current-password" />
             {inactivity && <StatusMsg type="error" msg={t('common.inactivity')} />}
             {error && <StatusMsg type="error" msg={error} />}
@@ -783,12 +784,16 @@ function AjustesTab({ user, onUpdate }: { user: UserRecord; onUpdate: (u: UserRe
 
 // ─── Tab: Red ─────────────────────────────────────────────────────────────────
 
-function RedTab({ merchants, user, onSpend }: { merchants: Merchant[]; user: UserRecord; onSpend: () => void }) {
-  const active = merchants.filter((m) => m.merchant_status === 'ACTIVE');
+function RedTab({ user, onSpend }: { user: UserRecord; onSpend: () => void }) {
+  const [active, setActive] = useState<Merchant[]>([]);
   const [selected, setSelected] = useState<Merchant | null>(null);
   const [amount, setAmount] = useState('');
   const [state, setState] = useState<'idle' | 'loading' | 'success' | 'error'>('idle');
   const [msg, setMsg] = useState('');
+
+  useEffect(() => {
+    getActiveMerchants().then((res) => setActive(res.data)).catch(() => {});
+  }, []);
 
   async function handleSpend(e: React.FormEvent) {
     e.preventDefault();
@@ -929,7 +934,6 @@ export default function ClientPage() {
   const [user, setUser] = useState<UserRecord | null>(null);
   const [transactions, setTransactions] = useState<Transaction[]>([]);
   const [milestones, setMilestones] = useState<Milestone[]>([]);
-  const [merchants, setMerchants] = useState<Merchant[]>([]);
   const [activeTab, setActiveTab] = useState<Tab>('cuenta');
   const [inactivity, setInactivity] = useState(false);
 
@@ -942,7 +946,6 @@ export default function ClientPage() {
       setUser(session.user);
       setTransactions(session.transactions ?? []);
       setMilestones(session.milestones ?? []);
-      setMerchants(session.merchants ?? []);
       setIntroComplete(true);
     } catch {
       localStorage.removeItem(SESSION_KEY);
@@ -953,7 +956,6 @@ export default function ClientPage() {
     setUser(data.user);
     setTransactions(data.transactions);
     setMilestones(data.milestones);
-    setMerchants(data.merchants);
     localStorage.setItem(SESSION_KEY, JSON.stringify(data));
   }
 
@@ -990,7 +992,6 @@ export default function ClientPage() {
     setUser(null);
     setTransactions([]);
     setMilestones([]);
-    setMerchants([]);
     setActiveTab('cuenta');
     setInactivity(reason === 'inactivity');
   }
@@ -1006,7 +1007,7 @@ export default function ClientPage() {
       <main className="px-4 pt-5 pb-28 flex flex-col gap-4">
         {activeTab === 'cuenta'    && <CuentaTab user={user} />}
         {activeTab === 'actividad' && <ActividadTab transactions={transactions} milestones={milestones} />}
-        {activeTab === 'red'       && <RedTab merchants={merchants} user={user} onSpend={refreshUser} />}
+        {activeTab === 'red'       && <RedTab user={user} onSpend={refreshUser} />}
         {activeTab === 'ajustes'   && <AjustesTab user={user} onUpdate={(u) => { setUser(u); const raw = localStorage.getItem(SESSION_KEY); if (raw) { const s = JSON.parse(raw); localStorage.setItem(SESSION_KEY, JSON.stringify({ ...s, user: u })); } }} />}
       </main>
       <TabBar active={activeTab} onChange={setActiveTab} />

@@ -26,7 +26,7 @@ export function authHeaders(token: string): HeadersInit {
 
 // --- Auth ---
 
-export function pilotLogin(body: { full_name: string; credential: string }) {
+export function pilotLogin(body: { username: string; credential: string }) {
   return apiFetch<{
     data: {
       user: UserRecord;
@@ -41,7 +41,7 @@ export function pilotLogin(body: { full_name: string; credential: string }) {
   });
 }
 
-export function merchantLogin(body: { full_name: string; credential: string }) {
+export function merchantLogin(body: { username: string; credential: string }) {
   return apiFetch<{
     data: {
       merchant: Merchant;
@@ -73,7 +73,7 @@ export function resetPassword(body: { email: string; code: string; new_password:
   });
 }
 
-export function register(body: { role: 'client'; full_name: string; email: string; password: string }) {
+export function register(body: { role: 'client'; username: string; full_name: string; email: string; phone: string; password: string }) {
   return apiFetch<{ data: { role: 'client'; user_id: string } }>('/api/auth/register', {
     method: 'POST',
     headers: jsonHeaders(),
@@ -87,6 +87,7 @@ export function applyMerchant(body: {
   contact_name: string;
   contact_email: string;
   contact_phone: string;
+  username: string;
   notes?: string;
 }) {
   return apiFetch<{ data: { id: string } }>('/api/applications/merchant', {
@@ -152,6 +153,10 @@ export function spendCATR(body: { user_id: string; merchant_id: string; amount_c
 
 export function getMerchants(token?: string) {
   return apiFetch<{ data: Merchant[] }>('/api/merchants', token ? { headers: authHeaders(token) } : undefined);
+}
+
+export function getActiveMerchants() {
+  return apiFetch<{ data: Merchant[] }>('/api/merchants/active');
 }
 
 export function getMerchant(id: string) {

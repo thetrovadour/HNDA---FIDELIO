@@ -57,6 +57,7 @@ export default function ApplyPage() {
   const [contactName, setContactName] = useState('');
   const [contactEmail, setContactEmail] = useState('');
   const [contactPhone, setContactPhone] = useState('');
+  const [username, setUsername] = useState('');
   const [notes, setNotes] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
@@ -73,6 +74,7 @@ export default function ApplyPage() {
         contact_name: contactName,
         contact_email: contactEmail,
         contact_phone: contactPhone,
+        username,
         notes: notes || undefined,
       });
       setSuccess(true);
@@ -130,7 +132,12 @@ export default function ApplyPage() {
                   </Field>
 
                   <Field label="Nombre del contacto">
-                    <input style={inputStyle} value={contactName} onChange={(e) => setContactName(e.target.value)} required placeholder="Juan Pérez" />
+                    <input style={inputStyle} value={contactName} onChange={(e) => setContactName(e.target.value)} required placeholder="Juan Pérez" autoComplete="name" />
+                  </Field>
+
+                  <Field label="Usuario">
+                    <input style={inputStyle} value={username} onChange={(e) => setUsername(e.target.value.toLowerCase())} required placeholder="mi_negocio" autoComplete="username" />
+                    <span style={{ ...font, fontSize: '0.62rem', color: '#64748B' }}>Solo letras minúsculas, números y guión bajo. Este será tu usuario para iniciar sesión.</span>
                   </Field>
 
                   <Field label="Correo electrónico">

@@ -51,7 +51,7 @@ export function adminAuth(req: Request, res: Response, next: NextFunction): void
 }
 
 export function userAuth(req: Request, res: Response, next: NextFunction): void {
-  const cookieToken = req.cookies?.fidelio_token as string | undefined;
+  const cookieToken = req.cookies?.fidelio_client_token as string | undefined;
   const authHeader = req.headers.authorization;
   const token = cookieToken ?? (authHeader?.startsWith('Bearer ') ? authHeader.slice(7) : undefined);
   if (!token) {
@@ -77,7 +77,7 @@ export function userAuth(req: Request, res: Response, next: NextFunction): void 
 }
 
 export function selfOrAdmin(req: Request, res: Response, next: NextFunction): void {
-  const cookieToken = req.cookies?.fidelio_token as string | undefined;
+  const cookieToken = req.cookies?.fidelio_client_token as string | undefined;
   const authHeader = req.headers.authorization;
   const token = cookieToken ?? (authHeader?.startsWith('Bearer ') ? authHeader.slice(7) : undefined);
   if (!token) {
@@ -108,7 +108,7 @@ export function selfOrAdmin(req: Request, res: Response, next: NextFunction): vo
 }
 
 export function merchantAuth(req: Request, res: Response, next: NextFunction): void {
-  const cookieToken = req.cookies?.fidelio_token as string | undefined;
+  const cookieToken = req.cookies?.fidelio_merchant_token as string | undefined;
   const authHeader = req.headers.authorization;
   const token = cookieToken ?? (authHeader?.startsWith('Bearer ') ? authHeader.slice(7) : undefined);
   if (!token) {

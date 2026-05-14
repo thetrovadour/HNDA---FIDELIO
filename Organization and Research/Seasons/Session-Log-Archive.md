@@ -1402,3 +1402,50 @@ dotenv 17 dropped the `import * as dotenv` namespace default — named imports a
 - Add `approve-redemption` subcommand to `gca-admin.ts` CLI for terminal-based approval
 - Email notification to merchant on gift/vesting/redemption events
 - Admin UI panel for GCA management (gift approval queue, redemption queue)
+
+---
+
+### Session — 2026-05-14
+**Focus:** End-to-end testing, bug fixes, on-chain transfer flow, PendingTransfer tracking
+
+#### What happened
+
+**Merchant list stale on red tab — FIXED**
+- Root cause: merchant list was fetched at login time and stored in state — never refreshed
+- Fix: new `GET /api/merchants/active` public endpoint (no auth) returning only ACTIVE merchants
+- `RedTab` now fetches live on mount via `getActiveMerchants()` — stale session data no longer used
+- Removed `merchants` state from parent component entirely
+
+**CATR burn revert on redemption — ROOT CAUSE FOUND AND FIXED**
+- Root cause: `burn(from, amount)` on CATRToken calls `_burn(from, amount)` which requires `balanceOf(from) >= amount`. Merchant wallets had 0 CATR on-chain because spend flow was DB-only (no on-chain transfer).
+- Fix: spend flow now triggers an on-chain `burn(clientWallet) + mint(merchantWallet)` via bridge wallet's BURNER+MINTER roles — no client private key needed
+- New `/transfer` endpoint added to bridge `HttpServer`
+- New `transfer(fromWallet, toWallet, amountCATR)` method added to `Minter`
+- `transaction_service.ts` fires bridge transfer after recording spend in DB
+- Manual prefund: minted 175 CATR to Carnes wallet (`0xDeaBe...`) to unblock pre-existing redemption → burn succeeded (`tx 0x25e97f...`)
+
+**PendingTransfer tracking — IMPLEMENTED**
+- New `PendingTransfer` model in schema: tracks every on-chain transfer with `status (PENDING/CONFIRMED/FAILED)`, `tx_hash`, `attempts`, FK to `Transaction`
+- New `TransferStatus` enum
+- Migration: `20260513020000_add_pending_transfer`
+- `transaction_service.ts`: creates `PendingTransfer` row before firing bridge, updates to CONFIRMED (with tx_hash) on success, increments attempts on failure
+- `reconciliation.ts`: added second loop that retries stale PENDING transfers up to 3 times (same pattern as PendingMint), marks FAILED after max attempts
+
+**Cookie/auth issue — DIAGNOSED**
+- Root cause: `NEXT_PUBLIC_BACKEND_URL=http://192.168.0.113:3001` but frontend accessed at `localhost:3000` → different sites → `SameSite=Lax` blocks cookies
+- Fix: access frontend at `http://192.168.0.113:3000` (same site as backend) for both desktop and phone testing
+
+**Full end-to-end test — PASSED**
+- mint → client spends to merchant → on-chain transfer fires → merchant redeems → burn succeeds → LEMPIRAS_SENT
+- Confirmed in DB: multiple merchants (meat, Carnes) completed full cycle
+
+#### Key decisions
+- Burn+mint via bridge roles (not ERC20 transfer) avoids needing client private keys on the bridge
+- DB-first for all on-chain ops: PendingTransfer row created before bridge call — survives crashes
+- `SameSite=Lax` is intentional for prod security; dev workaround is to use same hostname for frontend and backend
+
+#### Pending / next up
+- Wire on-chain mint into GCA vesting milestones (currently DB-only)
+- Email notification on gift/vesting/redemption events
+- Admin UI panel for GCA management
+- Reconciliation currently runs at 08:00 UTC daily — consider adding alerting for FAILED rows

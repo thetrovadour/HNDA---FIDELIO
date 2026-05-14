@@ -8,18 +8,20 @@ import { generateWallet } from '../utils/wallet_crypto';
 
 const RegisterSchema = z.object({
   role: z.literal('client'),
+  username: z.string().min(3).max(30).refine((v) => /^[a-z0-9_]+$/.test(v), 'Solo letras minúsculas, números y guión bajo'),
   full_name: z.string().min(1),
   email: z.string().email(),
+  phone: z.string().min(7).max(20),
   password: z.string().min(6),
 });
 
 const PilotLoginSchema = z.object({
-  full_name: z.string().min(1),
+  username: z.string().min(1),
   credential: z.string().min(1),
 });
 
 const MerchantLoginSchema = z.object({
-  full_name: z.string().min(1),
+  username: z.string().min(1),
   credential: z.string().min(1),
 });
 
@@ -53,10 +55,10 @@ export function authRouter(): Router {
   const router = Router();
 
   router.post('/pilot-login', validate(PilotLoginSchema), async (req: Request, res: Response) => {
-    const { full_name, credential } = req.body as { full_name: string; credential: string };
+    const { username, credential } = req.body as { username: string; credential: string };
 
     const user = await db.user.findFirst({
-      where: { full_name },
+      where: { username },
       include: { wallet: true },
     });
 
@@ -98,7 +100,7 @@ export function authRouter(): Router {
       db.merchant.findMany({ where: { merchant_status: 'ACTIVE' } }),
     ]);
 
-    res.cookie('fidelio_token', token, TOKEN_COOKIE);
+    res.cookie('fidelio_client_token', token, TOKEN_COOKIE);
     res.status(200).json({
       data: {
         user: {
@@ -136,9 +138,9 @@ export function authRouter(): Router {
   });
 
   router.post('/merchant-login', validate(MerchantLoginSchema), async (req: Request, res: Response) => {
-    const { full_name, credential } = req.body as { full_name: string; credential: string };
+    const { username, credential } = req.body as { username: string; credential: string };
 
-    const user = await db.user.findFirst({ where: { full_name } });
+    const user = await db.user.findFirst({ where: { username } });
     if (!user) {
       res.status(401).json({ error: 'No encontramos tu cuenta', code: 'INVALID_CREDENTIALS' });
       return;
@@ -171,7 +173,7 @@ export function authRouter(): Router {
       { algorithm: 'HS256', expiresIn: '7d' }
     );
 
-    res.cookie('fidelio_token', token, TOKEN_COOKIE);
+    res.cookie('fidelio_merchant_token', token, TOKEN_COOKIE);
     res.status(200).json({
       data: {
         merchant: {
@@ -254,16 +256,21 @@ export function authRouter(): Router {
   router.post('/register', validate(RegisterSchema), async (req: Request, res: Response) => {
     const body = req.body as z.infer<typeof RegisterSchema>;
 
-    const existing = await db.user.findFirst({ where: { email: body.email } });
-    if (existing) {
+    const existingEmail = await db.user.findFirst({ where: { email: body.email } });
+    if (existingEmail) {
       res.status(409).json({ error: 'Este correo ya está registrado', code: 'EMAIL_TAKEN' });
+      return;
+    }
+    const existingUsername = await db.user.findFirst({ where: { username: body.username } });
+    if (existingUsername) {
+      res.status(409).json({ error: 'Este usuario ya está en uso', code: 'USERNAME_TAKEN' });
       return;
     }
 
     const password_hash = await bcrypt.hash(body.password, 10);
 
     const user = await db.user.create({
-      data: { full_name: body.full_name, email: body.email, password_hash },
+      data: { username: body.username, full_name: body.full_name, email: body.email, phone: body.phone, password_hash },
     });
     const { address, privateKeyEncrypted } = generateWallet();
     await db.wallet.create({ data: { user_id: user.id, address, private_key_encrypted: privateKeyEncrypted } });
@@ -271,7 +278,8 @@ export function authRouter(): Router {
   });
 
   router.post('/logout', (_req: Request, res: Response) => {
-    res.clearCookie('fidelio_token', { path: '/' });
+    res.clearCookie('fidelio_client_token', { path: '/' });
+    res.clearCookie('fidelio_merchant_token', { path: '/' });
     res.status(200).json({ data: { ok: true } });
   });
 

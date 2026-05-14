@@ -198,6 +198,16 @@ export function adminRouter(mintService: MintService): Router {
     if (!application) { res.status(404).json({ error: 'Application not found' }); return; }
     if (application.status !== 'PENDING') { res.status(409).json({ error: 'Application already reviewed' }); return; }
 
+    if (!application.username) {
+      res.status(400).json({ error: 'Application has no username — ask the applicant to resubmit' });
+      return;
+    }
+    const existingUsername = await db.user.findFirst({ where: { username: application.username } });
+    if (existingUsername) {
+      res.status(409).json({ error: 'Username already taken', code: 'USERNAME_TAKEN' });
+      return;
+    }
+
     const tempPassword = Math.random().toString(36).slice(2, 10) + Math.random().toString(36).slice(2, 6).toUpperCase();
     const bcrypt = await import('bcrypt');
     const password_hash = await bcrypt.hash(tempPassword, 10);
@@ -207,6 +217,7 @@ export function adminRouter(mintService: MintService): Router {
     const [user] = await db.$transaction([
       db.user.create({
         data: {
+          username: application.username,
           full_name: application.contact_name,
           email: application.contact_email,
           phone: application.contact_phone,
@@ -235,6 +246,7 @@ export function adminRouter(mintService: MintService): Router {
     res.status(200).json({
       data: {
         user_id: user.id,
+        username: user.username,
         full_name: user.full_name,
         email: user.email,
         temp_password: tempPassword,

@@ -56,8 +56,10 @@ const inputStyle = {
 
 export default function RegisterPage() {
   const router = useRouter();
+  const [username, setUsername] = useState('');
   const [fullName, setFullName] = useState('');
   const [email, setEmail] = useState('');
+  const [phone, setPhone] = useState('');
   const [password, setPassword] = useState('');
   const [confirm, setConfirm] = useState('');
   const [loading, setLoading] = useState(false);
@@ -79,13 +81,15 @@ export default function RegisterPage() {
 
     setLoading(true);
     try {
-      await register({ role: 'client', full_name: fullName, email, password });
+      await register({ role: 'client', username, full_name: fullName, email, phone, password });
       localStorage.removeItem('fidelio_session');
       setSuccess(true);
       setTimeout(() => router.push('/client'), 2000);
     } catch (err: unknown) {
       const msg = err instanceof Error ? err.message : 'Error al registrar';
-      if (msg.includes('409') || msg.includes('EMAIL_TAKEN')) {
+      if (msg.includes('USERNAME_TAKEN')) {
+        setError('Este usuario ya está en uso.');
+      } else if (msg.includes('409') || msg.includes('EMAIL_TAKEN')) {
         setError('Este correo ya está registrado.');
       } else {
         setError(msg);
@@ -123,12 +127,21 @@ export default function RegisterPage() {
             ) : (
               <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '0.875rem' }}>
 
+                <Field label="Usuario">
+                  <input style={inputStyle} value={username} onChange={(e) => setUsername(e.target.value.toLowerCase())} required placeholder="juan_perez" autoComplete="username" />
+                  <span style={{ ...font, fontSize: '0.62rem', color: '#64748B' }}>Solo letras minúsculas, números y guión bajo. No se puede cambiar después.</span>
+                </Field>
+
                 <Field label="Nombre completo">
-                  <input style={inputStyle} value={fullName} onChange={(e) => setFullName(e.target.value)} required placeholder="Juan Pérez" />
+                  <input style={inputStyle} value={fullName} onChange={(e) => setFullName(e.target.value)} required placeholder="Juan Pérez" autoComplete="name" />
                 </Field>
 
                 <Field label="Correo electrónico">
-                  <input style={inputStyle} type="email" value={email} onChange={(e) => setEmail(e.target.value)} required placeholder="juan@email.com" />
+                  <input style={inputStyle} type="email" value={email} onChange={(e) => setEmail(e.target.value)} required placeholder="juan@email.com" autoComplete="email" />
+                </Field>
+
+                <Field label="Teléfono">
+                  <input style={inputStyle} type="tel" value={phone} onChange={(e) => setPhone(e.target.value)} required placeholder="+504 9999-9999" autoComplete="tel" />
                 </Field>
 
                 <Field label="Contraseña">

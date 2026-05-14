@@ -33,7 +33,7 @@ export class HttpServer {
   }
 
   private handleRequest(req: http.IncomingMessage, res: http.ServerResponse): void {
-    if (req.method !== 'POST' || (req.url !== '/mint' && req.url !== '/burn')) {
+    if (req.method !== 'POST' || (req.url !== '/mint' && req.url !== '/burn' && req.url !== '/transfer')) {
       res.writeHead(404);
       res.end(JSON.stringify({ error: 'Not found' }));
       return;
@@ -41,6 +41,11 @@ export class HttpServer {
 
     if (req.url === '/burn') {
       this.handleBurn(req, res);
+      return;
+    }
+
+    if (req.url === '/transfer') {
+      this.handleTransfer(req, res);
       return;
     }
 
@@ -102,6 +107,37 @@ export class HttpServer {
           console.error(`[bridge:http] Burn failed for ${payload.redemption_id}: ${outcome.reason}`);
           res.writeHead(500, { 'Content-Type': 'application/json' });
           res.end(JSON.stringify({ status: 'NACK', redemption_id: payload.redemption_id, reason: outcome.reason }));
+        }
+      }).catch((err: unknown) => {
+        const reason = err instanceof Error ? err.message : String(err);
+        res.writeHead(500, { 'Content-Type': 'application/json' });
+        res.end(JSON.stringify({ status: 'NACK', reason }));
+      });
+    });
+  }
+
+  private handleTransfer(req: http.IncomingMessage, res: http.ServerResponse): void {
+    let body = '';
+    req.on('data', (chunk) => { body += chunk.toString(); });
+    req.on('end', () => {
+      let payload: { from_wallet: string; to_wallet: string; amount_catr: string };
+      try {
+        payload = JSON.parse(body);
+      } catch {
+        res.writeHead(400, { 'Content-Type': 'application/json' });
+        res.end(JSON.stringify({ status: 'NACK', reason: 'Invalid JSON' }));
+        return;
+      }
+
+      this.minter.transfer(payload.from_wallet, payload.to_wallet, payload.amount_catr).then((outcome) => {
+        if (outcome.success) {
+          console.log(`[bridge:http] Transferred ${payload.amount_catr} CATR ${payload.from_wallet} → ${payload.to_wallet} tx ${outcome.tx_hash}`);
+          res.writeHead(200, { 'Content-Type': 'application/json' });
+          res.end(JSON.stringify({ status: 'ACK', tx_hash: outcome.tx_hash }));
+        } else {
+          console.error(`[bridge:http] Transfer failed ${payload.from_wallet} → ${payload.to_wallet}: ${outcome.reason}`);
+          res.writeHead(500, { 'Content-Type': 'application/json' });
+          res.end(JSON.stringify({ status: 'NACK', reason: outcome.reason }));
         }
       }).catch((err: unknown) => {
         const reason = err instanceof Error ? err.message : String(err);
