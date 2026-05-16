@@ -28,6 +28,14 @@ import { evaluateGcaVesting } from './services/gca_service';
 
 const isDev = process.env.NODE_ENV !== 'production';
 
+if (!isDev) {
+  const dangerousDefaults = ['change_me_in_production', ''];
+  if (dangerousDefaults.includes(process.env.JWT_SECRET ?? ''))
+    throw new Error('Refusing to start: JWT_SECRET is the default placeholder. Set a strong secret in .env.');
+  if (dangerousDefaults.includes(process.env.BRIDGE_SECRET ?? ''))
+    throw new Error('Refusing to start: BRIDGE_SECRET is the default placeholder. Set a strong secret in .env.');
+}
+
 const globalLimiter = rateLimit({
   windowMs: 15 * 60 * 1000,
   max: isDev ? 2000 : 100,

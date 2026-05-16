@@ -4,14 +4,20 @@ packages/merlink/core/build/
 reviews/
 PILOT_KEYS.md
 ideas_and_extras/
-
+uploadFIDELIOonline.md
 # Build outputs
 packages/backend/dist/
 packages/web/.next/
 
+# Hardhat / Typechain generated
+packages/contracts/artifacts/
+packages/contracts/typechain-types/
+
 # Turborepo cache
 .turbo/
 packages/web/.turbo/
+packages/backend/.turbo/
+packages/contracts/.turbo/
 
 # Next.js auto-generated
 packages/web/next-env.d.ts

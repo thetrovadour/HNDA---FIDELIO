@@ -23,7 +23,7 @@ The live contract does NOT have BURNER_ROLE. It must be redeployed.
 
 ## Steps to redeploy
 
-1. Decide on the burner address. Recommended: VaultOp Safe (`0x43E528d658dB911F8cbc77620Ed2A7c0F0226AB7`) — same 2-of-2 gate as high-value redemptions.
+1. Decide on the burner address. Recommended: VaultOp Safe (2-of-2 Gnosis Safe) — same gate as high-value redemptions. Address is in `packages/contracts/.env` as `BURNER_ADDRESS`.
 2. Add `BURNER_ADDRESS` to `packages/contracts/.env`.
 3. Run:
    ```bash

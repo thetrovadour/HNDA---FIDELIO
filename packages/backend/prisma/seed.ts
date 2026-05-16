@@ -27,7 +27,7 @@ async function main() {
       pin: '1234',
       wallet: {
         create: {
-          address: '0x7afc24b5a34d45c568f59ba09923e7de0056c45f',
+          address: '0x000000000000000000000000000000000000dEaD',
           catr_balance: 0,
         },
       },
