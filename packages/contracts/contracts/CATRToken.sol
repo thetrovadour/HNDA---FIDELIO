@@ -52,9 +52,10 @@ contract CATRToken is ERC20Capped, AccessControl {
         }
 
         // Regular transfer: deduct 3.6% commission
-        uint256 commission = (amount * 360) / 10000;
-        uint256 toTreasury = (commission * 65) / 100;
-        uint256 toRewardPool = commission - toTreasury;
+        // Multiply before divide to avoid precision loss from intermediate truncation
+        uint256 toTreasury = (amount * 360 * 65) / 1000000;
+        uint256 toRewardPool = (amount * 360 * 35) / 1000000;
+        uint256 commission = toTreasury + toRewardPool;
         uint256 toRecipient = amount - commission;
 
         super._update(from, to, toRecipient);
