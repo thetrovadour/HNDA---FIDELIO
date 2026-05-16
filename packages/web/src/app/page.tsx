@@ -260,7 +260,7 @@ export default function HndaHome() {
           </p>
           <div style={{ display: "flex", gap: "1rem", justifyContent: "center", flexWrap: "wrap" }}>
             <Link href="/register" style={btnPrimary}>Join Network</Link>
-            <a href="mailto:rodriguez.cjrp@outlook.com" style={btnOutline}>Contact HNDA</a>
+            <a href="mailto:someone@someone.com" style={btnOutline}>Contact HNDA</a>
             <Link href="/fidelio" style={btnOutline}>See FIDELIO</Link>
           </div>
         </div>

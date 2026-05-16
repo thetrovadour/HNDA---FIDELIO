@@ -2,8 +2,8 @@
   "_format": "hh-sol-cache-2",
   "files": {
     "/home/nait/proyectos/HNDA---FIDELIO/packages/contracts/contracts/CATRToken.sol": {
-      "lastModificationDate": 1777093211066,
-      "contentHash": "d0b477b519e0991b99869750c642be58",
+      "lastModificationDate": 1778958181971,
+      "contentHash": "a88ad4a95e270aa8396f810d25c2ed0f",
       "sourceName": "contracts/CATRToken.sol",
       "solcConfig": {
         "version": "0.8.20",
@@ -305,6 +305,44 @@
         "ERC20"
       ]
     },
+    "/home/nait/proyectos/HNDA---FIDELIO/node_modules/@openzeppelin/contracts/interfaces/draft-IERC6093.sol": {
+      "lastModificationDate": 1777094819314,
+      "contentHash": "bcc76f4747d56c28c40ae272ef3470a6",
+      "sourceName": "@openzeppelin/contracts/interfaces/draft-IERC6093.sol",
+      "solcConfig": {
+        "version": "0.8.20",
+        "settings": {
+          "optimizer": {
+            "enabled": true,
+            "runs": 200
+          },
+          "evmVersion": "paris",
+          "outputSelection": {
+            "*": {
+              "*": [
+                "abi",
+                "evm.bytecode",
+                "evm.deployedBytecode",
+                "evm.methodIdentifiers",
+                "metadata"
+              ],
+              "": [
+                "ast"
+              ]
+            }
+          }
+        }
+      },
+      "imports": [],
+      "versionPragmas": [
+        ">=0.8.4"
+      ],
+      "artifacts": [
+        "IERC1155Errors",
+        "IERC20Errors",
+        "IERC721Errors"
+      ]
+    },
     "/home/nait/proyectos/HNDA---FIDELIO/node_modules/@openzeppelin/contracts/token/ERC20/IERC20.sol": {
       "lastModificationDate": 1777094819478,
       "contentHash": "9261adf6457863de3e9892f51317ec89",
@@ -377,44 +415,6 @@
       ],
       "artifacts": [
         "IERC20Metadata"
-      ]
-    },
-    "/home/nait/proyectos/HNDA---FIDELIO/node_modules/@openzeppelin/contracts/interfaces/draft-IERC6093.sol": {
-      "lastModificationDate": 1777094819314,
-      "contentHash": "bcc76f4747d56c28c40ae272ef3470a6",
-      "sourceName": "@openzeppelin/contracts/interfaces/draft-IERC6093.sol",
-      "solcConfig": {
-        "version": "0.8.20",
-        "settings": {
-          "optimizer": {
-            "enabled": true,
-            "runs": 200
-          },
-          "evmVersion": "paris",
-          "outputSelection": {
-            "*": {
-              "*": [
-                "abi",
-                "evm.bytecode",
-                "evm.deployedBytecode",
-                "evm.methodIdentifiers",
-                "metadata"
-              ],
-              "": [
-                "ast"
-              ]
-            }
-          }
-        }
-      },
-      "imports": [],
-      "versionPragmas": [
-        ">=0.8.4"
-      ],
-      "artifacts": [
-        "IERC1155Errors",
-        "IERC20Errors",
-        "IERC721Errors"
       ]
     },
     "/home/nait/proyectos/HNDA---FIDELIO/packages/contracts/contracts/GCAToken.sol": {
