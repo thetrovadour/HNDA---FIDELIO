@@ -1644,3 +1644,92 @@ dotenv 17 dropped the `import * as dotenv` namespace default — named imports a
 - Email notification to merchant on GCA gift/vest/redemption approval
 - H-Wallet key generation (POST /api/wallets still accepts externally-supplied addresses)
 - Etapa 2 — BAC Credomatic API replacing manual bank transfer + email parsing
+
+---
+
+### Session — 2026-05-16
+**Focus:** Pre-public security audit and hardening
+
+#### What happened
+
+**Security audit — passed**
+- Full scan of all git-tracked files (517 files)
+- No hardcoded private keys, no committed .env files, no secrets in git history
+- `uploadFIDELIOonline.md` was already gitignored
+- Wallet private key column (`private_key_encrypted`) confirmed AES-256-GCM encrypted — fresh IV per wallet, key from env var, never plaintext in DB
+
+**Build artifacts untracked**
+- `artifacts/`, `typechain-types/`, `.turbo/` logs were committed despite being in `.gitignore` (added after the fact)
+- Removed with `git rm --cached`, added all paths explicitly to root `.gitignore`
+- 86 generated files removed from the repo going forward
+
+**Startup guard added**
+- `packages/backend/src/app.ts` — server throws on boot in production if `JWT_SECRET` or `BRIDGE_SECRET` equals `change_me_in_production` or empty string
+- Prevents the common "copy .env.example to .env, forget to change secrets" mistake
+
+**Addresses redacted from public docs**
+- `CLAUDE.md` — removed deployed CATRToken address and minter address; replaced with pointer to `packages/contracts/.env`
+- `REDEPLOY_REQUIRED.md` — removed VaultOp Safe address (`0x43E528...`); replaced with reference to `BURNER_ADDRESS` env var
+
+**Seed wallet replaced**
+- `prisma/seed.ts:30` — replaced `0x7afc24b5...` (a real-looking address) with `0x000000000000000000000000000000000000dEaD`
+
+**Pushed to GitHub**
+- Commit `15b3e14` pushed to `thetrovadour/HNDA---FIDELIO` — repo is now public-ready
+
+#### Key decisions
+- Wallet encryption confirmed safe — no action needed on DB schema
+- `uploadFIDELIOonline.md` was already gitignored — no change needed
+- Artifact untracking required `git rm --cached` because `.gitignore` entries were added after files were already committed
+- Git history still contains old commits with artifacts — harmless (no secrets), `git filter-repo` is optional
+
+#### Pending / next up
+- Email notification to merchant on GCA gift/vest/redemption approval
+- H-Wallet key generation (POST /api/wallets still accepts externally-supplied addresses)
+- Etapa 2 — BAC Credomatic API replacing manual bank transfer + email parsing
+
+---
+
+### Session — 2026-05-16 (Part 2)
+**Focus:** Security testing — TruffleHog, npm audit, Slither, Nuclei OWASP
+
+#### What happened
+
+**TruffleHog — git history scan**
+- Installed via direct binary download (GitHub releases)
+- Scanned full git history: 3,652 chunks, 0 verified secrets, 0 unverified secrets
+- Repo confirmed clean — no secret was ever committed
+
+**npm audit**
+- 48 vulnerabilities initially; `npm audit fix` resolved axios (HIGH) — dropped to 46 then to 3 after cleanup
+- Remaining 3 are all dev-tool noise (hardhat toolchain, postcss in Next.js internals)
+- Production surface confirmed clean
+- Accepted risks documented in SECURITY.md
+
+**Slither — smart contract static analysis**
+- Installed via pipx + solc-select (solc 0.8.28)
+- Run via Hardhat project mode to resolve OpenZeppelin imports
+- 1 real finding: `divide-before-multiply` in `CATRToken._update` commission math (lines 55-56)
+- Fix: restructured to `toTreasury = (amount * 360 * 65) / 1_000_000` — all multiplications before single division
+- 31/31 contract tests passing after fix
+- Remaining findings (pragma version mismatch, solc-version warnings) are OpenZeppelin interface noise — not actionable
+
+**Nuclei OWASP API scan**
+- Installed via GitHub release binary
+- 1,436 templates loaded (api, auth, exposure, misconfig, token tags)
+- Scanned live backend at `http://localhost:3001`
+- 0 matches found in 32 seconds
+
+**SECURITY.md**
+- Created with full audit documentation: TruffleHog results, npm audit accepted risks, Slither findings, Nuclei scan results, contract invariants, H-Wallet encryption strategy
+
+#### Key decisions
+- Hardhat/solidity-coverage vulns accepted as dev-only — zero production exposure
+- postcss vuln accepted — blocked on Next.js upstream fix (>16.2.6)
+- Divide-before-multiply is a real precision bug even in integer math — fixed before any mainnet deployment
+- SECURITY.md is the canonical audit log for the public repo
+
+#### Pending / next up
+- Email notification to merchant on GCA gift/vest/redemption approval
+- H-Wallet key generation (POST /api/wallets still accepts externally-supplied addresses)
+- Etapa 2 — BAC Credomatic API replacing manual bank transfer + email parsing
