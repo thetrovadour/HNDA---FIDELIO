@@ -40,6 +40,34 @@ chunks scanned: 3,652
 
 No secrets were ever committed to this repository.
 
+### Nuclei OWASP API scan
+
+API surface scanned with Nuclei v3.4.3 against the live backend (`http://localhost:3001`):
+
+```
+templates loaded:  1,436
+tags:              api, auth, exposure, misconfig, token
+severity:          low, medium, high, critical
+scan duration:     32s
+matches found:     0
+```
+
+No vulnerabilities detected across auth, token exposure, misconfiguration, and API attack templates.
+
+---
+
+## Smart Contract Security
+
+### Slither static analysis — 2026-05-16
+
+`CATRToken.sol` and `GCAToken.sol` analyzed with Slither v0.11.5 (via Hardhat, solc 0.8.28).
+
+| Finding | Severity | Status |
+|---|---|---|
+| `divide-before-multiply` in commission math (`CATRToken.sol:55-56`) | Medium | ✅ Fixed — restructured to multiply before divide |
+| `pragma` version mismatch across OpenZeppelin imports | Informational | Accepted — OZ interface files, not actionable |
+| `solc-version` warnings on `^0.8.20` | Informational | Accepted — OZ dependency, not actionable |
+
 ---
 
 ## Smart Contract Security
