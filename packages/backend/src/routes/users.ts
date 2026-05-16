@@ -86,6 +86,21 @@ export function usersRouter(userService: UserService, transactionService: Transa
     }
   });
 
+  router.get('/:id/security-status', selfOrAdmin, async (req: Request, res: Response) => {
+    const user = await db.user.findUnique({
+      where: { id: req.params.id as string },
+      select: { password_hash: true },
+    });
+    if (!user) { res.status(404).json({ error: 'User not found' }); return; }
+    res.status(200).json({
+      data: {
+        jwt_session_active: false,
+        passkey_registered: false,
+        password_set: !!user.password_hash,
+      },
+    });
+  });
+
   router.get('/:id/transactions', selfOrAdmin, async (req: Request, res: Response) => {
     const page = parseInt(req.query.page as string) || 1;
     const limit = parseInt(req.query.limit as string) || 20;

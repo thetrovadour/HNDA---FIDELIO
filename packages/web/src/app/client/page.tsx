@@ -16,9 +16,11 @@ import {
   forgotPassword,
   resetPassword,
   logout,
+  switchToMerchant,
   AuthError,
 } from '@/lib/api';
 import type { UserRecord, Transaction, Milestone, Merchant } from '@/lib/api';
+import SecurityReminderBanner from '@/components/SecurityReminderBanner';
 import { t } from '@/lib/i18n';
 
 // ─── Design tokens ────────────────────────────────────────────────────────────
@@ -317,7 +319,7 @@ function LoginScreen({ onLogin, inactivity }: LoginProps) {
 
 // ─── Top bar ──────────────────────────────────────────────────────────────────
 
-function TopBar({ user, onLogout }: { user: UserRecord; onLogout: () => void }) {
+function TopBar({ user, onLogout, onSwitchToMerchant }: { user: UserRecord; onLogout: () => void; onSwitchToMerchant?: () => void }) {
   const firstName = user.full_name.split(' ')[0];
 
   return (
@@ -332,13 +334,24 @@ function TopBar({ user, onLogout }: { user: UserRecord; onLogout: () => void }) 
 
       <div className="flex items-center justify-between mb-5">
         <Link href="/" className="text-base font-black tracking-widest" style={{ color: C.gold, textDecoration: 'none' }}>FIDELIO</Link>
-        <button
-          onClick={onLogout}
-          className="text-xs font-semibold px-3 py-1.5 rounded-lg transition-all active:scale-95"
-          style={{ background: C.surfaceHi, color: C.slate, border: `1px solid ${C.border}` }}
-        >
-          {t('common.logout')}
-        </button>
+        <div className="flex items-center gap-2">
+          {onSwitchToMerchant && (
+            <button
+              onClick={onSwitchToMerchant}
+              className="text-xs font-semibold px-3 py-1.5 rounded-lg transition-all active:scale-95"
+              style={{ background: 'rgba(201,168,76,0.1)', color: C.gold, border: '1px solid rgba(201,168,76,0.3)' }}
+            >
+              Ingresar como Comercio
+            </button>
+          )}
+          <button
+            onClick={onLogout}
+            className="text-xs font-semibold px-3 py-1.5 rounded-lg transition-all active:scale-95"
+            style={{ background: C.surfaceHi, color: C.slate, border: `1px solid ${C.border}` }}
+          >
+            {t('common.logout')}
+          </button>
+        </div>
       </div>
 
       <p
@@ -420,6 +433,8 @@ function CuentaTab({ user }: { user: UserRecord }) {
 
   return (
     <div className="flex flex-col gap-4">
+
+      <SecurityReminderBanner userId={user.id} />
 
       {/* Wallet */}
       <Section title={t('client.section_wallet')}>
@@ -718,18 +733,20 @@ function AjustesTab({ user, onUpdate }: { user: UserRecord; onUpdate: (u: UserRe
         </form>
       </Section>
 
-      <Section>
-        <a
-          href="/apply"
-          className="flex items-center justify-between w-full rounded-xl px-4 py-3 transition-all active:scale-95"
-          style={{ background: C.goldDim, border: `1px solid rgba(201,168,76,0.35)`, textDecoration: 'none' }}
-        >
-          <span style={{ color: C.gold, fontFamily: 'var(--font-body)', fontSize: '0.85rem', fontWeight: 600, letterSpacing: '0.06em' }}>
-            {t('client.apply_merchant')}
-          </span>
-          <span style={{ color: C.gold, fontSize: '0.85rem' }}>→</span>
-        </a>
-      </Section>
+      {!user.owned_merchant && (
+        <Section>
+          <a
+            href="/apply"
+            className="flex items-center justify-between w-full rounded-xl px-4 py-3 transition-all active:scale-95"
+            style={{ background: C.goldDim, border: `1px solid rgba(201,168,76,0.35)`, textDecoration: 'none' }}
+          >
+            <span style={{ color: C.gold, fontFamily: 'var(--font-body)', fontSize: '0.85rem', fontWeight: 600, letterSpacing: '0.06em' }}>
+              {t('client.apply_merchant')}
+            </span>
+            <span style={{ color: C.gold, fontSize: '0.85rem' }}>→</span>
+          </a>
+        </Section>
+      )}
 
       <Section title={t('client.section_password')}>
         <form onSubmit={handlePasswordSave} className="flex flex-col gap-3">
@@ -744,20 +761,39 @@ function AjustesTab({ user, onUpdate }: { user: UserRecord; onUpdate: (u: UserRe
         </form>
       </Section>
 
-      <Section title={t('client.section_biometric')}>
-        <div
-          className="flex items-center gap-4 rounded-xl px-4 py-4"
-          style={{ background: C.surfaceHi, border: `1px solid ${C.border}`, opacity: 0.6 }}
-        >
-          <div className="flex-1">
-            <p className="text-sm font-semibold" style={{ color: C.white }}>{t('client.biometric_desc')}</p>
-          </div>
-          <span
-            className="text-xs font-bold px-2 py-1 rounded-lg"
-            style={{ background: 'rgba(255,255,255,0.06)', color: C.slate, border: `1px solid ${C.border}`, whiteSpace: 'nowrap' }}
+      <Section title="Seguridad">
+        <div className="flex flex-col gap-2">
+          {/* JWT session */}
+          <div
+            className="flex items-center gap-4 rounded-xl px-4 py-4"
+            style={{ background: C.surfaceHi, border: `1px solid ${C.border}`, opacity: 0.6 }}
           >
-            {t('client.biometric_soon')}
-          </span>
+            <div className="flex-1">
+              <p className="text-sm font-semibold" style={{ color: C.white, fontFamily: 'var(--font-body)' }}>Sesión JWT persistente</p>
+              <p className="text-xs" style={{ color: C.slate, fontFamily: 'var(--font-body)', fontWeight: 300, marginTop: '0.2rem' }}>Accede sin reintroducir credenciales en este dispositivo.</p>
+            </div>
+            <span
+              className="text-xs font-bold px-2 py-1 rounded-lg"
+              style={{ background: 'rgba(255,255,255,0.06)', color: C.slate, border: `1px solid ${C.border}`, whiteSpace: 'nowrap', fontFamily: 'var(--font-body)' }}
+            >
+              Próximamente
+            </span>
+          </div>
+          {/* Biometric */}
+          <div
+            className="flex items-center gap-4 rounded-xl px-4 py-4"
+            style={{ background: C.surfaceHi, border: `1px solid ${C.border}`, opacity: 0.6 }}
+          >
+            <div className="flex-1">
+              <p className="text-sm font-semibold" style={{ color: C.white }}>{t('client.biometric_desc')}</p>
+            </div>
+            <span
+              className="text-xs font-bold px-2 py-1 rounded-lg"
+              style={{ background: 'rgba(255,255,255,0.06)', color: C.slate, border: `1px solid ${C.border}`, whiteSpace: 'nowrap' }}
+            >
+              {t('client.biometric_soon')}
+            </span>
+          </div>
         </div>
       </Section>
 
@@ -792,6 +828,7 @@ function RedTab({ user, onSpend }: { user: UserRecord; onSpend: () => void }) {
   const [amount, setAmount] = useState('');
   const [state, setState] = useState<'idle' | 'loading' | 'success' | 'error'>('idle');
   const [msg, setMsg] = useState('');
+  const [query, setQuery] = useState('');
 
   useEffect(() => {
     getActiveMerchants().then((res) => setActive(res.data)).catch(() => {});
@@ -879,16 +916,53 @@ function RedTab({ user, onSpend }: { user: UserRecord; onSpend: () => void }) {
     );
   }
 
+  const filtered = query.trim()
+    ? active.filter((m) =>
+        m.name.toLowerCase().includes(query.toLowerCase()) ||
+        m.category.toLowerCase().includes(query.toLowerCase())
+      )
+    : active;
+
   return (
     <div className="flex flex-col gap-4">
-      <Section title={`${active.length} establecimiento${active.length !== 1 ? 's' : ''} en la red`}>
+      {/* Search bar */}
+      <div style={{ position: 'relative' }}>
+        <span style={{ position: 'absolute', left: '0.875rem', top: '50%', transform: 'translateY(-50%)', color: C.slate, fontSize: '0.85rem', pointerEvents: 'none' }}>
+          🔍
+        </span>
+        <input
+          type="text"
+          value={query}
+          onChange={(e) => setQuery(e.target.value)}
+          placeholder="Buscar establecimiento o categoría…"
+          style={{
+            width: '100%', boxSizing: 'border-box',
+            background: C.surfaceHi, border: `1px solid ${C.border}`,
+            borderRadius: '0.75rem', padding: '0.65rem 0.875rem 0.65rem 2.25rem',
+            color: C.white, fontFamily: 'var(--font-body)', fontSize: '0.82rem',
+            outline: 'none',
+          }}
+        />
+        {query && (
+          <button
+            onClick={() => setQuery('')}
+            style={{ position: 'absolute', right: '0.75rem', top: '50%', transform: 'translateY(-50%)', background: 'none', border: 'none', color: C.slate, cursor: 'pointer', fontSize: '0.8rem', padding: 0 }}
+          >
+            ✕
+          </button>
+        )}
+      </div>
+
+      <Section title={`${filtered.length} establecimiento${filtered.length !== 1 ? 's' : ''}${query ? ` · "${query}"` : ' en la red'}`}>
         {active.length === 0 ? (
           <p className="text-sm py-4 text-center" style={{ color: C.slate }}>
             {t('client.no_merchants')}
           </p>
+        ) : filtered.length === 0 ? (
+          <p className="text-sm py-4 text-center" style={{ color: C.slate }}>Sin resultados para &ldquo;{query}&rdquo;.</p>
         ) : (
           <div className="flex flex-col gap-2">
-            {active.map((m) => (
+            {filtered.map((m) => (
               <button
                 key={m.id}
                 onClick={() => setSelected(m)}
@@ -1000,12 +1074,22 @@ export default function ClientPage() {
 
   useInactivityLogout(5 * 60 * 1000, () => handleLogout('inactivity'), !!user);
 
+  async function handleSwitchToMerchant() {
+    try {
+      const res = await switchToMerchant();
+      localStorage.setItem('fidelio_merchant_session', JSON.stringify({ merchant: res.data.merchant }));
+      router.push('/merchant');
+    } catch {
+      // If switch fails (no merchant), do nothing
+    }
+  }
+
   if (!introComplete) return <FidelioIntro onComplete={() => setIntroComplete(true)} />;
   if (!user) return <LoginScreen onLogin={(d) => { setInactivity(false); handleLogin(d); }} inactivity={inactivity} />;
 
   return (
     <div className="min-h-screen" style={{ background: C.bg }}>
-      <TopBar user={user} onLogout={handleLogout} />
+      <TopBar user={user} onLogout={handleLogout} onSwitchToMerchant={user.owned_merchant ? handleSwitchToMerchant : undefined} />
       <main className="px-4 pt-5 pb-28 flex flex-col gap-4">
         {activeTab === 'cuenta'    && <CuentaTab user={user} />}
         {activeTab === 'actividad' && <ActividadTab transactions={transactions} milestones={milestones} />}

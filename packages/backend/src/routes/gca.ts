@@ -19,6 +19,12 @@ const PriceFloorSchema = z.object({
 export function gcaRouter(db: PrismaClient): Router {
   const router = Router();
 
+  // GET /api/gca/reserve — live reserve status (public — used by merchant balance display)
+  router.get('/reserve', async (_req: Request, res: Response) => {
+    const status = await gcaReserveStatus(db);
+    res.status(200).json({ data: status });
+  });
+
   // GET /api/gca/:merchant_id — balance + HNL estimate
   router.get('/:merchant_id', async (req: Request, res: Response) => {
     const allocation = await db.merchantGcaAllocation.findUnique({
@@ -121,12 +127,6 @@ export function gcaRouter(db: PrismaClient): Router {
     res.status(200).json({ data: { id: app.id, status: app.status, notes: app.notes, created_at: app.created_at } });
   });
 
-  // GET /api/gca/reserve — live reserve status (public — used by merchant balance display)
-  router.get('/reserve', async (_req: Request, res: Response) => {
-    const status = await gcaReserveStatus(db);
-    res.status(200).json({ data: status });
-  });
-
   // ── Admin endpoints ──────────────────────────────────────────────────────────
 
   // GET /api/gca/admin/merchants — all merchants' GCA allocations
@@ -194,6 +194,24 @@ export function gcaRouter(db: PrismaClient): Router {
       orderBy: { created_at: 'asc' },
     });
     res.status(200).json({ data: requests });
+  });
+
+  // GET /api/gca/admin/redemptions/log — full history all statuses, paginated
+  router.get('/admin/redemptions/log', adminAuth, async (req: Request, res: Response) => {
+    const limit  = Math.min(parseInt(req.query.limit  as string ?? '20', 10), 200);
+    const offset = parseInt(req.query.offset as string ?? '0',  10);
+
+    const [requests, total] = await Promise.all([
+      db.gcaRedemptionRequest.findMany({
+        include: { merchant: { select: { id: true, name: true } } },
+        orderBy: { created_at: 'desc' },
+        take: limit,
+        skip: offset,
+      }),
+      db.gcaRedemptionRequest.count(),
+    ]);
+
+    res.status(200).json({ data: requests, total });
   });
 
   // PATCH /api/gca/admin/redemptions/:id/approve

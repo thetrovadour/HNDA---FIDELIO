@@ -175,6 +175,7 @@ function InfoRow({ label, value, mono = false }: { label: string; value: React.R
 }
 
 import { IconStore, IconSwap, IconGem, IconList, IconCopy, IconSettings } from '../../components/icons';
+import SecurityReminderBanner from '@/components/SecurityReminderBanner';
 
 // ─── Login screen ─────────────────────────────────────────────────────────────
 
@@ -348,13 +349,22 @@ function TopBar({ merchant, balance, gca, onLogout }: { merchant: Merchant; bala
 
       <div className="flex items-center justify-between mb-5">
         <Link href="/" className="text-base font-black tracking-widest" style={{ color: C.gold, textDecoration: 'none' }}>FIDELIO</Link>
-        <button
-          onClick={onLogout}
-          className="text-xs font-semibold px-3 py-1.5 rounded-lg transition-all active:scale-95"
-          style={{ background: C.surfaceHi, color: C.slate, border: `1px solid ${C.border}` }}
-        >
-          {t('common.logout')}
-        </button>
+        <div className="flex items-center gap-2">
+          <Link
+            href="/client"
+            className="text-xs font-semibold px-3 py-1.5 rounded-lg transition-all active:scale-95"
+            style={{ background: 'rgba(201,168,76,0.1)', color: C.gold, border: '1px solid rgba(201,168,76,0.3)', textDecoration: 'none' }}
+          >
+            Ingresar como Cliente
+          </Link>
+          <button
+            onClick={onLogout}
+            className="text-xs font-semibold px-3 py-1.5 rounded-lg transition-all active:scale-95"
+            style={{ background: C.surfaceHi, color: C.slate, border: `1px solid ${C.border}` }}
+          >
+            {t('common.logout')}
+          </button>
+        </div>
       </div>
 
       <p
@@ -474,6 +484,7 @@ function NegocioTab({ merchant }: { merchant: Merchant }) {
 
   return (
     <div className="flex flex-col gap-4">
+      <SecurityReminderBanner merchantId={merchant.id} />
       <Section title={t('merchant.section_wallet')}>
         <div className="flex flex-col gap-3">
           <div
@@ -1156,22 +1167,41 @@ function AjustesTab({ merchant, onUpdate }: { merchant: Merchant; onUpdate: (m: 
         </form>
       </Section>
 
-      <Section title={t('merchant.section_biometric')}>
-        <div
-          className="flex items-center gap-4 rounded-xl px-4 py-4"
-          style={{ background: C.surfaceHi, border: `1px solid ${C.border}`, opacity: 0.6 }}
-        >
-          <div className="flex-1">
-            <p className="text-sm font-semibold" style={{ color: C.white }}>
-              Activa tu huella o reconocimiento facial para acceder sin contraseña.
-            </p>
-          </div>
-          <span
-            className="text-xs font-bold px-2 py-1 rounded-lg"
-            style={{ background: 'rgba(255,255,255,0.06)', color: C.slate, border: `1px solid ${C.border}`, whiteSpace: 'nowrap' }}
+      <Section title="Seguridad">
+        <div className="flex flex-col gap-2">
+          {/* JWT session */}
+          <div
+            className="flex items-center gap-4 rounded-xl px-4 py-4"
+            style={{ background: C.surfaceHi, border: `1px solid ${C.border}`, opacity: 0.6 }}
           >
-            Próximamente
-          </span>
+            <div className="flex-1">
+              <p className="text-sm font-semibold" style={{ color: C.white, fontFamily: 'var(--font-body)' }}>Sesión JWT persistente</p>
+              <p className="text-xs" style={{ color: C.slate, fontFamily: 'var(--font-body)', fontWeight: 300, marginTop: '0.2rem' }}>Accede sin reintroducir credenciales en este dispositivo.</p>
+            </div>
+            <span
+              className="text-xs font-bold px-2 py-1 rounded-lg"
+              style={{ background: 'rgba(255,255,255,0.06)', color: C.slate, border: `1px solid ${C.border}`, whiteSpace: 'nowrap', fontFamily: 'var(--font-body)' }}
+            >
+              Próximamente
+            </span>
+          </div>
+          {/* Biometric */}
+          <div
+            className="flex items-center gap-4 rounded-xl px-4 py-4"
+            style={{ background: C.surfaceHi, border: `1px solid ${C.border}`, opacity: 0.6 }}
+          >
+            <div className="flex-1">
+              <p className="text-sm font-semibold" style={{ color: C.white }}>
+                Activa tu huella o reconocimiento facial para acceder sin contraseña.
+              </p>
+            </div>
+            <span
+              className="text-xs font-bold px-2 py-1 rounded-lg"
+              style={{ background: 'rgba(255,255,255,0.06)', color: C.slate, border: `1px solid ${C.border}`, whiteSpace: 'nowrap' }}
+            >
+              Próximamente
+            </span>
+          </div>
         </div>
       </Section>
 

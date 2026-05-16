@@ -109,6 +109,84 @@ export function adminRouter(mintService: MintService): Router {
     });
   });
 
+  router.get('/mints', adminAuth, async (req: Request, res: Response) => {
+    const limit  = Math.min(parseInt(req.query.limit  as string ?? '50', 10), 200);
+    const offset = parseInt(req.query.offset as string ?? '0',  10);
+
+    const mints = await db.transaction.findMany({
+      where: { type: 'MINT' },
+      orderBy: { created_at: 'desc' },
+      take: limit,
+      skip: offset,
+      include: {
+        user: { select: { full_name: true, email: true } },
+        pending_mint: { select: { source: true, tx_hash: true, reference_code: true, status: true } },
+      },
+    });
+
+    const total = await db.transaction.count({ where: { type: 'MINT' } });
+
+    res.status(200).json({
+      data: mints.map((m) => ({
+        id:              m.id,
+        full_name:       m.user.full_name,
+        email:           m.user.email,
+        amount_catr:     m.amount_catr,
+        amount_lempiras: m.amount_lempiras,
+        status:          m.status,
+        source:          m.pending_mint?.source ?? 'ADMIN',
+        tx_hash:         m.pending_mint?.tx_hash ?? m.tx_hash ?? null,
+        reference_code:  m.pending_mint?.reference_code ?? m.reference_code ?? null,
+        created_at:      m.created_at,
+      })),
+      total,
+    });
+  });
+
+  router.get('/failed-rows', adminAuth, async (_req: Request, res: Response) => {
+    const [mints, transfers] = await Promise.all([
+      db.pendingMint.findMany({
+        where: { status: 'FAILED' },
+        orderBy: { updated_at: 'desc' },
+        select: { id: true, reference_code: true, client_wallet: true, amount_lempiras: true, source: true, attempts: true, last_attempt_at: true, created_at: true },
+      }),
+      db.pendingTransfer.findMany({
+        where: { status: 'FAILED' },
+        orderBy: { updated_at: 'desc' },
+        select: { id: true, transaction_id: true, from_wallet: true, to_wallet: true, amount_catr: true, attempts: true, last_attempt_at: true, created_at: true },
+      }),
+    ]);
+    res.status(200).json({ data: { mints, transfers } });
+  });
+
+  router.patch('/failed-rows/mints/:id/reset', adminAuth, async (req: Request, res: Response) => {
+    const { id } = req.params as { id: string };
+    const row = await db.pendingMint.findUnique({ where: { id } });
+    if (!row || row.status !== 'FAILED') {
+      res.status(404).json({ error: 'Row not found or not in FAILED state' });
+      return;
+    }
+    await db.pendingMint.update({
+      where: { id },
+      data: { status: 'PENDING', attempts: 0, last_attempt_at: null },
+    });
+    res.status(200).json({ data: { ok: true } });
+  });
+
+  router.patch('/failed-rows/transfers/:id/reset', adminAuth, async (req: Request, res: Response) => {
+    const { id } = req.params as { id: string };
+    const row = await db.pendingTransfer.findUnique({ where: { id } });
+    if (!row || row.status !== 'FAILED') {
+      res.status(404).json({ error: 'Row not found or not in FAILED state' });
+      return;
+    }
+    await db.pendingTransfer.update({
+      where: { id },
+      data: { status: 'PENDING', attempts: 0, last_attempt_at: null },
+    });
+    res.status(200).json({ data: { ok: true } });
+  });
+
   router.get('/runway', adminAuth, async (_req: Request, res: Response) => {
     const now = new Date();
     const thirtyDaysAgo = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000);

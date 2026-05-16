@@ -161,6 +161,29 @@ export function merchantsRouter(redemptionService: RedemptionService): Router {
     }
   });
 
+  // ── Merchant security status ───────────────────────────────────────────────
+
+  router.get('/:id/security-status', merchantAuth, async (req: Request, res: Response) => {
+    const merchant = await db.merchant.findUnique({
+      where: { id: req.params.id as string },
+      select: { owner_user_id: true },
+    });
+    if (!merchant) {
+      res.status(404).json({ error: 'Merchant not found', code: 'NOT_FOUND' });
+      return;
+    }
+    const user = merchant.owner_user_id
+      ? await db.user.findUnique({ where: { id: merchant.owner_user_id }, select: { password_hash: true } })
+      : null;
+    res.status(200).json({
+      data: {
+        jwt_session_active: false,
+        passkey_registered: false,
+        password_set: !!user?.password_hash,
+      },
+    });
+  });
+
   // ── Merchant status ────────────────────────────────────────────────────────
 
   router.get('/:id/status', merchantAuth, async (req: Request, res: Response) => {

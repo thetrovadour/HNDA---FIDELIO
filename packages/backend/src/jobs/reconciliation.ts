@@ -147,6 +147,35 @@ export class ReconciliationJob {
       try {
         const result = await this.run();
         console.log('[ReconciliationJob] Result:', result);
+
+        if (result.failed > 0 || result.transfers_failed > 0) {
+          console.error(`\n[ALERT] ⚠️  Reconciliation found FAILED rows:`);
+          if (result.failed > 0) {
+            const failedMints = await this.db.pendingMint.findMany({
+              where: { status: 'FAILED' },
+              select: { id: true, reference_code: true, client_wallet: true, amount_lempiras: true, attempts: true, last_attempt_at: true },
+              orderBy: { updated_at: 'desc' },
+              take: 20,
+            });
+            console.error(`  PendingMint FAILED (${result.failed} new this run, ${failedMints.length} total):`);
+            for (const m of failedMints) {
+              console.error(`    - ${m.reference_code} | wallet: ${m.client_wallet} | L.${m.amount_lempiras} | attempts: ${m.attempts} | last: ${m.last_attempt_at?.toISOString() ?? '—'}`);
+            }
+          }
+          if (result.transfers_failed > 0) {
+            const failedTransfers = await this.db.pendingTransfer.findMany({
+              where: { status: 'FAILED' },
+              select: { id: true, transaction_id: true, from_wallet: true, to_wallet: true, amount_catr: true, attempts: true, last_attempt_at: true },
+              orderBy: { updated_at: 'desc' },
+              take: 20,
+            });
+            console.error(`  PendingTransfer FAILED (${result.transfers_failed} new this run, ${failedTransfers.length} total):`);
+            for (const t of failedTransfers) {
+              console.error(`    - tx:${t.transaction_id.slice(0, 8)}… | ${t.from_wallet.slice(0, 8)}…→${t.to_wallet.slice(0, 8)}… | ${t.amount_catr} CATR | attempts: ${t.attempts}`);
+            }
+          }
+          console.error(`[ALERT] Manual review required — use admin panel health tab.\n`);
+        }
       } catch (err) {
         console.error('[ReconciliationJob] Error:', err);
       }

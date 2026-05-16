@@ -57,6 +57,10 @@ export function logout() {
   return apiFetch<{ data: { ok: boolean } }>('/api/auth/logout', { method: 'POST' });
 }
 
+export function switchToMerchant() {
+  return apiFetch<{ data: { merchant: Merchant } }>('/api/auth/switch-to-merchant', { method: 'POST' });
+}
+
 export function forgotPassword(email: string) {
   return apiFetch<{ data: { ok: boolean } }>('/api/auth/forgot-password', {
     method: 'POST',
@@ -127,6 +131,20 @@ export function updateUser(id: string, body: { full_name?: string; email?: strin
 
 export function getUser(id: string) {
   return apiFetch<{ data: UserRecord }>(`/api/users/${id}`);
+}
+
+export interface SecurityStatus {
+  jwt_session_active: boolean;
+  passkey_registered: boolean;
+  password_set: boolean;
+}
+
+export function getUserSecurityStatus(id: string) {
+  return apiFetch<{ data: SecurityStatus }>(`/api/users/${id}/security-status`);
+}
+
+export function getMerchantSecurityStatus(id: string) {
+  return apiFetch<{ data: SecurityStatus }>(`/api/merchants/${id}/security-status`);
 }
 
 export function getUserTransactions(id: string, page = 1, limit = 20) {
@@ -369,6 +387,69 @@ export function getRewardQueue(token: string) {
   return apiFetch<{ data: RewardPayout[] }>('/api/rewards/queue', { headers: authHeaders(token) });
 }
 
+export interface MintLogEntry {
+  id: string;
+  full_name: string;
+  email: string;
+  amount_catr: string;
+  amount_lempiras: string | null;
+  status: string;
+  source: string;
+  tx_hash: string | null;
+  reference_code: string | null;
+  created_at: string;
+}
+
+export interface FailedMint {
+  id: string;
+  reference_code: string;
+  client_wallet: string;
+  amount_lempiras: string;
+  source: string;
+  attempts: number;
+  last_attempt_at: string | null;
+  created_at: string;
+}
+
+export interface FailedTransfer {
+  id: string;
+  transaction_id: string;
+  from_wallet: string;
+  to_wallet: string;
+  amount_catr: string;
+  attempts: number;
+  last_attempt_at: string | null;
+  created_at: string;
+}
+
+export function getFailedRows(token: string) {
+  return apiFetch<{ data: { mints: FailedMint[]; transfers: FailedTransfer[] } }>(
+    '/api/admin/failed-rows',
+    { headers: authHeaders(token) },
+  );
+}
+
+export function resetFailedMint(id: string, token: string) {
+  return apiFetch<{ data: { ok: boolean } }>(`/api/admin/failed-rows/mints/${id}/reset`, {
+    method: 'PATCH',
+    headers: authHeaders(token),
+  });
+}
+
+export function resetFailedTransfer(id: string, token: string) {
+  return apiFetch<{ data: { ok: boolean } }>(`/api/admin/failed-rows/transfers/${id}/reset`, {
+    method: 'PATCH',
+    headers: authHeaders(token),
+  });
+}
+
+export function getMintLog(token: string, limit = 50, offset = 0) {
+  return apiFetch<{ data: MintLogEntry[]; total: number }>(
+    `/api/admin/mints?limit=${limit}&offset=${offset}`,
+    { headers: authHeaders(token) },
+  );
+}
+
 export function approveRewardPayout(id: string, token: string) {
   return apiFetch<{ data: RewardPayout }>(`/api/rewards/queue/${id}/approve`, {
     method: 'PATCH',
@@ -388,6 +469,7 @@ export interface UserRecord {
   created_at: string;
   notify_points_received: boolean;
   notify_milestone_near: boolean;
+  owned_merchant?: { id: string; name: string; category: string } | null;
 }
 
 export interface Transaction {
@@ -633,6 +715,37 @@ export function setGcaPriceFloor(body: { price_hnl: number }, token: string) {
     headers: authHeaders(token),
     body: JSON.stringify(body),
   });
+}
+
+export interface GcaReserve {
+  balance_hnl: string;
+  circulating_gca: string;
+  price_floor_hnl: string;
+}
+
+export interface GcaRedeemLogEntry {
+  id: string;
+  merchant_id: string;
+  merchant: { id: string; name: string };
+  amount_gca: string;
+  price_floor_hnl: string;
+  amount_hnl_estimated: string;
+  status: string;
+  approved_by: string | null;
+  notes: string | null;
+  created_at: string;
+  updated_at: string;
+}
+
+export function getGcaRedeemLog(token: string, limit = 20, offset = 0) {
+  return apiFetch<{ data: GcaRedeemLogEntry[]; total: number }>(
+    `/api/gca/admin/redemptions/log?limit=${limit}&offset=${offset}`,
+    { headers: authHeaders(token) },
+  );
+}
+
+export function getGcaReserve() {
+  return apiFetch<{ data: GcaReserve }>('/api/gca/reserve');
 }
 
 // --- Merchant Applications (admin) ---

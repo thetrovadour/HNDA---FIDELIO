@@ -1581,3 +1581,66 @@ dotenv 17 dropped the `import * as dotenv` namespace default — named imports a
 - Admin UI panel for GCA reserve status (balance, circulating, floor) — currently CLI/API only
 - Faraday full vesting test end-to-end
 - Reconciliation alerting for FAILED PendingTransfer rows
+
+---
+
+### Session — 2026-05-15
+**Focus:** Admin panels, operational logs, security UX, merchant search, dual-role switcher
+
+#### What happened
+
+**IP address update**
+- Machine IP changed to `192.168.0.113`
+- Updated `NEXT_PUBLIC_BACKEND_URL` in `packages/web/.env.local`
+- Updated `ALLOWED_ORIGIN` in `packages/backend/.env`
+
+**GCA reserve status panel — admin UI**
+- New `GcaReserveSection` at the top of `GcaAdminPanel` — shows Reserve (HNL), Circulante (GCA), Precio piso (HNL/GCA)
+- Auto-refreshes every 30 seconds
+- Fixed route ordering bug: `/reserve` was being matched by `/:merchant_id` — moved `/reserve` before `/:merchant_id` in `gca.ts`
+
+**CATR historical mint log**
+- `GET /api/admin/mints` — paginated, returns MINT transactions joined with user (name, email), amount, status, source, tx hash
+- `MintLog` component — rendered below `AwardPoints` in the `mint` admin tab
+- Shows client name, email, CATR/HNL amount, status pill, source pill, copyable tx hash, date/time
+
+**GCA redeem log**
+- `GET /api/gca/admin/redemptions/log` — all statuses, paginated (existing endpoint only returned PENDING)
+- `GcaRedeemLog` component — rendered below redemption queue in the `gca` admin tab
+- Shows merchant, date/time, GCA amount, price floor, HNL estimate, status pill
+
+**Reconciliation alerting**
+- Enhanced `ReconciliationJob.schedule()` — after daily run, if FAILED rows exist, prints loud `[ALERT]` block to terminal with reference codes, wallets, amounts, attempt counts
+- `GET /api/admin/failed-rows` — returns all FAILED PendingMints and PendingTransfers
+- `PATCH /api/admin/failed-rows/mints/:id/reset` and `/transfers/:id/reset` — resets status to PENDING, clears attempts
+- `FailedRowsAlert` component — top of `health` admin tab; green "todo en orden" when clean, red banner with per-row "Re-intentar" buttons when FAILED rows exist
+
+**In-app security reminder (Upgrade 3)**
+- `GET /api/users/:id/security-status` — returns `{ jwt_session_active, passkey_registered, password_set }`
+- `GET /api/merchants/:id/security-status` — same, looks up owner user
+- `SecurityReminderBanner` — dismissible gold banner, shown once per device via localStorage; appears on client `cuenta` tab and merchant `negocio` tab
+- `Ajustes → Seguridad` section added to both client and merchant settings: JWT session card + biometric card, both "Próximamente"
+
+**Merchant search bar**
+- Search input at top of client `red` tab — filters active merchants by name or category in real time
+- Section title updates to show result count and current query
+- Clear (✕) button resets query
+
+**Dual-role switcher (Merchants are Clients)**
+- `POST /api/auth/switch-to-merchant` — authenticated endpoint; trusts existing user cookie, returns full merchant session without password re-entry; sets `fidelio_merchant_token` cookie
+- `pilot-login` response now includes `owned_merchant: { id, name, category } | null`
+- Client TopBar: "Ingresar como Comercio" gold button — only shown when `user.owned_merchant` exists; calls `switch-to-merchant`, writes to `fidelio_merchant_session`, navigates to `/merchant`
+- Merchant TopBar: "Ingresar como Cliente" gold link — always shown; navigates to `/client`
+- "Aplicar para Comercio" card in client Ajustes hidden when user already owns a merchant
+
+#### Key decisions
+- Merchant IS a user — the data model already reflected this (`owner_user_id`). The role switcher acknowledges this without renaming anything; "client" and "merchant" describe what the person is doing, not who they are
+- `switch-to-merchant` bypasses merchant password because the user is already authenticated as the owner — trust flows from user session → merchant session
+- Switch is asymmetric: Client→Merchant requires a backend call (generate merchant context); Merchant→Client is pure navigation (client session already in localStorage)
+- GCA reserve route ordering: `/reserve` must be registered before `/:merchant_id` in Express or it gets swallowed as a merchant ID lookup
+- Price floor is CLI-only; removed from admin UI (Cristian's decision from prior session, confirmed)
+
+#### Pending / next up
+- Email notification to merchant on GCA gift/vest/redemption approval
+- H-Wallet key generation (POST /api/wallets still accepts externally-supplied addresses)
+- Etapa 2 — BAC Credomatic API replacing manual bank transfer + email parsing

@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect, useCallback } from 'react';
+import GcaRedeemLog from './GcaRedeemLog';
 import {
   getGcaRedemptions,
   approveGcaRedemption,
@@ -12,10 +13,12 @@ import {
   getGcaApplicationsAdmin,
   approveGcaApplication,
   rejectGcaApplication,
+  getGcaReserve,
   type GcaRedemptionRequest,
   type GcaMerchantAllocation,
   type GcaHistoryEntry,
   type GcaApplicationAdmin,
+  type GcaReserve,
 } from '@/lib/api';
 
 // ─── Design tokens ────────────────────────────────────────────────────────────
@@ -106,6 +109,65 @@ const TX_TYPE_COLORS: Record<string, string> = {
   TRADE_IN:  C.slateHi,
   REDEEM:    C.error,
 };
+
+// ─── Section: GCA Reserve ────────────────────────────────────────────────────
+
+function GcaReserveSection() {
+  const [data, setData] = useState<GcaReserve | null>(null);
+  const [error, setError] = useState('');
+
+  const load = useCallback(async () => {
+    try {
+      const r = await getGcaReserve();
+      setData(r.data);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Error al cargar reserva.');
+    }
+  }, []);
+
+  useEffect(() => {
+    load();
+    const id = setInterval(load, 30_000);
+    return () => clearInterval(id);
+  }, [load]);
+
+  return (
+    <Card title="Reserva GCA">
+      {error ? (
+        <p style={{ ...font, fontSize: '0.85rem', color: C.error }}>{error}</p>
+      ) : !data ? (
+        <p style={{ ...font, fontSize: '0.85rem', color: C.slate }}>Cargando…</p>
+      ) : (
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '0.75rem' }}>
+          <div style={{ background: C.surfaceHi, border: `1px solid ${C.border}`, borderRadius: '0.75rem', padding: '0.875rem 1rem' }}>
+            <p style={{ ...font, fontSize: '0.6rem', fontWeight: 700, letterSpacing: '0.12em', color: C.slate, textTransform: 'uppercase', marginBottom: '0.4rem' }}>
+              Reserva
+            </p>
+            <p style={{ ...font, fontSize: '1.1rem', fontWeight: 300, color: C.gold }}>
+              L. {parseFloat(data.balance_hnl).toLocaleString('es-HN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+            </p>
+          </div>
+          <div style={{ background: C.surfaceHi, border: `1px solid ${C.border}`, borderRadius: '0.75rem', padding: '0.875rem 1rem' }}>
+            <p style={{ ...font, fontSize: '0.6rem', fontWeight: 700, letterSpacing: '0.12em', color: C.slate, textTransform: 'uppercase', marginBottom: '0.4rem' }}>
+              Circulante
+            </p>
+            <p style={{ ...font, fontSize: '1.1rem', fontWeight: 300, color: C.white }}>
+              {parseFloat(data.circulating_gca).toLocaleString('es-HN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} GCA
+            </p>
+          </div>
+          <div style={{ background: C.surfaceHi, border: `1px solid ${C.border}`, borderRadius: '0.75rem', padding: '0.875rem 1rem' }}>
+            <p style={{ ...font, fontSize: '0.6rem', fontWeight: 700, letterSpacing: '0.12em', color: C.slate, textTransform: 'uppercase', marginBottom: '0.4rem' }}>
+              Precio piso
+            </p>
+            <p style={{ ...font, fontSize: '1.1rem', fontWeight: 300, color: C.success }}>
+              L. {parseFloat(data.price_floor_hnl).toFixed(4)}
+            </p>
+          </div>
+        </div>
+      )}
+    </Card>
+  );
+}
 
 // ─── Section: GCA Applications ───────────────────────────────────────────────
 
@@ -466,9 +528,11 @@ export default function GcaAdminPanel({ token }: { token: string }) {
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem' }}>
+      <GcaReserveSection />
       <GcaApplicationsSection token={token} onApproved={() => setRefreshKey((k) => k + 1)} />
       <MerchantsSection  token={token} refreshKey={refreshKey} />
       <RedemptionsSection token={token} />
+      <GcaRedeemLog token={token} />
     </div>
   );
 }

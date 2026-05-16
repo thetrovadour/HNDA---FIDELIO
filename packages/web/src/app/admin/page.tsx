@@ -21,6 +21,8 @@ import RewardPayoutQueue from '@/components/RewardPayoutQueue';
 import AwardPoints from '@/components/AwardPoints';
 import RunwayWidget from '@/components/RunwayWidget';
 import GcaAdminPanel from '@/components/GcaAdminPanel';
+import MintLog from '@/components/MintLog';
+import FailedRowsAlert from '@/components/FailedRowsAlert';
 
 // ─── Design tokens ────────────────────────────────────────────────────────────
 
@@ -443,8 +445,8 @@ export default function AdminPage() {
         {tab === 'merchants'   && <MerchantList merchants={merchants} token={token} onRefresh={loadMerchants} />}
         {tab === 'redemptions' && <RedemptionQueue token={token} />}
         {tab === 'payouts'     && <RewardPayoutQueue token={token} />}
-        {tab === 'mint'        && <AwardPoints token={token} />}
-        {tab === 'health'      && <RunwayWidget token={token} />}
+        {tab === 'mint'        && <><AwardPoints token={token} /><MintLog token={token} /></>}
+        {tab === 'health'      && <><FailedRowsAlert token={token} /><RunwayWidget token={token} /></>}
         {tab === 'clients'       && <ClientsTab token={token} />}
         {tab === 'gca'           && <GcaAdminPanel token={token} />}
         {tab === 'applications'  && <ApplicationsTab token={token} />}

@@ -3,6 +3,7 @@ import { z } from 'zod';
 import jwt from 'jsonwebtoken';
 import bcrypt from 'bcrypt';
 import { validate } from '../middleware/validate';
+import { userAuth } from '../middleware/auth';
 import db from '../db';
 import { generateWallet } from '../utils/wallet_crypto';
 
@@ -88,7 +89,7 @@ export function authRouter(): Router {
       { algorithm: 'HS256', expiresIn: '7d' }
     );
 
-    const [transactions, milestones, merchants] = await Promise.all([
+    const [transactions, milestones, merchants, ownedMerchant] = await Promise.all([
       db.transaction.findMany({
         where: { user_id: user.id },
         orderBy: { created_at: 'desc' },
@@ -98,6 +99,10 @@ export function authRouter(): Router {
         where: { user_id: user.id },
       }),
       db.merchant.findMany({ where: { merchant_status: 'ACTIVE' } }),
+      db.merchant.findFirst({
+        where: { owner_user_id: user.id, merchant_status: 'ACTIVE' },
+        select: { id: true, name: true, category: true },
+      }),
     ]);
 
     res.cookie('fidelio_client_token', token, TOKEN_COOKIE);
@@ -133,6 +138,46 @@ export function authRouter(): Router {
           contact_email: m.contact_email,
           merchant_status: m.merchant_status,
         })),
+        owned_merchant: ownedMerchant ?? null,
+      },
+    });
+  });
+
+  router.post('/switch-to-merchant', userAuth, async (req: Request, res: Response) => {
+    const userId = req.user?.id;
+    if (!userId) { res.status(401).json({ error: 'Not authenticated' }); return; }
+
+    const merchant = await db.merchant.findFirst({
+      where: { owner_user_id: userId, merchant_status: 'ACTIVE' },
+    });
+    if (!merchant) {
+      res.status(403).json({ error: 'No active merchant found for this account', code: 'NOT_A_MERCHANT' });
+      return;
+    }
+
+    const jwtSecret = process.env.JWT_SECRET!;
+    const token = jwt.sign(
+      { id: userId, user_id: userId, merchant_id: merchant.id, role: 'merchant' },
+      jwtSecret,
+      { algorithm: 'HS256', expiresIn: '7d' }
+    );
+
+    res.cookie('fidelio_merchant_token', token, TOKEN_COOKIE);
+    res.status(200).json({
+      data: {
+        merchant: {
+          id: merchant.id,
+          name: merchant.name,
+          category: merchant.category,
+          contact_email: merchant.contact_email,
+          wallet_address: merchant.wallet_address,
+          merchant_status: merchant.merchant_status,
+          notify_redemption_update: merchant.notify_redemption_update,
+          payout_bank: merchant.payout_bank,
+          payout_account_number: merchant.payout_account_number,
+          payout_account_type: merchant.payout_account_type,
+          payout_crypto_address: merchant.payout_crypto_address,
+        },
       },
     });
   });
