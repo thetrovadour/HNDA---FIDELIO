@@ -4,7 +4,7 @@ packages/merlink/core/build/
 reviews/
 PILOT_KEYS.md
 ideas_and_extras/
-uploadFIDELIOonline.md
+uploadonline.md
 # Build outputs
 packages/backend/dist/
 packages/web/.next/
@@ -27,3 +27,4 @@ packages/web/next-env.d.ts
 
 # Windows metadata (ASCII and Unicode colon variants)
 *Zone.Identifier
+.gitignore
