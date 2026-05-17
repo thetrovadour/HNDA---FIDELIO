@@ -28,3 +28,4 @@ packages/web/next-env.d.ts
 # Windows metadata (ASCII and Unicode colon variants)
 *Zone.Identifier
 .gitignore
+documents/
