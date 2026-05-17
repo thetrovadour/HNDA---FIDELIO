@@ -4,7 +4,7 @@
 
 If you discover a security vulnerability in FIDELIO, please report it privately to:
 
-**contact@hnda.io**
+**rodriguez.cjrp@outlook.com**
 
 Do not open a public GitHub issue for security vulnerabilities. We will respond within 72 hours and coordinate a fix before any public disclosure.
 
