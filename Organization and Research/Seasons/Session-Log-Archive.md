@@ -1733,3 +1733,174 @@ dotenv 17 dropped the `import * as dotenv` namespace default — named imports a
 - Email notification to merchant on GCA gift/vest/redemption approval
 - H-Wallet key generation (POST /api/wallets still accepts externally-supplied addresses)
 - Etapa 2 — BAC Credomatic API replacing manual bank transfer + email parsing
+
+---
+
+### Session — 2026-05-16 (Part 3)
+**Focus:** NFC architecture deep-dive — payment rails, regulatory walls, Etapa 2 strategy
+
+#### What happened
+
+**NFC feature exploration — starting point**
+- Cristian asked about starting the NFC feature
+- Reviewed what already exists: `nfc_reader.cpp` (C++ core, 14/14 tests passing) produces `PaymentEvent` with `source: "nfc"`
+- Identified the missing link: nothing drains the C++ `RetryQueue` and sends events to the Node.js bridge
+- Initial plan: `IpcSender` (C++ queue drainer → Unix socket → bridge) + `main.cpp` wiring
+
+**Critical clarification — merchant's phone IS the POS**
+- Cristian clarified the real NFC flow: merchant's phone is the terminal, not a standalone HNDA device
+- The whole point of FIDELIO is that small Honduran merchants can't afford a traditional POS — the merchant's Android phone replaces it
+- This changed the architecture entirely: NFC read happens in the browser (Web NFC API), not in C++
+- `nfc_reader.cpp` remains valid but as the future HNDA terminal path, not the current target
+
+**Web NFC implementation — built (3 steps)**
+
+Step 1 — `useNfcPayment` hook (`packages/web/src/hooks/useNfcPayment.ts`):
+- Wraps Web NFC API (`NDEFReader`)
+- Reads NDEF text record from card, validates EVM address format (`0x` + 40 hex chars)
+- 30-second timeout with Spanish error messages
+- States: `idle | scanning | success | error`
+- Clean abort via `AbortController`
+
+Step 2 — `NfcChargeFlow` component (`packages/web/src/components/NfcChargeFlow.tsx`):
+- 5 screens: amount entry → NFC scan (animated pulsing icon) → confirm → done → error
+- Detects NFC support at render time — shows "NFC no disponible" on non-Android-Chrome
+- POSTs to `POST /bridge/payment-received` with `source: 'NFC'`
+- `submitNfcPayment()` added to `packages/web/src/lib/api.ts`
+
+Step 3 — Wired into `NegocioTab` in `packages/web/src/app/merchant/page.tsx`:
+- `NfcChargeFlow` added as first section in the merchant's home tab
+- All 3 steps passed TypeScript type checking with zero errors
+
+**Card design question — Option A vs B**
+- Option A: merchant sets amount, card carries only wallet address (correct for real POS)
+- Option B: amount encoded on card (wrong — cards can't be rewritten per transaction)
+- Cristian chose Option A — this is how Visa/Mastercard work
+
+**NDEF write question — FIDELIO blank cards**
+- Proposed enrollment flow: first tap = blank card → generate H-Wallet → write `FIDELIO-{uuid}` to card → process payment
+- Cristian immediately identified the regulatory wall: issuing cards implies holding value, which requires CNBS authorization and 300M lempiras capital reserve
+- HNDA cannot be a card issuer. Decision: FIDELIO does not issue cards.
+
+**Bank card NFC — technical wall identified**
+- Web NFC API (`NDEFReader`) only reads NDEF tags — it CANNOT read EMV bank cards (Visa/Mastercard)
+- Bank cards use ISO 14443-4 / EMV contactless — a completely different protocol
+- Reading bank cards requires a native Android app or physical POS terminal
+- Conclusion: bank card NFC and Etapa 2 (BAC API) are the same thing — one cannot happen without the other
+
+**The real Etapa 2 conversation**
+- Deep discussion on what "using the bank API" actually means legally
+- Cristian identified the core insight: FIDELIO using a bank API to move money = FIDELIO acting as a payment processor = CNBS regulated
+- The legal architecture of Etapa 1 works precisely because the CLIENT initiates the transfer — HNDA never touches the money movement
+- Etapa 2 with BAC should be framed as: "When one of your clients transfers to HNDA's account, send us a webhook" — not "let us initiate transfers"
+- BAC confirmed as preferred bank partner — more adoption and more technologically advanced than Promerica in Honduras
+
+**Card emitter bank does not matter at NFC level**
+- Cristian asked: does the issuing bank matter when reading the card?
+- Answer: No — EMV data is standardized. Any card from any bank looks identical at the NFC protocol level
+- The bank only matters when moving money — not for identification
+- Insight: the card token is a universal client identifier regardless of issuing bank
+
+**One-time mandate — the real unlock**
+- Cristian connected the dots via the Binance/BAC analogy: OTP sent once, confirmed once, silent forever after
+- This is a recurring payment authorization / card-on-file mandate — standard in fintech globally (Netflix, Uber, Binance)
+- Flow: first tap → FIDELIO reads card token → bank sends OTP to client → client confirms → bank issues mandate token to FIDELIO → all future taps are silent
+- This is the correct Etapa 2 ask to BAC: one OTP authorization per card per client, mandate token returned, charges silent going forward
+
+**Float / money holding discussion**
+- Explored US entity (Delaware LLC + FinCEN MSB) to hold the float legally
+- Explored USDC on Base as on-chain reserve (already on Base, auditable, no US banking relationship needed)
+- Explored Tigo Money as EMI partner for unbanked clients
+- Cristian correctly identified the root problem: all of these are workarounds — HNDA needs to hold money to eliminate friction entirely
+- Conclusion: the card-on-file mandate with BAC is the cleanest path — HNDA never holds money, bank handles the float, FIDELIO listens for confirmation
+
+#### Key decisions
+- FIDELIO does not issue NFC cards — regulatory wall (CNBS, 300M lempiras capital requirement)
+- The merchant's Android phone is the POS terminal — Web NFC is the correct current implementation path
+- iPhone merchants are a known limitation — HNDA terminal (C++ path) is the future fallback
+- Web NFC implementation built and kept in codebase — premature only in that bank card reading requires native app, not Web NFC
+- Etapa 2 is a one-time card mandate conversation with BAC — not a payment processing integration
+- The card emitter bank is irrelevant at the identity layer — card token is universal across all banks
+- BAC is the preferred bank partner over Promerica
+- The real Etapa 2 ask to BAC: "Give us a card-on-file mandate after one OTP confirmation per card per client"
+
+#### Pending / next up
+- Talk to BAC about card-on-file mandate API (one-time OTP authorization per card per client)
+- Email notification to merchant on GCA gift/vest/redemption approval
+- H-Wallet key generation (POST /api/wallets still accepts externally-supplied addresses)
+- Etapa 2 scaffolding — webhook receiver for when BAC calls back after a confirmed transfer
+
+---
+
+### Session — 2026-05-16 (Part 4)
+**Focus:** Payment rails strategy — corresponsal bancario, INDEL, and foreign subsidiary
+
+#### What happened
+
+**NFC identity insight**
+- Cristian questioned whether the physical card is necessary for identity — it's not
+- The card is just a pointer to a wallet address; identity validation happens at the account level
+- Client's phone could broadcast the wallet address via NFC (phone-as-card)
+- Hit the pre-load constraint: phone-as-card only works if the client already has CATR — same friction as a bank transfer with extra steps
+- Conclusion: the POS phone concept is FIDELIO's core differentiator; the pre-load model kills it
+
+**Back to corner 1 — payment processing problem**
+- Cristian correctly identified that FIDELIO still needs a way to process payments
+- Bank commission per transfer is an unknown cost that stacks on top of FIDELIO's 3.6%
+
+**Corresponsal bancario deep dive**
+- Researched Circular CNBS No. 251/2013 — the governing regulation for banking correspondents in Honduras
+- Key finding: Article 5 creates the **Administrador de Corresponsales** role — a non-bank, non-licensed third party that organizes agent networks on behalf of a supervised institution
+- HNDA fits this role: merchants become the agents, HNDA is the administrator, the bank holds regulatory liability
+- No CNBS license, INDEL, or EPSPE required for HNDA in this structure
+
+**Three partner candidates ranked**
+1. Cooperativa (CAC under CONSUCOOP) — fastest, most flexible, same legal framework
+2. Banco Atlántida — natural fit (clients already transfer to HNDA's Atlántida account), 4,200+ agent network
+3. BAC Honduras — best long-term tech partner, slowest to move
+
+**Break-even commission analysis**
+- FIDELIO's 3.6% splits: 2.34% → HNDA treasury, 1.26% → reward pool
+- Bank's cut must come from the 2.34% treasury share (reward pool is committed)
+- Hard ceiling: 2.34% — above that the model breaks
+- Target negotiation zone: get bank below 1%, HNDA keeps 1.34%+
+- Standard Latin American corresponsal commission: 0.5%–1.5%
+
+**Contact pages found**
+- BAC: API advisory form at `baccredomatic.com/empresas/solicitud-api-tesoreria/solicitud`, strategic contact `marco.nelson@baccredomatic.hn`
+- Atlántida: Agente form at `bancatlan.hn/formularios/agente-atlantida/formulario-agente-atlantida.php`, leadership directory available
+- Honduras has no open banking mandate — all API access is relationship-gated
+
+**CNBS response context**
+- Cristian already had a CNBS response: they redirected INDEL questions to BCH at `innovacion.financiera@bch.hn`
+- Key insight: the corresponsal path bypasses this entirely — HNDA as administrador doesn't need CNBS pre-approval; the bank notifies CNBS, not HNDA
+
+**Fallback paths if no bank partnership**
+- INDEL (BCH authorization) — full control, no commission sharing, but trust accounts + BCH process
+- EPSPE — lighter than INDEL but still needs a bank in the chain
+- Tigo Money partnership — fastest rails but telecom dependency
+- Pre-load only — works today, kills spontaneous purchase UX
+
+**Foreign subsidiary structure**
+- Cristian proposed a subsidiary abroad as the financial layer
+- HNDA Honduras = tech + merchant network (never touches money)
+- HNDA Financial [Panama] = financial layer (holds float, processes transactions, interfaces with banks as corporate client)
+- Panama identified as strongest jurisdiction: Ley Fintech 2023, regional hub, USD, same timezone
+- El Salvador as second option (Bitcoin Law, crypto-permissive, lower cost)
+- This reframes the bank conversation: Honduran banks deal with the Panamanian sub as a corporate client, not a competitor
+
+#### Key decisions
+- The phone-as-card model only works with real-time bank pull — pre-load model breaks the UX
+- HNDA's hard ceiling on bank commission: 2.34% (treasury share)
+- Target bank commission: below 1%
+- Corresponsal bancario path is viable under Circular CNBS 251/2013 Article 5 — no HNDA license needed
+- Panama is the preferred jurisdiction for the foreign financial subsidiary
+- All remaining decisions are legal and business work — Víctor needs to be in the room
+
+#### Pending / next up
+- Víctor: corresponsal negotiation with Atlántida or BAC
+- Víctor: BCH INDEL inquiry (`innovacion.financiera@bch.hn`) as fallback
+- Víctor: Panamanian subsidiary incorporation and EMI licensing feasibility
+- Email notification to merchant on GCA gift/vest/redemption approval
+- H-Wallet key generation
+- Etapa 2 scaffolding — webhook receiver for BAC callback

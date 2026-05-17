@@ -793,3 +793,18 @@ export function rejectApplication(id: string, token: string, reason?: string) {
     body: JSON.stringify({ reason }),
   });
 }
+
+export interface NfcPaymentPayload {
+  reference_code: string;
+  amount_lempiras: number;
+  client_wallet: string;
+  received_at: number;
+}
+
+export function submitNfcPayment(payload: NfcPaymentPayload) {
+  return apiFetch<{ status: string; reference_code: string }>('/bridge/payment-received', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ ...payload, source: 'NFC' }),
+  });
+}

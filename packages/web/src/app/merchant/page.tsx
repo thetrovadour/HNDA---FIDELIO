@@ -1,6 +1,7 @@
 'use client';
 
 import { FidelioIntro } from '@/components/FidelioIntro';
+import { NfcChargeFlow } from '@/components/NfcChargeFlow';
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
@@ -485,6 +486,9 @@ function NegocioTab({ merchant }: { merchant: Merchant }) {
   return (
     <div className="flex flex-col gap-4">
       <SecurityReminderBanner merchantId={merchant.id} />
+      <Section title="Cobrar con NFC">
+        <NfcChargeFlow merchantId={merchant.id} />
+      </Section>
       <Section title={t('merchant.section_wallet')}>
         <div className="flex flex-col gap-3">
           <div
