@@ -189,5 +189,5 @@ packages/
 
 ---
 
-HNDA — Honduras Digital Assets  
+HNDA — Honduras Nativa Digital Answers
 San Pedro Sula, Honduras
