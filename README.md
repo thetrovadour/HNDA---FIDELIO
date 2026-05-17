@@ -15,7 +15,7 @@ The CATR token is not a cryptocurrency to the end user. It is a loyalty point â€
 
 ## The problem it solves
 
-A small merchant in San Pedro Sula cannot afford a traditional POS terminal. The rental fees, the card processing percentages, the hardware contracts. What the merchant gets in return is a payment rail and nothing else. No loyalty system. No customer data. No recurring relationship. Transactions occur in what HNDA believes is a floor level: I give, you recieve, you give, I recieve.
+A bottleneck that Honduras is experiencing is that of a small merchant in San Pedro Sula that cannot afford a traditional POS terminal. The merchant then loses all possibility of plastic movements. Add to it the rental fees, the card processing percentages, the hardware contracts and more. What the merchant gets in return is a payment rail and nothing else. No loyalty system. No customer data. No recurring relationship. Transactions occur in what HNDA believes is a floor level: I give, you receive, you give, I receive.
 
 FIDELIO offers the merchan a feature to make a client participate in FIDELIO in a loyalty business with the merchant. The merchant charges clients by tapping the phone. The commission stays inside the network and a fraction of it flows back to clients as cashback and to merchants as GCA (Guacacoin) loyalty equity. The money stays in Honduras.
 
