@@ -141,5 +141,5 @@ These questions were raised during the Season 5 thinking session and are answere
 3. **GCA deployment** — Should GCA be deployed now in simplified form for visualization, ahead of Etapa 2?
 4. **GCA thermodynamics** — GCA can only grow. Where is the loss? What is GCA actually backed by?
 5. **GCA tradeability** — Would making GCA tradeable solve the value floor problem? (Answer: no — regulatory risk. GCA stays internal.)
-6. **GCA value backing** — Is GCA's value a function of the 0.63% commission, or something more fundamental?
+6. **GCA value backing** — Is GCA's value a function of the 3.6% commission, or something more fundamental?
 7. **Decay vs. dilution vs. dividends** — Which mechanism honestly answers the entropy question for GCA?

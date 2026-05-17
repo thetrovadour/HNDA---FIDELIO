@@ -44,7 +44,7 @@ The smart contract is the final authority. It does not trust the bridge. It does
 **The invariants, encoded in Solidity:**
 
 - `ERC20Capped(50_000_000 * 10**18)` — 50 million CATR hard cap, enforced by OpenZeppelin at the EVM level. The cap cannot be changed after deployment.
-- `_update()` override — every non-mint, non-burn transfer deducts 0.63% commission before execution. Three sub-transfers per transfer: recipient, treasury, reward pool. The math is transparent and verifiable on-chain.
+- `_update()` override — every non-mint, non-burn transfer deducts 3.6% commission before execution. Three sub-transfers per transfer: recipient, treasury, reward pool. The math is transparent and verifiable on-chain.
 - `MINTER_ROLE` — only the bridge minter wallet can call `mint()`. Granted atomically in the constructor. No post-deploy `grantRole` call required.
 - `DEFAULT_ADMIN_ROLE` — assigned to VaultOp Safe (Gnosis Safe 2-of-2: Cristian + Víctor). The admin cannot mint. The minter cannot administrate.
 
