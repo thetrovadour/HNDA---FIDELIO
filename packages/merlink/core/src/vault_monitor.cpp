@@ -1,5 +1,5 @@
 #include "vault_monitor.h"
-
+// for the future.
 #include <cstdio>
 #include <cmath>
 
@@ -33,7 +33,7 @@ void VaultMonitor::on_alert(std::function<void(const VaultAlert&)> callback) {
 }
 
 // ---------------------------------------------------------------------------
-// Lifecycle
+// Lifecycle, should not resurrect from the dead.
 // ---------------------------------------------------------------------------
 
 void VaultMonitor::start() {
@@ -78,7 +78,7 @@ void VaultMonitor::monitor_loop() {
 }
 
 // ---------------------------------------------------------------------------
-// check_once — core logic, static-style, fully testable
+// check_once — core logic, static-style, fully testable, I mean, this can be tested.
 // ---------------------------------------------------------------------------
 
 std::optional<VaultAlert> VaultMonitor::check_once(const VaultState& current,
@@ -132,4 +132,4 @@ std::optional<VaultAlert> VaultMonitor::check_once(const VaultState& current,
     return std::nullopt;
 }
 
-} // namespace merlink
+} 
