@@ -139,6 +139,21 @@ Append-only. Newest entries at the top. Format:
 
 <!-- New entries go here -->
 
+### 2026-05-23 — Engine class named `GridWorld` (not `GridEngine`, not `Grid`)
+**Decision:** The world/state class is `Catr.GridEngine.GridWorld`. Module / folder / asmdef stay called `GridEngine`.
+**Why:** Class name `GridEngine` collided with its own namespace (`CS0118: namespace used like a type`). Renamed to `Grid` — but `UnityEngine.Grid` exists (Tilemap system), triggering `CS0104: ambiguous reference`. `GridWorld` is descriptive (it IS the world state), reads cleanly (`engine.Engine.PlayerPosition`), and collides with neither. Lesson: never name a class identically to its containing namespace.
+**Phase:** G1.
+
+### 2026-05-23 — Totem art deferred to post-G3 art-direction review
+**Decision:** G1 totem = plain cyan circle. Final character/pawn art is **not** decided now.
+**Why:** Cristian asked about 3D pawn. Implications analysis surfaced that this is an art-direction decision, not a totem-swap: 2D-flat / 2D-with-character / tilted-isometric-3D are different *games* with different camera setups, different render pipelines (URP 2D vs URP 3D), and different asset pipelines. Decision blocked on having playable gameplay (post-G3, after mist + puzzles) to react to. Three paths identified, all viable.
+**Phase:** G5 / G7 (art).
+
+### 2026-05-23 — Active Input Handling = `Both` for G1 sandbox
+**Decision:** Unity Player Settings → Active Input Handling = *Both* during the G1 sandbox phase. Sandbox driver stays on legacy `UnityEngine.Input.*`.
+**Why:** Unity 6 defaults to the new Input System Package; legacy `Input.GetKeyDown` throws every frame under that setting. Two options: port the throwaway sandbox driver (~30 extra lines for code we'll delete) or flip the project to `Both` (one setting, zero new code). Chose `Both` because the real `InputAdapter` module (post-G1) will use the new system properly — polishing throwaway code is wasted work. Yellow deprecation warning is acceptable; zero errors. Revisit when sandbox is deleted.
+**Phase:** G1 / cross-cutting.
+
 ### 2026-05-23 — Folder name `game/` vs branded name `CATR!`
 **Decision:** Unity project folder stays `packages/game/` (Linux path, monorepo convention, no shell-escaping pain). The branded identity `CATR!` lives in Unity's Player Settings (`Product Name: CATR!`, `Company Name: HNDA`) — the name users see on phone home screens, Steam library, window titles.
 **Why:** `!` triggers bash/zsh history expansion — every `cd packages/CATR!/...` command would require single-quoting forever, including every Claude bash call. Folder name = dev convention; display name = brand. Standard practice in shipped Unity projects.

@@ -40,6 +40,68 @@ A clear, actionable opener for the next session.
 
 ---
 
+## 2026-05-23 — G1 First Modules: `GridEngine` + `GridRenderer` Playable
+**Phase:** G1 (first real gameplay modules)
+**Participants:** Cristian, Claude
+
+### Goal
+Write the first two G1 modules from scratch: a pure-C# `GridEngine` (the world model) and a Unity `GridRenderer` (the visualization), wire them in `G1_GridSandbox`, and prove the engine→renderer chain works end-to-end with a keyboard sandbox driver.
+
+### What Happened
+1. Picked up from prior session — Unity project skeleton in place, four empty module folders, no code.
+2. **Plan-before-code negotiation on `GridEngine`.** Claude initially proposed a generic "infinite plane, player at origin, free 4-directional movement" model. Cristian rewrote the brief: 9 rows × ∞ columns, player starts on the left, only 3 forward-adjacent tiles ever choosable, no backwards movement, mist eats trailing columns. Resolved 6 ambiguities (wrong-answer behavior, adjacency definition, sideways movement, spawn position, grid-height ownership, starting row) before writing a line.
+3. **Warmup-phase rule clarified.** Column 0 starts black; player can scroll up/down freely (no puzzles); the 3 forward-adjacent tiles in column 1 are colored *relative to current row* and slide with him; commit (tap any column-1 tile) ends warmup, column 0 becomes Spent, game starts.
+4. **Critical determinism rule:** sliding the player vertically does NOT re-roll colors. Each `(x, y)` cell has a category fixed by a seeded integer hash. Cristian wanted memory-based strategy to actually work.
+5. **Wrote `GridEngine` module:** 9 files in `Assets/Scripts/GridEngine/` — `GridCoord`, `CellCategory` (8 colors), `VisualState` (6-state cell lifecycle: WarmupBlack → Unrevealed → Revealed → Entered → Spent → Consumed), `GamePhase`, `VerticalDir`, `CellView` (read-only projection), `GridWorld` (the engine class), and an `.asmdef` with `noEngineReferences: true` — compile-time guarantee no rendering code can leak in.
+6. **Wrote 11 unit tests** (NUnit) covering: spawn, warmup vertical move, top-edge clamping, sliding-doesn't-re-roll determinism, commit transition, correct/wrong puzzle resolution, edge-row frontier (2 cells instead of 3), per-seed reproducibility, column-consumption GameOver, and `PlayerMoved` event ordering.
+7. **Verified the engine in isolation with `dotnet test`** (NUnit 3 pinned — Unity ships NUnit 3, `dotnet new nunit` pulls NUnit 4 which dropped the classic `Assert.AreEqual` API). 11/11 green. Caught one real bug pre-Unity: `h *= 0x846ca68b` failed because the literal exceeds `int.MaxValue` (interpreted as `uint`), even inside `unchecked`. Fixed with `unchecked((int)0x846ca68b)`.
+8. **Plan-before-code on `GridRenderer`.** Renderer = `MonoBehaviour` that owns the `GridWorld`, subscribes to its 3 events, draws a sliding 9-row × 9-column window of `SpriteRenderer` quads, lerps totem + camera. Sprites generated procedurally in `Awake` (1×1 white square + procedurally rasterized circle) — no asset import required.
+9. **Totem art digression.** Cristian floated "what if the totem is a 3D pawn?" Claude pushed back with a full implications analysis: URP 2D vs URP 3D (different render pipelines), top-down ortho camera + 3D pawn = pointless (you only see the top), 2D vs 2D-with-character vs tilted-isometric-3D are different *games* not different totems. Concluded: this is an **art-direction decision** that should wait until after G3 (mist + puzzles working) when there's playable material to react to. For G1: plain cyan circle. Logged as a deferred decision.
+10. **Wrote `GridRenderer` module:** 4 files in `Assets/Scripts/GridRenderer/` — `CategoryPalette` (8 sandbox colors), `GridRendererBehaviour` (MonoBehaviour), `.asmdef` (references `GridEngine`, allows `UnityEngine`), `Sandbox/G1SandboxDriver.cs` (throwaway keyboard driver — header comment flags it for deletion when `InputAdapter` ships).
+11. **Tried Unity batchmode compile to verify renderer syntax.** Unity exited after path-change because `-quit` without `-executeMethod` doesn't trigger an asset import. Skipped — Editor open is faster.
+12. **Three real bugs surfaced once Cristian hit Play:**
+    - `GridEngine.Tests.asmdef` had both `references: [..., "UnityEngine.TestRunner", "UnityEditor.TestRunner"]` AND legacy `optionalUnityReferences: ["TestAssemblies"]` → duplicate references. Removed the legacy field.
+    - `Catr.GridEngine.GridEngine` — class name matches namespace, causes `CS0118: 'GridEngine' is a namespace but is used like a type`. Renamed class to `Grid`.
+    - `Grid` collides with `UnityEngine.Grid` (Tilemap system) → `CS0104: ambiguous reference`. Final rename: `GridWorld`. Reads cleanly: `engine.Engine.PlayerPosition` via the renderer's public property.
+13. **Self-inflicted process bug:** Claude used `Edit replace_all` for `Grid → GridWorld`, which greedily munged `GridCoord → GridWorldCoord` AND `namespace Catr.GridEngine → Catr.GridWorldEngine`. Reverted both. **Lesson logged: never `replace_all` short tokens.** Three fix-and-retest cycles consumed more time than the original rename would have.
+14. **Unity 6 Input System gotcha:** Sandbox driver uses legacy `UnityEngine.Input.GetKeyDown`. Unity 6 defaults Active Input Handling to *Input System Package (New)* → 866 `InvalidOperationException` errors. Cristian flipped Player Settings → Active Input Handling to *Both*. Decided NOT to port the sandbox driver to the new Input System: it's throwaway code; the real `InputAdapter` will use the new system properly. Yellow warning persists, no errors.
+15. **End-to-end success.** Cristian hit Play: 9 black tiles in column 0, cyan totem on middle, 3 colored frontier tiles to the right. W/S scrolls vertically with the frontier sliding. Space commits, column 0 dims to spent colors, totem jumps forward, new frontier appears. 1/2/3 advance correctly. Camera follows rightward. Cell hierarchy in Editor shows live spawn/despawn of `Cell (x, y)` GameObjects as the window slides.
+
+### Decisions Made
+*(Mirrored into `CLAUDE.md` §11 Decision Log)*
+- **Engine class named `GridWorld`** (not `GridEngine`, not `Grid`) — avoids the namespace/class collision and the `UnityEngine.Grid` collision in one move. Module / folder / asmdef stay called `GridEngine`.
+- **Totem art deferred to post-G3 art-direction review.** Three viable paths identified (flat 2D, 2D-with-character, tilted 3D iso). Decision blocked on having playable gameplay to react to.
+- **Active Input Handling = `Both`** for the duration of G1 sandbox. Sandbox driver stays on legacy `Input.*` (throwaway); real `InputAdapter` post-G1 will use `UnityEngine.InputSystem`.
+- **Per-coordinate categories are deterministic from `(seed, x, y)`** — sliding the player never re-rolls a cell's color. Confirmed via tests + Cristian's "memory-based strategy" rationale.
+
+### Artifacts Touched
+- `packages/game/Assets/Scripts/GridEngine/{GridCoord, CellCategory, VisualState, GamePhase, VerticalDir, CellView, GridEngine}.cs` — engine module, pure C#.
+- `packages/game/Assets/Scripts/GridEngine/GridEngine.asmdef` — `noEngineReferences: true`.
+- `packages/game/Assets/Scripts/GridEngine/Tests/GridEngineTests.cs` + `GridEngine.Tests.asmdef` — 11 NUnit tests.
+- `packages/game/Assets/Scripts/GridRenderer/{GridRendererBehaviour, CategoryPalette}.cs` — renderer module.
+- `packages/game/Assets/Scripts/GridRenderer/GridRenderer.asmdef` — references `GridEngine`.
+- `packages/game/Assets/Scripts/GridRenderer/Sandbox/G1SandboxDriver.cs` — throwaway keyboard driver.
+- `packages/game/Assets/Scenes/G1_GridSandbox.unity` — added `GridRoot` (with `GridRendererBehaviour`) and `SandboxDriver` (with `G1SandboxDriver`) GameObjects.
+- `packages/game/ProjectSettings/ProjectSettings.asset` — Active Input Handling → Both.
+- `packages/game/CLAUDE.md` — new Decision Log entries.
+- `packages/game/Sessions-CATR-log.md` — this entry.
+
+### Open Threads
+- **Visual polish:** during Warmup, the player's column-0 cell shows its underlying category color (Entered state has highest priority in the engine) instead of staying `WarmupBlack` like the rest of column 0. Cosmetic, breaks the "column 0 is all black until commit" expectation. Trivial engine fix — defer Entered-over-WarmupBlack so column 0 stays uniformly black during Warmup.
+- **Two G1 modules still empty:** `MistController/` and `InputAdapter/` — both have engine hooks ready (`ConsumeColumn`, `Phase`, `ChoosableCells`) but no code yet.
+- **Tests not yet runnable inside Unity Test Runner UI** — they pass under standalone `dotnet test` with NUnit 3 pinned, but Cristian hasn't opened *Window → General → Test Runner* in Unity to confirm the asmdef wiring lets the Test Runner discover them.
+- **Trivia question source still unresolved** (design doc §15.3).
+- **GCA→HNL redemption** blocked pending Víctor's legal review.
+
+### Next Session Starts With
+G1 is now ~50% done: `GridEngine` + `GridRenderer` working. Two viable next steps:
+- **`MistController`** — auto-consume the trailing column on a timer (or speed-curve), driving the GameOver condition the engine already supports. Clean continuation of the gameplay loop.
+- **`InputAdapter`** — replace the keyboard sandbox driver with proper click-to-pick-tile input using the new Input System. Required before any non-Cristian playtest.
+
+Cristian's call which comes first. Also: patch the warmup-player-cell color in a 5-line engine edit before moving on.
+
+---
+
 ## 2026-05-23 — Phase G1 Kickoff & Unity Toolchain Install
 **Phase:** G1 (initialization, no gameplay code yet)
 **Participants:** Cristian, Claude
