@@ -139,6 +139,16 @@ Append-only. Newest entries at the top. Format:
 
 <!-- New entries go here -->
 
+### 2026-05-23 — InputAdapter shipped; single-step warmup, click = correct in G1
+**Decision:** `InputAdapter` is a MonoBehaviour that polls `Pointer.current` (new Input System), maps screen→grid via a new public `GridRendererBehaviour.ScreenToGridCoord` helper, and routes clicks: Warmup → single-step `TryWarmupMove` if `dy == ±1` on column 0, or `Commit` if clicking column-1 frontier; Running → `ResolvePuzzle(target, correct: true)` for any frontier click. Sandbox keyboard driver demoted to "debug driver" — kept until the question engine arrives because mouse can't express "wrong answer."
+**Why:** Decouples intent from input device. Same `GridWorld` is now driven by mouse on desktop and finger on Android with zero branching (`Pointer.current` resolves to whichever is active). Single-step warmup chosen over free-jump because it (a) preserves the engine's existing API contract, (b) matches W/S parity, and (c) Cristian wants Warmup to feel like deliberate exploration, not teleportation. "Click = correct" is a G1 placeholder; G2 will route clicks into the question engine, which then calls `ResolvePuzzle` with the real outcome.
+**Phase:** G1.
+
+### 2026-05-23 — Renderer maps engine row 0 to world-top (Y-flip)
+**Decision:** `GridRendererBehaviour.CellWorldPos` now uses `(rowCount - 1 - c.Y) * cellSize` for the Y component, so engine row 0 renders at the top of the world and row N-1 at the bottom. Camera centering unchanged (range is identical). Also added a `if (Engine == null) return;` guard at the top of `LateUpdate` to survive Unity's assembly hot-reload during Play.
+**Why:** Engine treats Y=0 as the top row (`TryWarmupMove(Up) → Y - 1`); the original renderer mapped Y=0 to world-bottom, so W moved the totem visually down and S moved it visually up. Inverting the mapping at the renderer keeps the engine untouched — Y semantics stay "row index from the top," which is how the engine, tests, and design doc all read. Null guard fixed a NullReferenceException at line 65 after a hot-recompile nuked the `Engine` field mid-Play.
+**Phase:** G1.
+
 ### 2026-05-23 — MistController shipped; interval = 2.3s placeholder
 **Decision:** `MistController` is a thin MonoBehaviour that ticks every `intervalSeconds` and calls `GridWorld.ConsumeColumn(mistFrontX++)` while `Phase == Running`. Default interval = **2.3s**, explicitly a placeholder pending trivia integration. Real tuning happens in G3 when questions add cognitive load.
 **Why:** Without puzzles, 5s feels sluggish and 2s feels frantic; 2.3s is a sane placeholder. The right pacing is a function of how long a player needs to read+answer a trivia card — undefined until G3. Module is intentionally trivial (no acceleration curve, no pause, no visual fog) so it can be replaced wholesale when the economy/difficulty system arrives.

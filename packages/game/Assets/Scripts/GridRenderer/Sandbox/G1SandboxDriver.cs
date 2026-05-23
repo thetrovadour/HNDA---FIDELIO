@@ -1,4 +1,6 @@
-// G1 SANDBOX ONLY — delete when InputAdapter + MistController land.
+// G1 DEBUG DRIVER — kept alongside InputAdapter until the question engine arrives.
+// Mouse can't express "wrong answer" (every click = correct in G1); the 0 hotkey simulates
+// it for testing the engine's no-op-on-wrong path. Delete when the question engine resolves.
 // Drives GridEngine with keyboard hotkeys so we can see the renderer respond.
 //   W / S         → warmup move up / down (column 0 only)
 //   Space         → commit center-forward cell (ends warmup)

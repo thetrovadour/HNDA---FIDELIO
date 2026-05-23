@@ -57,6 +57,8 @@ namespace Catr.GridRenderer
 
         private void LateUpdate()
         {
+            if (Engine == null) return;
+
             if (totem != null)
                 totem.transform.position = Vector3.Lerp(totem.transform.position, totemTarget, Time.deltaTime * totemLerpSpeed);
 
@@ -163,7 +165,16 @@ namespace Catr.GridRenderer
             }
         }
 
-        private Vector3 CellWorldPos(GridCoord c) => new Vector3(c.X * cellSize, c.Y * cellSize, 0f);
+        private Vector3 CellWorldPos(GridCoord c) => new Vector3(c.X * cellSize, (rowCount - 1 - c.Y) * cellSize, 0f);
+
+        public GridCoord ScreenToGridCoord(Vector2 screenPos)
+        {
+            var cam = mainCamera != null ? mainCamera : Camera.main;
+            Vector3 world = cam.ScreenToWorldPoint(new Vector3(screenPos.x, screenPos.y, -cam.transform.position.z));
+            int x = Mathf.RoundToInt(world.x / cellSize);
+            int y = (rowCount - 1) - Mathf.RoundToInt(world.y / cellSize);
+            return new GridCoord(x, y);
+        }
 
         private static Sprite MakeSquareSprite()
         {

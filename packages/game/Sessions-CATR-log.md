@@ -40,8 +40,8 @@ A clear, actionable opener for the next session.
 
 ---
 
-## 2026-05-23 — G1 Warmup Patch + `MistController` Shipped
-**Phase:** G1 (75% — three of four modules live)
+## 2026-05-23 — G1 Sealed: Warmup Patch, `MistController`, Y-flip, `InputAdapter`
+**Phase:** G1 (100% — all four modules live, mouse + keyboard playable end-to-end)
 **Participants:** Cristian, Claude
 
 ### Goal
@@ -56,11 +56,21 @@ Two surgical pieces: (1) fix the warmup-player-cell color leak so column 0 stays
 6. **Sandbox cleanup.** Removed the now-redundant `M` hotkey (manual `ConsumeColumn`) from `G1SandboxDriver`; mist supersedes it. Removed the `.gitkeep` placeholder from `Assets/Scripts/MistController/`.
 7. **Pacing dialogue.** Started at 5.0s — Cristian called it "too slow." Walked through the live-edit workflow (Inspector serialized field, Play-mode edits are discarded on Stop, edit-while-stopped + save scene to persist). Cristian settled on **2.3s** with the explicit observation: *"the real definition of that comes when adding the questions and the answers."* Filed as a G3 retuning task.
 8. **End-to-end verified by Cristian in Editor.** Column 0 is now uniformly black during Warmup (including the player's cell). Mist eventually reaches the player and Play stops responding to inputs — engine flipped to `GameOver` as designed.
+9. **Y-axis inversion bug.** Cristian: "S is down but when I hit it goes up haha, and vice versa with W." Root cause: engine treats Y=0 as the top row (`TryWarmupMove(Up) → Y - 1`), but renderer mapped Y=0 to world-bottom. Fix at the renderer: `CellWorldPos` Y component became `(rowCount - 1 - c.Y) * cellSize`. Engine semantics untouched.
+10. **NullReferenceException at `LateUpdate:65`.** Hot-recompile during Play nuked the `Engine` field; `mainCamera`-branch dereferenced it without guard. Added `if (Engine == null) return;` at the top of `LateUpdate`. Both fixes verified together: W moves up, S moves down, no exceptions.
+11. **InputAdapter plan-before-code.** Defined the module boundary: knows engine + renderer (for `ScreenToGridCoord` helper), not cell GameObjects, not trivia, not mist. Open question surfaced: warmup click = single-step (W/S parity) or free-jump? Cristian's answer was reflective — "I am starting to feel that the warm-up gives our player freedom to move. Let's maintain the single-step for now." Filed as a deliberate UX choice, not a constraint: Warmup is exploration, not teleportation.
+12. **Wrote `InputAdapter`** — 2 files, ~55 lines. Polls `Pointer.current.press.wasPressedThisFrame`, maps screen→grid via the renderer's new `ScreenToGridCoord` public helper, routes by phase: Warmup column-0 click → `TryWarmupMove` (±1 only), Warmup column-1 frontier click → `Commit`, Running frontier click → `ResolvePuzzle(correct: true)`. "Click = correct" is a G1 placeholder — G2 wires real puzzle outcomes through the question engine.
+13. **Renderer extension.** Added public `ScreenToGridCoord(Vector2)` on `GridRendererBehaviour`. Single source of truth for spatial mapping — InputAdapter doesn't duplicate `cellSize`/`rowCount`/Y-flip math.
+14. **Sandbox demoted, not deleted.** Updated `G1SandboxDriver` header: kept alive as "debug driver" until the question engine arrives, because the mouse can't express "wrong answer" (every click = correct). The `0` hotkey still simulates the wrong-answer no-op path for engine testing.
+15. **Component visibility confusion.** First attempt to Add Component → "input adapter behavior" showed only "New script" — looked like the script wasn't found. Walked Cristian through (a) re-enabling Console error icons, (b) confirming `com.unity.inputsystem` 1.19.0 is installed via Package Manager. Resolution turned out to be Unity-fuzzy-search latency: a moment later the component appeared as **Input Adapter Behaviour (Catr.In...)**.
+16. **End-to-end verified by Cristian.** Mouse drives the full loop: click column 0 to slide warmup, click frontier to commit, click frontier in Running to advance. Mist still eats trailing columns. Keyboard debug driver still works in parallel. G1 is sealed.
 
 ### Decisions Made
 *(Mirrored into `CLAUDE.md` §11 Decision Log)*
 - **Warmup keeps player cell black until commit.** `WarmupBlack` check precedes `Entered` check in `GetCellView`. Test updated.
 - **MistController shipped; interval = 2.3s placeholder.** Real pacing tuning deferred to G3 alongside trivia integration. Module is intentionally trivial so it can be replaced wholesale when difficulty/economy systems arrive.
+- **Renderer maps engine row 0 to world-top (Y-flip).** Engine semantics untouched; visual inversion fixed in `CellWorldPos`. `LateUpdate` null-guard added for hot-reload survival.
+- **InputAdapter shipped; single-step warmup, click = correct in G1.** Warmup is exploration, not teleportation. "Click = correct" is a G1 placeholder; G2 will route through the question engine.
 
 ### Artifacts Touched
 - `packages/game/Assets/Scripts/GridEngine/GridEngine.cs` — reordered two `if` blocks in `GetCellView`.
@@ -68,20 +78,23 @@ Two surgical pieces: (1) fix the warmup-player-cell color leak so column 0 stays
 - `packages/game/Assets/Scripts/MistController/MistController.asmdef` — new, references `GridEngine` + `GridRenderer`.
 - `packages/game/Assets/Scripts/MistController/MistControllerBehaviour.cs` — new, ~25 lines.
 - `packages/game/Assets/Scripts/MistController/.gitkeep` — removed.
-- `packages/game/Assets/Scripts/GridRenderer/Sandbox/G1SandboxDriver.cs` — removed `M` hotkey + header line.
-- `packages/game/Assets/Scenes/G1_GridSandbox.unity` — Cristian added `MistController` GameObject, wired `GridRoot` into its `gridRenderer` field, set `intervalSeconds = 2.3`.
-- `packages/game/CLAUDE.md` — 2 new Decision Log entries.
+- `packages/game/Assets/Scripts/GridRenderer/GridRendererBehaviour.cs` — Y-flip in `CellWorldPos`, null guard in `LateUpdate`, new public `ScreenToGridCoord` helper.
+- `packages/game/Assets/Scripts/GridRenderer/Sandbox/G1SandboxDriver.cs` — removed `M` hotkey + updated header to "debug driver."
+- `packages/game/Assets/Scripts/InputAdapter/InputAdapter.asmdef` — new, references `GridEngine` + `GridRenderer` + `Unity.InputSystem`.
+- `packages/game/Assets/Scripts/InputAdapter/InputAdapterBehaviour.cs` — new, ~55 lines.
+- `packages/game/Assets/Scenes/G1_GridSandbox.unity` — Cristian added `MistController` + `InputAdapter` GameObjects, wired `GridRoot` into both, set `intervalSeconds = 2.3`.
+- `packages/game/CLAUDE.md` — 4 new Decision Log entries.
 - `packages/game/Sessions-CATR-log.md` — this entry.
 
 ### Open Threads
-- **Last G1 module empty:** `InputAdapter/` — replace the throwaway keyboard sandbox driver with the new Input System for click-to-pick-tile. Required before any non-Cristian playtest.
 - **Mist interval (2.3s) is a placeholder** — real tuning happens in G3 when trivia cards add cognitive load (read + decide takes seconds, not key-mashing milliseconds).
+- **Click = correct is a G1 placeholder** — InputAdapter will route clicks into the question engine in G2.
 - **Tests not yet runnable inside Unity Test Runner UI** — passing under sidecar `dotnet test`, but Test Runner asmdef wiring still unconfirmed.
 - **Trivia question source still unresolved** (design doc §15.3).
 - **GCA→HNL redemption** blocked pending Víctor's legal review.
 
 ### Next Session Starts With
-G1 is now ~75% done. Final G1 module is **`InputAdapter`** — port the keyboard sandbox driver to the new Input System with click/tap-to-pick-tile, so a real human (mouse on desktop, finger on Android) can play without `1/2/3` hotkeys. After that, G1 is sealed and G2 (question engine) begins.
+**G1 is sealed.** All four modules live, mouse + keyboard both playable, mist drives GameOver. Next session opens **G2 — the Question Engine**. Plan first: where do questions come from (static JSON catalog seed? trivia API? local hand-authored set?), what's the data model (`Question { id, category, prompt, answers[], correct }`), how does it bind to the 8 cell categories, and how does `InputAdapter` hand off a frontier click to the question engine instead of immediately calling `ResolvePuzzle(correct: true)`. The hidden time mechanic enters here too — but stays internal (never surface in UI).
 
 ---
 
