@@ -4,7 +4,6 @@
 //   Space         → commit center-forward cell (ends warmup)
 //   1 / 2 / 3     → ResolvePuzzle correct on up-right / right / down-right
 //   0             → ResolvePuzzle wrong (no-op verification)
-//   M             → manually consume column (playerX - 2)
 
 using UnityEngine;
 using Catr.GridEngine;
@@ -37,8 +36,6 @@ namespace Catr.GridRenderer.Sandbox
                 if (Input.GetKeyDown(KeyCode.Alpha0)) Resolve( 0, false);
             }
 
-            if (Input.GetKeyDown(KeyCode.M))
-                SafeCall(() => e.ConsumeColumn(e.PlayerPosition.X - 2));
         }
 
         private void Resolve(int dy, bool correct)

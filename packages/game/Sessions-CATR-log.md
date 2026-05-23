@@ -40,6 +40,51 @@ A clear, actionable opener for the next session.
 
 ---
 
+## 2026-05-23 — G1 Warmup Patch + `MistController` Shipped
+**Phase:** G1 (75% — three of four modules live)
+**Participants:** Cristian, Claude
+
+### Goal
+Two surgical pieces: (1) fix the warmup-player-cell color leak so column 0 stays uniformly black until commit; (2) ship `MistController` so trailing columns auto-consume on a timer and the engine's existing GameOver path actually triggers in play.
+
+### What Happened
+1. Session-start ritual: confirmed Game track, summarized the last 3 sessions, proposed warmup-patch-then-MistController order. Approved.
+2. **Warmup patch.** Root cause in `GridWorld.GetCellView`: the `c == PlayerPosition → Entered` check ran *before* the `Phase == Warmup && c.X == 0 → WarmupBlack` check, so the player's column-0 cell leaked its underlying category color. Swapped the two `if` blocks. Updated `Spawn_PlayerAtMiddleRowOfColumnZero_PhaseWarmup` to assert all 9 column-0 rows are `WarmupBlack` (removed the `y == 4` skip).
+3. **Sidecar `dotnet test` verification.** No standalone csproj lives in the repo; recreated a temp NUnit project under `/tmp/catr-gridengine-test`, copied the 7 engine sources + test file, pinned `NUnit 3.14.0` (Unity ships NUnit 3; `dotnet new nunit` pulls NUnit 4 which dropped classic `Assert.AreEqual`). **11/11 green.** First attempt failed with a zsh `no matches found: *` glob — fixed by removing the pre-clean `rm -rf *` and just deleting the dir wholesale.
+4. **MistController plan-before-code.** Defined the module boundary tightly: knows only `Engine.PlayerPosition.X` (read), `Engine.ConsumeColumn(x)` (write), and `Time.deltaTime`. Does NOT know about rendering, puzzles, or input. Renderer's existing `ColumnConsumed` subscription paints consumed columns black with zero renderer changes — clean validation of the Modularity Mandate.
+5. **Wrote `MistController`** — 2 files, ~25 lines total: `MistController.asmdef` (references `GridEngine` + `GridRenderer`) and `MistControllerBehaviour.cs`. Activates only in `Running`, ticks every `intervalSeconds`, calls `ConsumeColumn(mistFrontX++)`. No acceleration curve, no pause, no visual fog — pure G1 placeholder.
+6. **Sandbox cleanup.** Removed the now-redundant `M` hotkey (manual `ConsumeColumn`) from `G1SandboxDriver`; mist supersedes it. Removed the `.gitkeep` placeholder from `Assets/Scripts/MistController/`.
+7. **Pacing dialogue.** Started at 5.0s — Cristian called it "too slow." Walked through the live-edit workflow (Inspector serialized field, Play-mode edits are discarded on Stop, edit-while-stopped + save scene to persist). Cristian settled on **2.3s** with the explicit observation: *"the real definition of that comes when adding the questions and the answers."* Filed as a G3 retuning task.
+8. **End-to-end verified by Cristian in Editor.** Column 0 is now uniformly black during Warmup (including the player's cell). Mist eventually reaches the player and Play stops responding to inputs — engine flipped to `GameOver` as designed.
+
+### Decisions Made
+*(Mirrored into `CLAUDE.md` §11 Decision Log)*
+- **Warmup keeps player cell black until commit.** `WarmupBlack` check precedes `Entered` check in `GetCellView`. Test updated.
+- **MistController shipped; interval = 2.3s placeholder.** Real pacing tuning deferred to G3 alongside trivia integration. Module is intentionally trivial so it can be replaced wholesale when difficulty/economy systems arrive.
+
+### Artifacts Touched
+- `packages/game/Assets/Scripts/GridEngine/GridEngine.cs` — reordered two `if` blocks in `GetCellView`.
+- `packages/game/Assets/Scripts/GridEngine/Tests/GridEngineTests.cs` — `Spawn_PlayerAtMiddleRowOfColumnZero_PhaseWarmup` now asserts all 9 column-0 rows are `WarmupBlack`.
+- `packages/game/Assets/Scripts/MistController/MistController.asmdef` — new, references `GridEngine` + `GridRenderer`.
+- `packages/game/Assets/Scripts/MistController/MistControllerBehaviour.cs` — new, ~25 lines.
+- `packages/game/Assets/Scripts/MistController/.gitkeep` — removed.
+- `packages/game/Assets/Scripts/GridRenderer/Sandbox/G1SandboxDriver.cs` — removed `M` hotkey + header line.
+- `packages/game/Assets/Scenes/G1_GridSandbox.unity` — Cristian added `MistController` GameObject, wired `GridRoot` into its `gridRenderer` field, set `intervalSeconds = 2.3`.
+- `packages/game/CLAUDE.md` — 2 new Decision Log entries.
+- `packages/game/Sessions-CATR-log.md` — this entry.
+
+### Open Threads
+- **Last G1 module empty:** `InputAdapter/` — replace the throwaway keyboard sandbox driver with the new Input System for click-to-pick-tile. Required before any non-Cristian playtest.
+- **Mist interval (2.3s) is a placeholder** — real tuning happens in G3 when trivia cards add cognitive load (read + decide takes seconds, not key-mashing milliseconds).
+- **Tests not yet runnable inside Unity Test Runner UI** — passing under sidecar `dotnet test`, but Test Runner asmdef wiring still unconfirmed.
+- **Trivia question source still unresolved** (design doc §15.3).
+- **GCA→HNL redemption** blocked pending Víctor's legal review.
+
+### Next Session Starts With
+G1 is now ~75% done. Final G1 module is **`InputAdapter`** — port the keyboard sandbox driver to the new Input System with click/tap-to-pick-tile, so a real human (mouse on desktop, finger on Android) can play without `1/2/3` hotkeys. After that, G1 is sealed and G2 (question engine) begins.
+
+---
+
 ## 2026-05-23 — G1 First Modules: `GridEngine` + `GridRenderer` Playable
 **Phase:** G1 (first real gameplay modules)
 **Participants:** Cristian, Claude

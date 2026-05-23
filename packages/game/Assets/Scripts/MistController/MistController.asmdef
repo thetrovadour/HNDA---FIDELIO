@@ -1,0 +1,17 @@
+{
+    "name": "MistController",
+    "rootNamespace": "Catr.MistController",
+    "references": [
+        "GridEngine",
+        "GridRenderer"
+    ],
+    "includePlatforms": [],
+    "excludePlatforms": [],
+    "allowUnsafeCode": false,
+    "overrideReferences": false,
+    "precompiledReferences": [],
+    "autoReferenced": true,
+    "defineConstraints": [],
+    "versionDefines": [],
+    "noEngineReferences": false
+}

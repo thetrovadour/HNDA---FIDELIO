@@ -139,6 +139,16 @@ Append-only. Newest entries at the top. Format:
 
 <!-- New entries go here -->
 
+### 2026-05-23 — MistController shipped; interval = 2.3s placeholder
+**Decision:** `MistController` is a thin MonoBehaviour that ticks every `intervalSeconds` and calls `GridWorld.ConsumeColumn(mistFrontX++)` while `Phase == Running`. Default interval = **2.3s**, explicitly a placeholder pending trivia integration. Real tuning happens in G3 when questions add cognitive load.
+**Why:** Without puzzles, 5s feels sluggish and 2s feels frantic; 2.3s is a sane placeholder. The right pacing is a function of how long a player needs to read+answer a trivia card — undefined until G3. Module is intentionally trivial (no acceleration curve, no pause, no visual fog) so it can be replaced wholesale when the economy/difficulty system arrives.
+**Phase:** G1 / retuned in G3.
+
+### 2026-05-23 — Warmup keeps player cell black until commit
+**Decision:** `GridWorld.GetCellView` now checks `WarmupBlack` (Phase==Warmup && X==0) **before** the `Entered` (cell == PlayerPosition) check. Column 0 is now uniformly black during Warmup, including the player's tile.
+**Why:** Previous order leaked the player's underlying category color through `Entered`, breaking the "column 0 is unrevealed scaffolding until you commit" invariant. The `Entered` state only matters once Running starts (column 0 is gone by then), so reordering is safe. Test `Spawn_PlayerAtMiddleRowOfColumnZero_PhaseWarmup` updated to assert all 9 rows of column 0 are `WarmupBlack` (no more `y == 4` skip). 11/11 NUnit green.
+**Phase:** G1.
+
 ### 2026-05-23 — Engine class named `GridWorld` (not `GridEngine`, not `Grid`)
 **Decision:** The world/state class is `Catr.GridEngine.GridWorld`. Module / folder / asmdef stay called `GridEngine`.
 **Why:** Class name `GridEngine` collided with its own namespace (`CS0118: namespace used like a type`). Renamed to `Grid` — but `UnityEngine.Grid` exists (Tilemap system), triggering `CS0104: ambiguous reference`. `GridWorld` is descriptive (it IS the world state), reads cleanly (`engine.Engine.PlayerPosition`), and collides with neither. Lesson: never name a class identically to its containing namespace.
