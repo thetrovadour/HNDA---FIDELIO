@@ -65,6 +65,8 @@ Initialize Phase G1 — get the Unity toolchain installed and confirm the machin
 15. Scaffolded four module folders inside `Assets/Scripts/` with `.gitkeep` placeholders: `GridEngine/`, `MistController/`, `InputAdapter/`, `GridRenderer/`. Unity auto-generated `.meta` files for each.
 16. Cristian created `Assets/Scenes/G1_GridSandbox.unity` in-Editor (deleted Unity's `SampleScene`), set `Product Name: CATR!`, `Company Name: HNDA`, registered `G1_GridSandbox` as scene index 0 in Build Profiles.
 17. **Unity persistence quirk surfaced:** First verification pass showed Player + Build settings unchanged on disk despite the UI showing new values. Root cause: `Ctrl+S` saves only the *active scene* — project-level settings require **File → Save Project**. After explicit Save Project, filesystem confirmed all three values persisted.
+18. **Root `.gitignore` quirk surfaced during commit:** `git add packages/game/.gitignore` was rejected — `git check-ignore -v` revealed root `.gitignore:30` is literally the line `.gitignore`, meaning the repo refuses to track any nested `.gitignore` file. Force-added ours with `git add -f` since the Unity-scoped gitignore is essential to keep `Library/` out of the repo. Flagged for a future session: that root rule is unusual and will block any future package that needs a scoped gitignore.
+19. Committed as **`7a2d020 feat(game): bootstrap Unity 6.3 LTS project for Phase G1`** — 60 files, 6836 insertions. Single coherent commit covering the Unity project skeleton, scoped gitignore, module scaffolding, smoke scene, Player/Build settings, root CLAUDE.md Workflow Router, and all three doc updates.
 
 ### Decisions Made
 *(Mirrored into `CLAUDE.md` §11 Decision Log)*
