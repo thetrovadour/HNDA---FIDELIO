@@ -21,9 +21,8 @@ namespace Catr.GridEngine.Tests
 
             for (int y = 0; y < Rows; y++)
             {
-                if (y == 4) continue;
                 var view = e.GetCellView(new GridCoord(0, y));
-                Assert.AreEqual(VisualState.WarmupBlack, view.State);
+                Assert.AreEqual(VisualState.WarmupBlack, view.State, $"row {y}");
                 Assert.IsNull(view.Category);
             }
         }

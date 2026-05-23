@@ -58,11 +58,11 @@ namespace Catr.GridEngine
             if (consumedColumns.Contains(c.X))
                 return new CellView(VisualState.Consumed, CategoryFor(c.X, c.Y));
 
-            if (c == PlayerPosition)
-                return new CellView(VisualState.Entered, CategoryFor(c.X, c.Y));
-
             if (Phase == GamePhase.Warmup && c.X == 0)
                 return new CellView(VisualState.WarmupBlack, null);
+
+            if (c == PlayerPosition)
+                return new CellView(VisualState.Entered, CategoryFor(c.X, c.Y));
 
             if (IsChoosable(c))
                 return new CellView(VisualState.Revealed, CategoryFor(c.X, c.Y));
