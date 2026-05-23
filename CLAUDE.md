@@ -4,6 +4,30 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ---
 
+## Workflow Router — Always Ask This First
+
+Before anything else at session start, ask Cristian:
+
+> **"Are we working on the game (CATR!) or on the network (FIDELIO)?"**
+
+The two tracks share a chain, a backend, and a token — but they have distinct phases, decision logs, hard constraints, and session rituals. Loading the wrong context wastes the session.
+
+### Track A — FIDELIO Network
+The closed-loop HNL loyalty/payment network on Base. Smart contracts, MerL1nk core, backend API, merchant/client web. **Use the rest of this file** (Session Start ritual, Phase A–E status, MerL1nk architecture, Privacy & Sovereignty, etc.).
+
+### Track B — CATR! The Game
+The Unity-based user-acquisition and token-demand engine. Lives at `packages/game/`. **Switch context to `packages/game/CLAUDE.md`** — it owns:
+- The four behavioral principles (Think Before Coding, Simplicity First, Surgical Changes, Goal-Driven Execution)
+- Game build phases G1–G7 and the game Session Start ritual
+- Game-specific hard constraints (no gambling, hidden time mechanic, custodial-only, 1.8% commission, GCA legal gate)
+- The game Decision Log
+- Source of truth design doc: `packages/game/CATR-GAME-DESIGN.md`
+- Session log: `packages/game/Sessions-CATR-log.md`
+
+**Cross-cutting items** (the chain, custodial wallet pattern, MerL1nk `GAME_PAYMENT` event, the 1.8% rate alignment with FIDELIO merchant commission) touch both tracks — flag them explicitly and update both decision logs when they change.
+
+---
+
 ## Session Start — Always Do This First
 
 At the start of every session, remind Cristian of:
