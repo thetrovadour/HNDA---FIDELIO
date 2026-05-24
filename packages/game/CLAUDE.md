@@ -84,8 +84,9 @@ Before writing any code in a session:
 
 1. **Report current build phase** (G1 through G7 — see design doc §12).
 2. **Review last session's decisions** appended to this file's Decision Log.
-3. **State what we are building today** and how it connects to the FIDELIO macro vision.
-4. **Show the plan before writing any code.** Get approval. Then implement.
+3. **Check for an active phase plan.** If `packages/game/G{N}-plan.md` exists for the current phase, read it. Resume execution from the first unchecked progress item. If a plan does not exist for the current phase, the session likely opens with designing one.
+4. **State what we are building today** and how it connects to the FIDELIO macro vision.
+5. **Show the plan before writing any code.** Get approval. Then implement.
 
 ## 7. Architectural Anchors
 
@@ -138,6 +139,56 @@ Append-only. Newest entries at the top. Format:
 ```
 
 <!-- New entries go here -->
+
+### 2026-05-23 — G2 plan approved; backend-first execution
+**Decision:** Full G2 plan lives in `packages/game/G2-plan.md` (Track A backend → Track B Unity → C convergence). Approved as-is. Execution begins with A1 (Prisma schema). CLAUDE.md §6 updated to instruct future sessions to read `G{N}-plan.md` and resume from the first unchecked progress item.
+**Why:** Plan-document size would otherwise crowd CLAUDE.md. Separating plan (in `G{N}-plan.md`) from rules+decisions (CLAUDE.md) keeps both readable. "Camina, las cargas se arreglan en el camino" — start moving, iterate against contact with reality.
+**Phase:** G2 / cross-cutting (Session Start Ritual updated).
+
+### 2026-05-23 — Question source: server-side delivery, curated catalog
+**Decision:** Questions live in the FIDELIO Postgres DB and ship to the client one at a time via Express endpoints. Client never holds the catalog. Seed = ~100 hand-authored bilingual questions; local-AI pool maintenance deferred to G6.
+**Why:** Static client-side catalogs leak via APK decompile (HQ Trivia, Trivia Crack pattern). Server delivery + curation is the industry standard for prize-money trivia. Also honors the Sovereignty principle — Honduran data on Honduran infrastructure.
+**Phase:** G2.
+
+### 2026-05-23 — Question format: MC-4 + T/F, no free-text, bilingual
+**Decision:** Two formats. MC-4 is the standard load; T/F injected randomly every ~5–8 questions (capped, can't be farmed). No free-text (brutal on mobile). Bilingual day one: `prompt_es` / `prompt_en`, mirrored answer arrays.
+**Why:** MC-4 is mobile-native and skill-legible. T/F gives a perceived breather but still carries risk (wrong T/F still costs). Bilingual is cheap now, painful to retrofit later.
+**Phase:** G2.
+
+### 2026-05-23 — Difficulty ratchet: monotonic per-run, driven by speed
+**Decision:** 5 tiers. Ratchet is monotonic per-run with no turn-around. Speed metric = rolling average of last 3 answer times. Buy-in sets *base* difficulty (not ramp slope). Tile tier locks at frontier-reveal time (snapshot), not at click time.
+**Why:** "Treadmill where the incline is your own sprint." Punishes greedy speedrunning; rewards self-pacing. Per-run reset keeps every run interesting. Base-by-buy-in keeps low-stake runs accessible (practice mode); ramp-slope-by-buy-in would burn out high-stake players unfairly. Snapshot at reveal preserves the truthfulness of tier hints.
+**Phase:** G2 (formula constants tuned in G3).
+
+### 2026-05-23 — Depletion fallback: controlled repeat within bucket
+**Decision:** When (category, tier) bucket is exhausted for a player, serve the oldest-served question from that same bucket. No cross-category substitution. No tier promotion/demotion.
+**Why:** Category is absolute (cell color = pool, no lying to the player). Tier is absolute (no cheapening the ratchet). Controlled repeat is the only honest escape valve. Brutal hard-fail would also work but pushes the local-AI workload artificially earlier.
+**Phase:** G2.
+
+### 2026-05-23 — Wildcard side-channel
+**Decision:** Cell category stays deterministic per `(seed, x, y)`; wildcards override at frontier-reveal as a *player-state-driven* re-skin. Wildcard tiles are off-ratchet, always tier 5, random category, reward = CATR + Time combo. Frequency = `min(P_cap, k × N_tier5_answered × speed_factor)`. Constants tuned in G3.
+**Why:** Two players with the same seed get different wildcard placements, but the underlying world (categories) is still deterministic — memory-strategy invariant preserved. Off-ratchet keeps wildcard as a pure side-channel (greedy hunting doesn't compound the difficulty climb). Tying frequency to (tier-5 answers × speed) means sustained tier-5 fluency is the gateway to bonus rewards — "the climb pays for itself."
+**Phase:** G2 (constants in G3).
+
+### 2026-05-23 — The Light revised: gold/silver tile, stops mist briefly
+**Decision:** *The Light* (rare easter-egg tile from 2026-05-22) is now gold/silver, not white. On entry: briefly stops the mist (a "break"). Visually distinct from Wildcard (which stays white).
+**Why:** Both being white collapsed the visual language. Renaming The Light by color separates the two channels cleanly: white = bonus-currency wildcard; gold/silver = legendary break. Revises the 2026-05-22 entry.
+**Phase:** G3.
+
+### 2026-05-23 — Wrong-answer mechanic: −2s, tile consumed, 3-strike fail
+**Decision:** Wrong answer → mist jumps forward 2 cells (mist is the source of truth, clock is visualization) + the chosen frontier tile is consumed. If all 3 frontier tiles are consumed → run lost (second game-over path alongside mist contact).
+**Why:** Spatial-mist-as-source-of-truth means there's no separate clock to desync from gameplay; player sees their remaining budget at all times. Tile consumption gives the wrong-answer act a visible permanent cost. Three-strike fail caps frontier dwell time without needing a per-frontier timer.
+**Phase:** G2.
+
+### 2026-05-23 — UI: in-grid card, just-in-time fetch, mist keeps ticking
+**Decision:** Question card appears in-grid (above the clicked tile), not as a modal overlay or side panel. Clicking another frontier tile dismisses the current card and shows that tile's card. Fetch is just-in-time per click (no pre-fetch). Mist keeps ticking during the question.
+**Why:** In-grid keeps the player's eyes on the threat (mist). Just-in-time avoids 3× catalog drain that pre-fetching all 3 frontier questions would cause; the player must commit to a tile before seeing its question, which is itself a strategic decision under time pressure. Pausing mist would neuter the survival pressure.
+**Phase:** G2.
+
+### 2026-05-23 — Tier hints: always-visible badge, truthful, more at high tier
+**Decision:** Each frontier tile shows a small tier badge (e.g., "T3") when `HintVisible == true`. Probability of `HintVisible` rises with current tier (high stakes deserve high signal). Tier only — no kind/wildcard flags. Always truthful (no misleading hints). Black trap tiles get no extra hint; the color is the warning.
+**Why:** Surfaces partial info, lets the community discover the ratchet pattern through play — same philosophy as the hidden time mechanic. Truthful hints preserve the trust contract; misleading hints would collapse into ignored noise. Higher hint density at high tier rewards the player who climbed with situational awareness.
+**Phase:** G2.
 
 ### 2026-05-23 — InputAdapter shipped; single-step warmup, click = correct in G1
 **Decision:** `InputAdapter` is a MonoBehaviour that polls `Pointer.current` (new Input System), maps screen→grid via a new public `GridRendererBehaviour.ScreenToGridCoord` helper, and routes clicks: Warmup → single-step `TryWarmupMove` if `dy == ±1` on column 0, or `Commit` if clicking column-1 frontier; Running → `ResolvePuzzle(target, correct: true)` for any frontier click. Sandbox keyboard driver demoted to "debug driver" — kept until the question engine arrives because mouse can't express "wrong answer."

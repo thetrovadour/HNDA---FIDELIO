@@ -40,6 +40,62 @@ A clear, actionable opener for the next session.
 
 ---
 
+## 2026-05-23 — G2 Designed End-to-End; A1 Shipped (Prisma migration)
+**Phase:** G2 (design phase + A1 backend foundation)
+**Participants:** Cristian, Claude
+
+### Goal
+Open G2 (Question Engine). Lock every architectural decision before any code, write a phase plan document, then execute A1: the Postgres schema + Prisma migration for `GameQuestion` + `QuestionServe`.
+
+### What Happened
+1. **Session-start ritual.** Confirmed Game track. Summarized the last 3 sessions (G1 sealed → first modules → G1 kickoff). Phase is G2.
+2. **Question source — full discussion.** Cristian raised the three real concerns: leak resistance, online/AI generation, prior art. Walked through HQ Trivia / Trivia Crack / Kahoot — established that **server-side delivery from a curated catalog** is the industry default. Eliminated LLM-as-runtime-oracle (cost, latency, hallucination = legally radioactive for prize-money trivia). Locked: server-side, ~100 hand-authored bilingual seed, local AI deferred to G6.
+3. **Question format.** MC-4 + T/F (random injection every ~5–8 questions, capped). No free-text. Bilingual day one.
+4. **Difficulty mechanic — the centerpiece of the session.** Cristian proposed: "answer speed → difficulty ratchet, no turn-around, mist forces the tempo." The "treadmill where the incline is your own sprint" metaphor crystallized the design. Locked: 5 tiers, monotonic per-run, rolling-average-of-last-3 speed metric, buy-in sets base difficulty (not ramp slope). Constants tuned in G3.
+5. **Catalog depth.** ~100 hand-authored. Depletion fallback = controlled repeat within (category, tier) bucket, oldest-served first. No cross-substitution.
+6. **Wildcard side-channel.** Off-ratchet (doesn't feed the climb), always tier 5, CATR+Time combo reward. Frequency = function of (tier-5 answers × rolling speed) — sustained tier-5 fluency unlocks more white tiles. Underlying cell category stays deterministic per `(seed, x, y)`; wildcards override at frontier-reveal as a *player-state-driven re-skin*. Two players + same seed = different wildcard placements but same world.
+7. **The Light revised.** Original 2026-05-22 entry called it a "rare glowing white tile" → collided with Wildcard's white. Recolored to **gold/silver**, behavior = briefly stops the mist. Visual language separates cleanly.
+8. **Wrong-answer mechanic.** −2s (mist jumps forward 2 cells — **mist is the source of truth**, clock is just visualization). Tile consumed within current frontier. 3 consumed tiles = run lost. Adds a second game-over path alongside mist contact.
+9. **UI shape — design pivoted mid-discussion.** First proposed pre-fetch all 3 frontier questions; Cristian realized that 3×4 options + reading-under-mist-pressure was unfair, **flipped to just-in-time**. Added the better idea: stochastic **tier hint badges** on tiles. "T3" / "T4" appear sometimes, not always; the player builds awareness of their own ratchet position via partial info. Same philosophy as the hidden time mechanic.
+10. **Tier hints locked.** Always-visible badge when `HintVisible == true`. Probability rises with current tier. Tier-only (no kind/wildcard flags). Always truthful. Tile tier locks at frontier-reveal time (snapshot), not at click time — otherwise hints would lie.
+11. **Module boundaries.** New Unity modules: `QuestionEngine/` (pure C#), `QuestionUI/` (Canvas + in-grid card), `BackendClient/` (`IBackendClient` + Http + Mock). `GridEngine` extended in place. `InputAdapter` rewired through `QuestionEngine`. Backend-first execution: data model is the contract.
+12. **Plan written to `packages/game/G2-plan.md`.** Cristian: "Don't over-crowd CLAUDE.md." → plan-document lives in its own file; CLAUDE.md §6 Session Start Ritual updated to instruct future sessions to read `G{N}-plan.md` and resume from the first unchecked progress item. Decision Log in CLAUDE.md §11 gets the terse decisions (10 new entries).
+13. **A1 execution — Prisma schema.** Added two models (`GameQuestion`, `QuestionServe`) + two enums (`GameQuestionCategory`, `GameQuestionKind`) + `User.question_serves` back-relation. No `wildcard` category — wildcard fetches are "random category, tier=5" at query time.
+14. **Migration hit a real environment block.** `prisma migrate dev` needs a shadow database; the `fidelio` Postgres user didn't have `CREATEDB` privilege → `P3014` error. Surfaced four honest paths to Cristian; he picked (a) grant CREATEDB. Cristian ran `sudo -u postgres psql -c "ALTER USER fidelio CREATEDB;"` (fingerprint auth). Migration re-ran cleanly: `20260524020136_add_game_questions`.
+15. **Verified.** `psql \dt` shows 23 tables (was 22 pre-migration; +`GameQuestion` and +`QuestionServe`); both tables empty (expected). Migration SQL is clean: enums + tables + 4 indexes + 2 FK constraints to `User` and `GameQuestion`.
+16. **Pre-existing test rot surfaced.** Backend Jest: 66/73 passing, 7 failing in `transaction_service.test.ts`. Confirmed pre-existing by stashing the schema diff and re-running — same failures. CLAUDE.md still claims "44/44 backend tests passing" from the 2026-04 era; the suite has grown to 73 and rotted. Flagged for a separate fix session — not blocking G2.
+
+### Decisions Made
+*(Mirrored into `CLAUDE.md` §11 Decision Log)*
+- G2 plan approved; backend-first execution; plan lives in `G2-plan.md`; CLAUDE.md §6 updated.
+- Question source: server-side delivery, curated catalog.
+- Question format: MC-4 + T/F, no free-text, bilingual.
+- Difficulty ratchet: monotonic per-run, driven by rolling-avg-3 of answer speed, base by buy-in.
+- Depletion fallback: controlled repeat within bucket, oldest-served first.
+- Wildcard: off-ratchet, tier 5, CATR+Time reward, frequency `min(P_cap, k × N_tier5 × speed_factor)`.
+- The Light revised: gold/silver tile, stops mist briefly.
+- Wrong answer: −2s, tile consumed, 3 wrong = run lost.
+- UI: in-grid card, just-in-time fetch, mist keeps ticking.
+- Tier hints: always-visible badge, more frequent at high tier, tier-only, always truthful.
+
+### Artifacts Touched
+- `packages/game/G2-plan.md` — new, full G2 plan with Track A / Track B / convergence and per-step verify checks.
+- `packages/game/CLAUDE.md` — §6 updated to instruct future sessions to read `G{N}-plan.md`; §11 gained 10 new Decision Log entries.
+- `packages/backend/prisma/schema.prisma` — added `GameQuestion` model, `QuestionServe` model, `GameQuestionCategory` enum, `GameQuestionKind` enum, `User.question_serves` back-relation.
+- `packages/backend/prisma/migrations/20260524020136_add_game_questions/migration.sql` — new migration.
+- `packages/backend/prisma/migrations/migration_lock.toml` — touched by Prisma (no semantic change).
+- `packages/game/Sessions-CATR-log.md` — this entry.
+
+### Open Threads
+- **Pre-existing backend test rot.** 7/73 tests fail in `transaction_service.test.ts`. Pre-existed A1. Needs a dedicated fix session before G2 sealing — A2 will add new tests and the failure baseline should be zero. CLAUDE.md's "44/44 backend tests passing" is stale (suite is now 73 tests).
+- **CREATEDB granted to `fidelio` Postgres user** — one-time fix, makes future `prisma migrate dev` runs work cleanly. Worth noting in onboarding docs if anyone else clones this.
+- **A2 (Express endpoints) is next.** `/api/game/questions/next` + `/api/game/questions/resolve`. Includes the controlled-repeat fallback logic and new Jest tests.
+
+### Next Session Starts With
+Open `G2-plan.md`. A1 ✅. Next unchecked: **A2 — Express endpoints**. Plan-before-code: walk through the endpoint contract (query param shape, controlled-repeat SQL, lang handling for `prompt_es`/`prompt_en` selection, error shapes), write the Zod schemas + route handlers + Jest tests, verify against the empty DB (will hit "no question found" cleanly), then ship A3 (seed scaffold with 10 placeholder questions) so we can verify the happy path. Also flag pre-existing test failures — Cristian's call whether to fix them before A2 lands or as a parallel cleanup.
+
+---
+
 ## 2026-05-23 — G1 Sealed: Warmup Patch, `MistController`, Y-flip, `InputAdapter`
 **Phase:** G1 (100% — all four modules live, mouse + keyboard playable end-to-end)
 **Participants:** Cristian, Claude

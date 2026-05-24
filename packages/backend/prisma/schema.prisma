@@ -28,6 +28,7 @@ model User {
   transactions    Transaction[]
   gold_statuses   UserGoldStatus[]
   wallet          Wallet?
+  question_serves QuestionServe[]
 }
 
 model Wallet {
@@ -436,6 +437,52 @@ model GcaReserve {
   id          String   @id @default(uuid())
   balance_hnl Decimal  @default(0) @db.Decimal(20, 4)
   updated_at  DateTime @updatedAt
+}
+
+model GameQuestion {
+  id            String               @id @default(uuid())
+  category      GameQuestionCategory
+  tier          Int
+  kind          GameQuestionKind
+  prompt_es     String
+  prompt_en     String
+  answers_es    Json
+  answers_en    Json
+  correct_index Int
+  active        Boolean              @default(true)
+  created_at    DateTime             @default(now())
+  updated_at    DateTime             @updatedAt
+  serves        QuestionServe[]
+
+  @@index([category, tier, active])
+  @@index([active])
+}
+
+model QuestionServe {
+  id          String       @id @default(uuid())
+  player_id   String
+  question_id String
+  served_at   DateTime     @default(now())
+  was_correct Boolean?
+  player      User         @relation(fields: [player_id], references: [id])
+  question    GameQuestion @relation(fields: [question_id], references: [id])
+
+  @@index([player_id, question_id])
+  @@index([player_id, served_at])
+}
+
+enum GameQuestionCategory {
+  RED
+  BLUE
+  GREEN
+  YELLOW
+  PURPLE
+  ORANGE
+}
+
+enum GameQuestionKind {
+  MC
+  TF
 }
 
 model MerchantApplication {

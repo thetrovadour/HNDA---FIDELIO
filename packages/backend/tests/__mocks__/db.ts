@@ -69,6 +69,17 @@ const mockDb = {
     update: jest.fn(),
     count: jest.fn(),
   },
+  pendingTransfer: {
+    findUnique: jest.fn(),
+    findMany: jest.fn(),
+    create: jest.fn(),
+    update: jest.fn(),
+  },
+  gcaReserve: {
+    findUnique: jest.fn(),
+    upsert: jest.fn(),
+    update: jest.fn(),
+  },
   $transaction: jest.fn().mockImplementation((fn: any) => fn(mockDb)),
   $queryRaw: jest.fn(),
 };
@@ -87,6 +98,7 @@ export function resetMocks() {
     }
   }
   mockDb.$transaction.mockImplementation((fn: any) => fn(mockDb));
+  mockDb.pendingTransfer.findMany.mockResolvedValue([]);
 }
 
 export default mockDb;

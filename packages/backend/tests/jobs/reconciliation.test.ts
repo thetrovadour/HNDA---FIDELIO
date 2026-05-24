@@ -20,7 +20,15 @@ describe('ReconciliationJob.run', () => {
 
     const result = await job.run();
 
-    expect(result).toEqual({ checked: 0, retried: 0, failed: 0, already_minted: 0 });
+    expect(result).toEqual({
+      checked: 0,
+      retried: 0,
+      failed: 0,
+      already_minted: 0,
+      transfers_checked: 0,
+      transfers_retried: 0,
+      transfers_failed: 0,
+    });
   });
 
   it('marks row as already_minted when tx_hash is already set', async () => {
