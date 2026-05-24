@@ -40,8 +40,8 @@ A clear, actionable opener for the next session.
 
 ---
 
-## 2026-05-23 — G2 Designed End-to-End; A1 Shipped (Prisma migration)
-**Phase:** G2 (design phase + A1 backend foundation)
+## 2026-05-23 — G2 A-Track Complete: Schema + Endpoints + Seed (A1, A2, A3)
+**Phase:** G2 (full A-track shipped — backend foundation ready for B-track)
 **Participants:** Cristian, Claude
 
 ### Goal
@@ -63,7 +63,18 @@ Open G2 (Question Engine). Lock every architectural decision before any code, wr
 13. **A1 execution — Prisma schema.** Added two models (`GameQuestion`, `QuestionServe`) + two enums (`GameQuestionCategory`, `GameQuestionKind`) + `User.question_serves` back-relation. No `wildcard` category — wildcard fetches are "random category, tier=5" at query time.
 14. **Migration hit a real environment block.** `prisma migrate dev` needs a shadow database; the `fidelio` Postgres user didn't have `CREATEDB` privilege → `P3014` error. Surfaced four honest paths to Cristian; he picked (a) grant CREATEDB. Cristian ran `sudo -u postgres psql -c "ALTER USER fidelio CREATEDB;"` (fingerprint auth). Migration re-ran cleanly: `20260524020136_add_game_questions`.
 15. **Verified.** `psql \dt` shows 23 tables (was 22 pre-migration; +`GameQuestion` and +`QuestionServe`); both tables empty (expected). Migration SQL is clean: enums + tables + 4 indexes + 2 FK constraints to `User` and `GameQuestion`.
-16. **Pre-existing test rot surfaced.** Backend Jest: 66/73 passing, 7 failing in `transaction_service.test.ts`. Confirmed pre-existing by stashing the schema diff and re-running — same failures. CLAUDE.md still claims "44/44 backend tests passing" from the 2026-04 era; the suite has grown to 73 and rotted. Flagged for a separate fix session — not blocking G2.
+16. **Pre-existing test rot surfaced.** Backend Jest: 66/73 passing, 7 failing in `transaction_service.test.ts`. Confirmed pre-existing by stashing the schema diff and re-running — same failures. CLAUDE.md still claims "44/44 backend tests passing" from the 2026-04 era; the suite has grown to 73 and rotted.
+17. **Test-rot fix (Cristian: "We still have time and resources").** Diagnosed: `tests/__mocks__/db.ts` was missing `gcaReserve` and `pendingTransfer` models (added to production months ago, mock never kept up). Added both to the mock; set `pendingTransfer.findMany` default to `[]` in `resetMocks()` so existing reconciliation tests don't need per-test mocking of the side path. Updated `reconciliation.test.ts` test #1's `toEqual` to include the `transfers_*` fields the `ReconciliationResult` interface gained. **73/73 green.** Committed as `59b2a45` (A1 + test-rot fix bundled).
+18. **A2 endpoint design walk-through.** Reviewed `transactions.ts` to confirm FIDELIO conventions (`userAuth`, Zod validate, `{ data }` / `{ error, code }` response shapes, supertest+jwt for route tests). **Security correction:** original plan listed `playerId` in the request body — caught it and changed to derive from `req.user.id` via `userAuth`. Sending it in the body would let a logged-in player query questions on behalf of another player. Logged into the G2 plan as an explicit correction.
+19. **Three small A2 design decisions** locked with Cristian: (a) `playerId` from auth, (b) mark-served at `/next` not `/resolve` (cleaner semantics; accept one wasted question per app-crash), (c) wildcard as `{ wildcard: true, tier-auto-forced-to-5 }` boolean flag (keeps the enum honest), (d) `kind: "ANY"` value supported (Unity side drives T/F injection cadence).
+20. **Wrote `QuestionService`** — pure C# style (no framework deps beyond Prisma): `fetchNext` does a single `gameQuestion.findMany` filtered by category/tier/kind, splits into unseen vs seen using a `Set` of served IDs, picks at random from unseen, falls back to oldest-served when exhausted. `resolve` updates the most recent unresolved `QuestionServe` row.
+21. **Wrote `game_questions.ts` route** — thin handlers, Zod schemas, mounted at `/api/game/questions` in `app.ts`. 7 route tests via supertest. One nit caught: Zod v4's `.uuid()` is strict and rejects "nil-pattern" UUIDs (`00000000-0000-0000-0000-000000000001`) because their version/variant nibbles are zero — switched test UUIDs to valid v4 shape (`11111111-1111-4111-8111-111111111111`).
+22. **Bilingual clarification mid-session.** Cristian asked: "is bilingual = both shown, or device-locale-driven?" Confirmed the design is the latter — DB stores both translations (single source of truth), API delivers one based on the `lang` request param, client sends the locale based on `Application.systemLanguage`. Honduran phone → Spanish content; US phone → English content. One schema, two translations, one delivered per call.
+23. **`tsconfig.test.json` added.** Diagnosed the noisy "Cannot find name 'jest'/'describe'/'expect'/..." LSP warnings: the root `tsconfig.json` `excludes` the `tests/` tree, so the LSP had no config to apply there and didn't load Jest's globals. New `tsconfig.test.json` extends the base, sets `noEmit: true`, and includes both `src/**/*` and `tests/**/*` — the LSP discovers it automatically. `tsc --noEmit -p tsconfig.test.json` exits clean; Jest unaffected. Build (`tsc → dist/`) untouched. Committed bundled with A2 as `94fb9ac`.
+24. **A2 sealed: 73 → 90/90 backend tests.** +17 new (10 service, 7 route).
+25. **A3 — seed scaffold.** Three small decisions locked: (a) idempotent upsert by hardcoded UUID, (b) real placeholder content not dummy strings, (c) separate `seed-game-questions.ts` from the existing FIDELIO seed (decoupled lifecycle — local AI takes over in G6).
+26. **Authored 10 bilingual placeholder questions** spanning all 6 categories, tiers 1–5, MC and TF. Used valid v4 UUIDs (`ce17e000-0000-4000-8000-00000000000X`) for idempotency.
+27. **`db:seed:game` initially failed** with `PrismaClientInitializationError: PrismaClient needs to be constructed with non-empty options`. Root cause: Prisma 7 requires explicit driver-adapter construction. Matched the `src/db.ts` pattern (`new PrismaPg({ connectionString })` + `new PrismaClient({ adapter })`). Re-ran: 10 rows seeded. Re-ran again: still 10 rows (idempotent confirmed). `psql` shows the catalog spans all 6 categories, tiers 1, 2, 3, 4, 5, and both kinds. Committed as `722d92a`.
 
 ### Decisions Made
 *(Mirrored into `CLAUDE.md` §11 Decision Log)*
@@ -79,20 +90,32 @@ Open G2 (Question Engine). Lock every architectural decision before any code, wr
 - Tier hints: always-visible badge, more frequent at high tier, tier-only, always truthful.
 
 ### Artifacts Touched
-- `packages/game/G2-plan.md` — new, full G2 plan with Track A / Track B / convergence and per-step verify checks.
+- `packages/game/G2-plan.md` — new, full G2 plan with Track A / Track B / convergence and per-step verify checks. A1/A2/A3 progress ticked; A2 section corrected to document `playerId`-from-auth.
 - `packages/game/CLAUDE.md` — §6 updated to instruct future sessions to read `G{N}-plan.md`; §11 gained 10 new Decision Log entries.
 - `packages/backend/prisma/schema.prisma` — added `GameQuestion` model, `QuestionServe` model, `GameQuestionCategory` enum, `GameQuestionKind` enum, `User.question_serves` back-relation.
 - `packages/backend/prisma/migrations/20260524020136_add_game_questions/migration.sql` — new migration.
 - `packages/backend/prisma/migrations/migration_lock.toml` — touched by Prisma (no semantic change).
+- `packages/backend/prisma/seed-questions.json` — new, 10 bilingual placeholder questions, hardcoded UUIDs for idempotency.
+- `packages/backend/prisma/seed-game-questions.ts` — new, idempotent upsert loader using `PrismaPg` adapter.
+- `packages/backend/package.json` — added `db:seed:game` script.
+- `packages/backend/src/services/question_service.ts` — new, `QuestionService` with controlled-repeat algorithm, wildcard category randomization, lang localization.
+- `packages/backend/src/routes/game_questions.ts` — new, thin Zod-validated `userAuth` route handlers for `/next` and `/resolve`.
+- `packages/backend/src/app.ts` — wired `QuestionService` + mounted router at `/api/game/questions`.
+- `packages/backend/tests/__mocks__/db.ts` — added `pendingTransfer`, `gcaReserve`, `gameQuestion`, `questionServe` to the mock; `resetMocks()` defaults `pendingTransfer.findMany` to `[]`.
+- `packages/backend/tests/jobs/reconciliation.test.ts` — `toEqual` updated for the `transfers_*` fields.
+- `packages/backend/tests/services/question_service.test.ts` — new, 10 service tests.
+- `packages/backend/tests/routes/game_questions.test.ts` — new, 7 route tests.
+- `packages/backend/tsconfig.test.json` — new, extends base + includes `tests/**/*` so LSP applies `@types/jest` globals to test files.
 - `packages/game/Sessions-CATR-log.md` — this entry.
 
 ### Open Threads
-- **Pre-existing backend test rot.** 7/73 tests fail in `transaction_service.test.ts`. Pre-existed A1. Needs a dedicated fix session before G2 sealing — A2 will add new tests and the failure baseline should be zero. CLAUDE.md's "44/44 backend tests passing" is stale (suite is now 73 tests).
-- **CREATEDB granted to `fidelio` Postgres user** — one-time fix, makes future `prisma migrate dev` runs work cleanly. Worth noting in onboarding docs if anyone else clones this.
-- **A2 (Express endpoints) is next.** `/api/game/questions/next` + `/api/game/questions/resolve`. Includes the controlled-repeat fallback logic and new Jest tests.
+- **B-track is the entire remainder of G2.** A-track shipped end-to-end (schema → endpoints → seed). Next step: Unity side. B1 = `GridEngine` extension (multi-attempt per frontier, tile-Consumed state, tier snapshot at reveal, mist runway math, ratchet, wildcard re-skin). Then B2–B6 (BackendClient, QuestionEngine, QuestionUI, InputAdapter rewire, hint badges).
+- **`fidelio` Postgres user has `CREATEDB`** — granted this session, persistent. Worth noting in onboarding docs.
+- **CLAUDE.md root `Current status` table claims "Backend Core — 44/44 tests passing"** — actually 90/90 now. Cosmetic, update next time the status table is touched.
+- **100-question content sprint (C2)** still owed. Local AI deferred to G6, so it'll be hand-authored.
 
 ### Next Session Starts With
-Open `G2-plan.md`. A1 ✅. Next unchecked: **A2 — Express endpoints**. Plan-before-code: walk through the endpoint contract (query param shape, controlled-repeat SQL, lang handling for `prompt_es`/`prompt_en` selection, error shapes), write the Zod schemas + route handlers + Jest tests, verify against the empty DB (will hit "no question found" cleanly), then ship A3 (seed scaffold with 10 placeholder questions) so we can verify the happy path. Also flag pre-existing test failures — Cristian's call whether to fix them before A2 lands or as a parallel cleanup.
+A-track is sealed (`59b2a45`, `94fb9ac`, `722d92a`). Open `G2-plan.md`. Next unchecked: **B1 — `GridEngine` extension**. Plan-before-code: walk through the new engine state (Tier, Kind, HintVisible, per-tile-Consumed in frontier, PlayerTier ratchet, LastAnswerTimes[3], Tier5AnsweredCount, MistRunwayCells), the new API (`AttemptPuzzle`, `GetTileMetadata`), the new events (`TileConsumed`, `RatchetClimbed`, `MistRunwayChanged`, `GameOver(reason)`), and how the existing 11 G1 NUnit tests stay green while ~10 new tests cover the additions. Engine boundary stays pure C#: no Unity deps, no network, questions are injected externally.
 
 ---
 
