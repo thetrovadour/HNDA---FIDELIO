@@ -75,6 +75,7 @@ Open G2 (Question Engine). Lock every architectural decision before any code, wr
 25. **A3 — seed scaffold.** Three small decisions locked: (a) idempotent upsert by hardcoded UUID, (b) real placeholder content not dummy strings, (c) separate `seed-game-questions.ts` from the existing FIDELIO seed (decoupled lifecycle — local AI takes over in G6).
 26. **Authored 10 bilingual placeholder questions** spanning all 6 categories, tiers 1–5, MC and TF. Used valid v4 UUIDs (`ce17e000-0000-4000-8000-00000000000X`) for idempotency.
 27. **`db:seed:game` initially failed** with `PrismaClientInitializationError: PrismaClient needs to be constructed with non-empty options`. Root cause: Prisma 7 requires explicit driver-adapter construction. Matched the `src/db.ts` pattern (`new PrismaPg({ connectionString })` + `new PrismaClient({ adapter })`). Re-ran: 10 rows seeded. Re-ran again: still 10 rows (idempotent confirmed). `psql` shows the catalog spans all 6 categories, tiers 1, 2, 3, 4, 5, and both kinds. Committed as `722d92a`.
+28. **B1 design discussion opened but deferred to next session.** Three clarifications surfaced before any engine code: (Q1) how mist moves now — timer+answers vs answer-only vs timer-only; (Q2) who owns the wildcard re-skin — `GridEngine` or `QuestionEngine`; (Q3) who owns tier-hint visibility — `GridEngine` or `GridRenderer`. My instinct on all three: `GridEngine` owns gameplay-world state, renderer stays a pure paintbrush, mist keeps its G1 timer with answers shoving it. Logged into `G2-plan.md` § "B1 — Open design questions" for Cristian's decision next session.
 
 ### Decisions Made
 *(Mirrored into `CLAUDE.md` §11 Decision Log)*
@@ -115,7 +116,7 @@ Open G2 (Question Engine). Lock every architectural decision before any code, wr
 - **100-question content sprint (C2)** still owed. Local AI deferred to G6, so it'll be hand-authored.
 
 ### Next Session Starts With
-A-track is sealed (`59b2a45`, `94fb9ac`, `722d92a`). Open `G2-plan.md`. Next unchecked: **B1 — `GridEngine` extension**. Plan-before-code: walk through the new engine state (Tier, Kind, HintVisible, per-tile-Consumed in frontier, PlayerTier ratchet, LastAnswerTimes[3], Tier5AnsweredCount, MistRunwayCells), the new API (`AttemptPuzzle`, `GetTileMetadata`), the new events (`TileConsumed`, `RatchetClimbed`, `MistRunwayChanged`, `GameOver(reason)`), and how the existing 11 G1 NUnit tests stay green while ~10 new tests cover the additions. Engine boundary stays pure C#: no Unity deps, no network, questions are injected externally.
+A-track is sealed (`59b2a45`, `94fb9ac`, `722d92a`, `c4d54e4`). Open `G2-plan.md` → **B1 — Open design questions**. Three decisions need locking before any engine code: (Q1) mist motion model — does the G1 timer keep ticking *and* answers shove the runway, or does mist become answer-only, or does the timer-only G1 behavior stay; (Q2) wildcard re-skin home — `GridEngine` or `QuestionEngine`; (Q3) tier-hint visibility home — `GridEngine` or `GridRenderer`. My instinct on all three is (a) — engine owns gameplay-world state, renderer stays a paintbrush, mist keeps the G1 timer + answer-driven shoves. After those land, write up the full B1 implementation (new state fields, API surface, events, ~10 new NUnit tests) before coding.
 
 ---
 

@@ -139,6 +139,25 @@ POST /api/game/questions/resolve   (userAuth)
 
 ## Track B — Unity (engineering)
 
+### B1 — Open design questions (resolve before code)
+
+Three clarifications need a decision before implementation. Each has my instinct flagged; Cristian gets the call next session.
+
+**B1-Q1 — How does the mist move now?**
+- (a) Mist still ticks on G1's 2.3s timer **AND** answers shove it: correct = player +1 col (runway extends), wrong = mist +2 cols (runway shrinks). Standing still = death (timer still ticks). **← my instinct**
+- (b) Mist only moves via answers (no timer). Standing still = invulnerable. Breaks the survival metaphor.
+- (c) G1 timer only, answers don't affect mist. Wrong answers only consume the tile, no time cost.
+
+**B1-Q2 — Who owns the wildcard re-skin?**
+- (a) `GridEngine` owns `Tier5AnsweredCount` + rolling speed + the probability roll. On frontier-reveal, flags tiles as `IsWildcard`. `GetTileMetadata` exposes it. Renderer + InputAdapter just read. **← my instinct**
+- (b) `QuestionEngine` owns the override at question-fetch time. Engine exposes raw category, QuestionEngine overrides en route to backend.
+
+**B1-Q3 — Who owns tier-hint visibility?**
+- (a) `GridEngine` rolls `HintVisible` per frontier-tile at reveal, based on player's current ratchet. Renderer just paints what `GetTileMetadata` says. **← my instinct**
+- (b) `GridRenderer` decides; engine exposes raw tier.
+
+**Reasoning for the (a)/(a)/(a) triple:** wildcard and tier hints are *gameplay-world* properties (they change behavior + cell appearance + player decisions), not visualization or question-fetch concerns. They belong in the engine. Renderer stays a pure paintbrush; `QuestionEngine` only fetches questions with given params and reports outcomes back.
+
 ### B1 — Extend `GridEngine`
 
 New state:
