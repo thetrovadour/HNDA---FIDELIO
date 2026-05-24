@@ -24,7 +24,9 @@ import { authRouter } from './routes/auth';
 import { adminRouter } from './routes/admin';
 import { gcaRouter } from './routes/gca';
 import { applicationsRouter } from './routes/applications';
+import { gameQuestionsRouter } from './routes/game_questions';
 import { evaluateGcaVesting } from './services/gca_service';
+import { QuestionService } from './services/question_service';
 
 const isDev = process.env.NODE_ENV !== 'production';
 
@@ -70,6 +72,7 @@ export function createApp(): express.Application {
   const transactionService = new TransactionService(db, rewardService, evaluateGcaVesting);
   const redemptionService = new RedemptionService(db);
   const userService = new UserService(db);
+  const questionService = new QuestionService(db);
 
   // Jobs
   new CashbackJob(rewardService).schedule();
@@ -88,6 +91,7 @@ export function createApp(): express.Application {
   app.use('/api/admin', sensitiveLimiter, adminRouter(mintService));
   app.use('/api/gca', gcaRouter(db));
   app.use('/api/applications', applicationsRouter());
+  app.use('/api/game/questions', gameQuestionsRouter(questionService));
 
   // Error handler (last middleware)
   app.use(errorHandler);

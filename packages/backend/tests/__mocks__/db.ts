@@ -80,6 +80,20 @@ const mockDb = {
     upsert: jest.fn(),
     update: jest.fn(),
   },
+  gameQuestion: {
+    findUnique: jest.fn(),
+    findFirst: jest.fn(),
+    findMany: jest.fn(),
+    create: jest.fn(),
+    count: jest.fn(),
+  },
+  questionServe: {
+    findUnique: jest.fn(),
+    findFirst: jest.fn(),
+    findMany: jest.fn(),
+    create: jest.fn(),
+    update: jest.fn(),
+  },
   $transaction: jest.fn().mockImplementation((fn: any) => fn(mockDb)),
   $queryRaw: jest.fn(),
 };

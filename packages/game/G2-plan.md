@@ -109,19 +109,25 @@ No separate `wildcard` category: wildcard fetches are "random category, tier=5" 
 
 ### A2 — Express endpoints
 
+**Security correction:** `playerId` is **never** in the request body. It derives from the JWT user token via `userAuth` middleware (mirrors the FIDELIO `transactions.ts` pattern). The original plan listed it in the body — that was wrong.
+
 ```
-POST /api/game/questions/next
-  body: { playerId, category, tier, lang, allowKind? }
-  → { id, prompt, answers, correctIndex, kind, category, tier }
+POST /api/game/questions/next   (userAuth)
+  body: { category, tier, kind: "MC"|"TF"|"ANY", lang, wildcard?: bool }
+  → 200 { data: { id, prompt, answers, correctIndex, kind, category, tier, isWildcard } }
+  → 404 when bucket is truly empty for that filter
 
-POST /api/game/questions/resolve
-  body: { playerId, questionId, wasCorrect }
-  → { ok: true }
+POST /api/game/questions/resolve   (userAuth)
+  body: { questionId, wasCorrect }
+  → 200 { data: { ok: true } }
+  → 404 when no unresolved serve exists for (player, questionId)
 ```
 
-`/next` enforces per-player no-repeat; controlled-repeat fallback when bucket exhausted (oldest-served first). `/resolve` writes to `QuestionServe`.
+`/next` enforces per-player no-repeat; **marks served at `/next` time** (not at `/resolve`). When the bucket is exhausted, controlled-repeat returns the oldest-served question. Wildcard requests ignore the body's `category` and force `tier=5`, with the server randomly picking from the 6 categories. `kind="ANY"` omits the kind filter; explicit `MC`/`TF` applies it (T/F injection is driven by the Unity-side `QuestionEngine` occasionally requesting `TF`).
 
-**Verify A2:** new Jest tests: (i) returns unseen question, (ii) controlled repeat when bucket exhausted, (iii) `/resolve` writes, (iv) 44/44 FIDELIO tests still green.
+**Architecture:** `src/services/question_service.ts` owns the algorithm; `src/routes/game_questions.ts` is the thin route layer. Mounted at `/api/game/questions` in `app.ts`.
+
+**Verify A2:** 17 new Jest tests (10 service, 7 route) — happy path, controlled-repeat fallback, bucket-empty 404, wildcard randomization, kind filter, lang localization, auth, validation. Full backend suite: 73 → **90/90** green.
 
 ### A3 — Seed file (scaffold)
 
@@ -226,7 +232,7 @@ Co-author the 100 bilingual questions. Pure content, no engineering.
 ## Progress
 
 - [x] A1 — Postgres schema + Prisma migration
-- [ ] A2 — Express endpoints
+- [x] A2 — Express endpoints (`/api/game/questions/next` + `/resolve`, 90/90 tests green)
 - [ ] A3 — Seed file (scaffold, ~10 placeholders)
 - [ ] B1 — `GridEngine` extension
 - [ ] B2 — `BackendClient/` module
