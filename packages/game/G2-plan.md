@@ -233,7 +233,7 @@ Co-author the 100 bilingual questions. Pure content, no engineering.
 
 - [x] A1 — Postgres schema + Prisma migration
 - [x] A2 — Express endpoints (`/api/game/questions/next` + `/resolve`, 90/90 tests green)
-- [ ] A3 — Seed file (scaffold, ~10 placeholders)
+- [x] A3 — Seed file scaffold (10 bilingual placeholder questions, idempotent upsert, `npm run db:seed:game`)
 - [ ] B1 — `GridEngine` extension
 - [ ] B2 — `BackendClient/` module
 - [ ] B3 — `QuestionEngine/` module

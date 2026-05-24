@@ -1,0 +1,132 @@
+[
+  {
+    "id": "ce17e000-0000-4000-8000-000000000001",
+    "category": "RED",
+    "tier": 1,
+    "kind": "MC",
+    "prompt_es": "¿Qué banda interpretó la canción 'Bohemian Rhapsody'?",
+    "prompt_en": "Which band performed the song 'Bohemian Rhapsody'?",
+    "answers_es": ["The Beatles", "Queen", "Led Zeppelin", "The Rolling Stones"],
+    "answers_en": ["The Beatles", "Queen", "Led Zeppelin", "The Rolling Stones"],
+    "correct_index": 1
+  },
+  {
+    "id": "ce17e000-0000-4000-8000-000000000002",
+    "category": "BLUE",
+    "tier": 1,
+    "kind": "MC",
+    "prompt_es": "¿Cuánto es 12 × 12?",
+    "prompt_en": "What is 12 × 12?",
+    "answers_es": ["124", "132", "144", "156"],
+    "answers_en": ["124", "132", "144", "156"],
+    "correct_index": 2
+  },
+  {
+    "id": "ce17e000-0000-4000-8000-000000000003",
+    "category": "YELLOW",
+    "tier": 1,
+    "kind": "MC",
+    "prompt_es": "¿Cuántos jugadores titulares hay en un equipo de fútbol?",
+    "prompt_en": "How many players are in a soccer team's starting lineup?",
+    "answers_es": ["9", "10", "11", "12"],
+    "answers_en": ["9", "10", "11", "12"],
+    "correct_index": 2
+  },
+  {
+    "id": "ce17e000-0000-4000-8000-000000000004",
+    "category": "GREEN",
+    "tier": 2,
+    "kind": "MC",
+    "prompt_es": "¿En qué año Honduras declaró su independencia de España?",
+    "prompt_en": "In what year did Honduras declare independence from Spain?",
+    "answers_es": ["1810", "1821", "1838", "1900"],
+    "answers_en": ["1810", "1821", "1838", "1900"],
+    "correct_index": 1
+  },
+  {
+    "id": "ce17e000-0000-4000-8000-000000000005",
+    "category": "PURPLE",
+    "tier": 2,
+    "kind": "MC",
+    "prompt_es": "¿Qué significan las siglas 'HTTP'?",
+    "prompt_en": "What does the acronym 'HTTP' stand for?",
+    "answers_es": [
+      "Hyper Text Transfer Protocol",
+      "High Tech Transfer Protocol",
+      "Home Transfer Tech Protocol",
+      "Hyper Transfer Tech Protocol"
+    ],
+    "answers_en": [
+      "Hyper Text Transfer Protocol",
+      "High Tech Transfer Protocol",
+      "Home Transfer Tech Protocol",
+      "Hyper Transfer Tech Protocol"
+    ],
+    "correct_index": 0
+  },
+  {
+    "id": "ce17e000-0000-4000-8000-000000000006",
+    "category": "ORANGE",
+    "tier": 2,
+    "kind": "MC",
+    "prompt_es": "¿Cuál es la capital de Honduras?",
+    "prompt_en": "What is the capital of Honduras?",
+    "answers_es": ["San Pedro Sula", "Tegucigalpa", "La Ceiba", "Comayagua"],
+    "answers_en": ["San Pedro Sula", "Tegucigalpa", "La Ceiba", "Comayagua"],
+    "correct_index": 1
+  },
+  {
+    "id": "ce17e000-0000-4000-8000-000000000007",
+    "category": "RED",
+    "tier": 3,
+    "kind": "TF",
+    "prompt_es": "Beyoncé fue miembro del grupo Destiny's Child.",
+    "prompt_en": "Beyoncé was a member of the group Destiny's Child.",
+    "answers_es": ["Verdadero", "Falso"],
+    "answers_en": ["True", "False"],
+    "correct_index": 0
+  },
+  {
+    "id": "ce17e000-0000-4000-8000-000000000008",
+    "category": "BLUE",
+    "tier": 4,
+    "kind": "MC",
+    "prompt_es": "¿Cuál es el valor de π redondeado a dos decimales?",
+    "prompt_en": "What is the value of π rounded to two decimal places?",
+    "answers_es": ["3.12", "3.14", "3.16", "3.18"],
+    "answers_en": ["3.12", "3.14", "3.16", "3.18"],
+    "correct_index": 1
+  },
+  {
+    "id": "ce17e000-0000-4000-8000-000000000009",
+    "category": "GREEN",
+    "tier": 5,
+    "kind": "MC",
+    "prompt_es": "¿Quién lideró la República Federal de Centroamérica en la década de 1830?",
+    "prompt_en": "Who led the Federal Republic of Central America in the 1830s?",
+    "answers_es": [
+      "José Cecilio del Valle",
+      "Francisco Morazán",
+      "Manuel José Arce",
+      "Vicente Filísola"
+    ],
+    "answers_en": [
+      "José Cecilio del Valle",
+      "Francisco Morazán",
+      "Manuel José Arce",
+      "Vicente Filísola"
+    ],
+    "correct_index": 1
+  },
+  {
+    "id": "ce17e000-0000-4000-8000-00000000000a",
+    "category": "PURPLE",
+    "tier": 5,
+    "kind": "TF",
+    "prompt_es": "El bloque génesis de Bitcoin fue minado en 2008.",
+    "prompt_en": "The Bitcoin genesis block was mined in 2008.",
+    "answers_es": ["Verdadero", "Falso"],
+    "answers_en": ["True", "False"],
+    "correct_index": 1
+  }
+]
