@@ -12,17 +12,39 @@ namespace Catr.GridEngine
         public event Action<GridCoord> PlayerMoved;
         public event Action<GridCoord> CellRevealed;
         public event Action<int> ColumnConsumed;
+        public event Action<GridCoord> TileConsumed;
+        public event Action<int> RatchetClimbed;
+        public event Action<int> MistRunwayChanged;
+        public event Action<GameOverReason> GameOver;
+
+        public int BaseTier { get; }
+        public int PlayerTier { get; private set; }
+        public int Tier5AnsweredCount { get; private set; }
+        public int MistRunwayCells { get; private set; }
+
+        // Tunable in G3 — kept internal so a single edit retunes the ratchet.
+        internal const float WildcardPCap = 0.25f;
+        internal const float WildcardK = 0.02f;
+        internal const int InitialMistRunway = 10;
 
         private readonly int seed;
         private readonly HashSet<int> consumedColumns = new HashSet<int>();
         private readonly HashSet<GridCoord> spentCells = new HashSet<GridCoord>();
+        private readonly Queue<float> lastAnswerTimes = new Queue<float>();
+        private readonly Dictionary<GridCoord, TileMetadata> frontierMetadata = new Dictionary<GridCoord, TileMetadata>();
         private int maxRevealedColumn;
 
-        public GridWorld(int rowCount, int seed)
+        public GridWorld(int rowCount, int seed) : this(rowCount, seed, baseTier: 1) { }
+
+        public GridWorld(int rowCount, int seed, int baseTier)
         {
             if (rowCount < 3) throw new ArgumentException("rowCount must be >= 3", nameof(rowCount));
+            if (baseTier < 1 || baseTier > 5) throw new ArgumentException("baseTier must be in [1,5]", nameof(baseTier));
             RowCount = rowCount;
             this.seed = seed;
+            BaseTier = baseTier;
+            PlayerTier = baseTier;
+            MistRunwayCells = InitialMistRunway;
             PlayerPosition = new GridCoord(0, rowCount / 2);
             Phase = GamePhase.Warmup;
             maxRevealedColumn = 1;
@@ -73,6 +95,13 @@ namespace Catr.GridEngine
             return new CellView(VisualState.Unrevealed, null);
         }
 
+        public TileMetadata GetTileMetadata(GridCoord target)
+        {
+            if (!frontierMetadata.TryGetValue(target, out var md))
+                throw new ArgumentException($"No frontier metadata for {target}.", nameof(target));
+            return md;
+        }
+
         public void Commit(GridCoord target)
         {
             if (Phase != GamePhase.Warmup)
@@ -89,16 +118,50 @@ namespace Catr.GridEngine
             PlayerPosition = target;
             maxRevealedColumn = target.X + 1;
             PlayerMoved?.Invoke(PlayerPosition);
+            SnapshotFrontierMetadata();
             RaiseRevealedForFrontier();
         }
 
+        // Legacy G1 API — kept for the sandbox driver until B5 rewires InputAdapter.
+        [Obsolete("Use AttemptPuzzle(target, correct, answerTimeSeconds).")]
         public void ResolvePuzzle(GridCoord target, bool correct)
         {
+            AttemptPuzzle(target, correct, answerTimeSeconds: 3.0f);
+        }
+
+        public void AttemptPuzzle(GridCoord target, bool correct, float answerTimeSeconds)
+        {
             if (Phase != GamePhase.Running)
-                throw new InvalidOperationException("ResolvePuzzle only valid during Running.");
+                throw new InvalidOperationException("AttemptPuzzle only valid during Running.");
             if (!IsChoosable(target))
                 throw new ArgumentException($"Target {target} is not choosable.", nameof(target));
-            if (!correct) return;
+            if (!frontierMetadata.TryGetValue(target, out var md))
+                throw new InvalidOperationException($"No frontier metadata for {target}; reveal first.");
+            if (md.Consumed)
+                throw new InvalidOperationException($"Tile {target} already consumed.");
+
+            if (!correct)
+            {
+                frontierMetadata[target] = md.WithConsumed(true);
+                TileConsumed?.Invoke(target);
+
+                if (AllFrontierConsumed())
+                {
+                    Phase = GamePhase.GameOver;
+                    GameOver?.Invoke(GameOverReason.FrontierExhausted);
+                    return;
+                }
+
+                ShoveMist(2);
+                return;
+            }
+
+            PushAnswerTime(answerTimeSeconds);
+            if (md.Tier == 5) Tier5AnsweredCount++;
+
+            int oldTier = PlayerTier;
+            RecomputePlayerTier();
+            if (PlayerTier > oldTier) RatchetClimbed?.Invoke(PlayerTier);
 
             MarkOtherChoosablesSpent(target);
             spentCells.Add(PlayerPosition);
@@ -106,8 +169,28 @@ namespace Catr.GridEngine
 
             PlayerPosition = target;
             maxRevealedColumn = target.X + 1;
+            MistRunwayCells += 1;
+            MistRunwayChanged?.Invoke(MistRunwayCells);
             PlayerMoved?.Invoke(PlayerPosition);
+
+            SnapshotFrontierMetadata();
             RaiseRevealedForFrontier();
+        }
+
+        // Returns true if runway hit zero → GameOver(MistContact).
+        public bool ShoveMist(int cells)
+        {
+            if (cells <= 0) return false;
+            if (Phase == GamePhase.GameOver) return true;
+            MistRunwayCells -= cells;
+            MistRunwayChanged?.Invoke(MistRunwayCells);
+            if (MistRunwayCells <= 0)
+            {
+                Phase = GamePhase.GameOver;
+                GameOver?.Invoke(GameOverReason.MistContact);
+                return true;
+            }
+            return false;
         }
 
         public void ConsumeColumn(int x)
@@ -117,7 +200,10 @@ namespace Catr.GridEngine
                 for (int y = 0; y < RowCount; y++)
                     spentCells.Remove(new GridCoord(x, y));
                 if (PlayerPosition.X == x)
+                {
                     Phase = GamePhase.GameOver;
+                    GameOver?.Invoke(GameOverReason.MistContact);
+                }
                 ColumnConsumed?.Invoke(x);
             }
         }
@@ -143,6 +229,85 @@ namespace Catr.GridEngine
                 CellRevealed.Invoke(c);
         }
 
+        private void SnapshotFrontierMetadata()
+        {
+            frontierMetadata.Clear();
+            int frontierColumn = PlayerPosition.X + 1;
+            foreach (var c in ChoosableCells())
+            {
+                bool isWildcard = RollWildcard(frontierColumn, c);
+                int tier = isWildcard ? 5 : PlayerTier;
+                var category = CategoryFor(c.X, c.Y);
+                var kind = RollKind(c);
+                bool hint = RollHintVisible(c, tier);
+                frontierMetadata[c] = new TileMetadata(category, tier, kind, hint, isWildcard, consumed: false);
+            }
+        }
+
+        private bool RollWildcard(int frontierColumn, GridCoord c)
+        {
+            float speed = RollingAvgAnswerTime();
+            float speedFactor = speed <= 0 ? 1.0f : Math.Min(2.0f, 3.0f / speed);
+            float p = Math.Min(WildcardPCap, WildcardK * Tier5AnsweredCount * speedFactor);
+            if (p <= 0) return false;
+            float r = UnitRandom(MixHash(seed, frontierColumn, c.Y, Tier5AnsweredCount, unchecked((int)0xA1B2C3D4)));
+            return r < p;
+        }
+
+        private QuestionKind RollKind(GridCoord c)
+        {
+            // T/F injection cadence is driven by QuestionEngine in B3; engine defaults to MC.
+            // Hash-mix here gives QuestionEngine a deterministic seed if it later wants engine-side cadence.
+            return QuestionKind.MC;
+        }
+
+        private bool RollHintVisible(GridCoord c, int tier)
+        {
+            float p = 0.20f + 0.15f * (tier - 1);
+            float r = UnitRandom(MixHash(seed, c.X, c.Y, tier, unchecked((int)0xC0DEFA11)));
+            return r < p;
+        }
+
+        private void PushAnswerTime(float t)
+        {
+            lastAnswerTimes.Enqueue(t);
+            while (lastAnswerTimes.Count > 3) lastAnswerTimes.Dequeue();
+        }
+
+        private float RollingAvgAnswerTime()
+        {
+            if (lastAnswerTimes.Count < 3) return 0f;
+            float sum = 0f;
+            foreach (var t in lastAnswerTimes) sum += t;
+            return sum / lastAnswerTimes.Count;
+        }
+
+        private void RecomputePlayerTier()
+        {
+            float avg = RollingAvgAnswerTime();
+            if (avg <= 0) return; // not enough samples; tier stays at BaseTier
+            int steps;
+            if (avg < 2.0f) steps = 4;
+            else if (avg < 3.0f) steps = 3;
+            else if (avg < 5.0f) steps = 2;
+            else if (avg < 8.0f) steps = 1;
+            else steps = 0;
+            int candidate = BaseTier + steps;
+            if (candidate > 5) candidate = 5;
+            if (candidate > PlayerTier) PlayerTier = candidate; // monotonic
+        }
+
+        private bool AllFrontierConsumed()
+        {
+            int count = 0;
+            foreach (var kv in frontierMetadata)
+            {
+                count++;
+                if (!kv.Value.Consumed) return false;
+            }
+            return count > 0;
+        }
+
         public CellCategory CategoryFor(int x, int y)
         {
             unchecked
@@ -159,6 +324,30 @@ namespace Catr.GridEngine
                 int idx = (int)((uint)h % (uint)count);
                 return (CellCategory)idx;
             }
+        }
+
+        private static int MixHash(int a, int b, int c, int d, int salt)
+        {
+            unchecked
+            {
+                int h = salt;
+                h = h * 31 + a;
+                h = h * 31 + b;
+                h = h * 31 + c;
+                h = h * 31 + d;
+                h ^= h >> 16;
+                h *= unchecked((int)0x7feb352d);
+                h ^= h >> 15;
+                h *= unchecked((int)0x846ca68b);
+                h ^= h >> 16;
+                return h;
+            }
+        }
+
+        private static float UnitRandom(int h)
+        {
+            uint u = (uint)h;
+            return (u & 0xFFFFFF) / (float)0x1000000;
         }
     }
 }
