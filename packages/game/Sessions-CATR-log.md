@@ -40,6 +40,55 @@ A clear, actionable opener for the next session.
 
 ---
 
+## 2026-05-26 — G2 B1: GridEngine Extension for the Question Engine
+**Phase:** G2 (B-track open — engine state foundation shipped)
+**Participants:** Cristian, Claude
+
+### Goal
+Open B1 with the three design questions logged at the end of last session locked. Then extend `GridWorld` with all G2 gameplay-world state: ratchet, wildcard, hint visibility, mist runway, frontier metadata snapshot, multi-attempt-per-frontier game-over path.
+
+### What Happened
+1. **Session-start ritual.** Confirmed Game track. Walked the last-3-sessions summary (G1 sealed → G2 A-track complete → B1 design questions logged). Phase G2, A-track ✅, B1 was the first unchecked plan item but blocked on three questions.
+2. **Three design decisions locked.** Cristian picked (a)/(a)/(a):
+   - Q1 — Mist motion: G1's 2.3s timer keeps ticking AND answers shove it. Standing still = death. ("Player has to keep on playing.")
+   - Q2 — Wildcard re-skin owner: `GridEngine`.
+   - Q3 — Tier-hint visibility owner: `GridEngine`.
+   Rationale Cristian echoed back: "Wildcard and tier-hints belong to the gameplay-world." Renderer stays a pure paintbrush; `QuestionEngine` only fetches and reports.
+3. **Markdown side-quest.** Cristian asked how to use bold/italic in the terminal. Answered with the GH-flavored markdown shorthand. He tested `**Hello** _font_ \`code man\`` — rendered correctly. (Side-effect: I dropped an emoji in the response; logged the slip against the global "no emojis unless asked" rule.)
+4. **B1 plan written.** Pre-code plan covered: new types (`TileMetadata`, `QuestionKind`, `GameOverReason`), new fields on `GridWorld` (`PlayerTier`, `BaseTier`, `LastAnswerTimes`, `Tier5AnsweredCount`, `MistRunwayCells`, `FrontierMetadata`), new API (`AttemptPuzzle`, `ShoveMist`, `GetTileMetadata`), new events (`TileConsumed`, `RatchetClimbed`, `MistRunwayChanged`, `GameOver`). Ratchet formula (4-band lookup against rolling-avg-3 of answer times), wildcard frequency, hint visibility curve all included with placeholder constants marked tuneable in G3. `ResolvePuzzle` kept as `[Obsolete]` shim — surgical, no caller deleted. Cristian approved as-is.
+5. **Implementation.** Three new files (`QuestionKind.cs`, `GameOverReason.cs`, `TileMetadata.cs`) + extended `GridEngine.cs` (~195 added lines). Ratchet is monotonic per-run (tier never decreases), `BaseTier` is a floor not a ceiling, wildcards force `Tier=5` and use a hash stream of `(seed, frontierColumn, row, Tier5AnsweredCount)` so two players with the same seed but different histories get different placement, hint visibility uses a separate `(seed, x, y, tier)` stream and is truthful.
+6. **Compile error caught.** First sidecar `dotnet test` flagged `CS1503: cannot convert from 'uint' to 'int'` on the salt constants `0xA1B2C3D4` / `0xC0DEFA11` — same gotcha as the 2026-05-23 `0x846ca68b` literal. Wrapped both in `unchecked((int)…)`.
+7. **Tests authored — 10 new.** Covered: correct-attempt-advances-and-bumps-runway, wrong-consumes-and-shoves-mist-2, three-wrong-frontier-exhausted, runway-zero-mist-contact, ratchet monotonicity, base-tier-as-floor, `Tier5AnsweredCount` only on tier-5-correct, wildcard divergence under same seed + different history, tier-snapshot-at-reveal-not-attempt, T5-vs-T1 hint probability (500 trials, wide margin). One existing test (`PlayerMoved_FiresOnWarmupMoveAndCommitAndResolve`) updated to call `AttemptPuzzle` directly instead of the obsolete `ResolvePuzzle` to avoid the deprecation warning.
+8. **Sidecar dotnet test green.** 21/21 (11 G1 + 10 new B1). `Duration: 47ms`. Test rig used the same NUnit-3.14.0 pin + tmp directory pattern from previous sessions.
+9. **Committed as `bf266d8`** — 6 files, 412 insertions, 5 deletions. Plan ticked: `G2-plan.md` B1 marked done.
+
+### Decisions Made
+*(Mirrored into `CLAUDE.md` §11 Decision Log)*
+- **B1-Q1 → (a):** Mist timer keeps ticking AND answers shove it. Standing still = death.
+- **B1-Q2 → (a):** `GridEngine` owns the wildcard re-skin (rolled at frontier-reveal, exposed via `GetTileMetadata`).
+- **B1-Q3 → (a):** `GridEngine` owns hint visibility (rolled at reveal, renderer just reads). Both decisions reinforce the rule: gameplay-world properties live in the engine; renderer is a paintbrush.
+
+### Artifacts Touched
+- `packages/game/Assets/Scripts/GridEngine/QuestionKind.cs` — new enum.
+- `packages/game/Assets/Scripts/GridEngine/GameOverReason.cs` — new enum.
+- `packages/game/Assets/Scripts/GridEngine/TileMetadata.cs` — new readonly struct (immutable with `WithConsumed` helper).
+- `packages/game/Assets/Scripts/GridEngine/GridEngine.cs` — extended with all B1 state + API + events + ratchet/wildcard/hint logic.
+- `packages/game/Assets/Scripts/GridEngine/Tests/GridEngineTests.cs` — +10 tests; one existing test migrated off `ResolvePuzzle`.
+- `packages/game/G2-plan.md` — B1 box ticked.
+- `packages/game/Sessions-CATR-log.md` — this entry.
+
+### Open Threads
+- **Unity `.meta` files for the three new `.cs` files** — not yet generated because Unity hasn't run since they were created. Next Editor open auto-generates them; commit as a follow-up so the asmdef stays clean for CI/teammates.
+- **`MistController` still calls `ConsumeColumn` directly, not `ShoveMist`.** Per the B1 plan this is deliberate — wiring belongs in B5, not B1. Standing-still-=-death still works because `MistController` still ticks; `ShoveMist` is just the new path that B5 will switch to.
+- **`InputAdapter` still calls `ResolvePuzzle(correct: true)`** — also B5. Engine accepts it via the `[Obsolete]` shim.
+- **100-question content sprint (C2)** still owed.
+- **CLAUDE.md root `Current status` table still claims "Backend Core — 44/44 tests passing"** — actually 90/90. Cosmetic carry-over.
+
+### Next Session Starts With
+B-track continues with **B2 — `BackendClient/` module**. Plan: `IBackendClient` interface, `MockBackendClient` (in-memory for unit tests), `HttpBackendClient` (`UnityWebRequest` against the A2 endpoints `/api/game/questions/next` + `/resolve`). Authentication still TBD — A2 uses `userAuth` middleware deriving `playerId` from JWT; B2 needs to decide where the client gets the token from in the custodial-wallet model (probably a `PlayerSession` provider injected at module boundary — but that's a B2 design question, not pre-locked here). Then B3 (`QuestionEngine`) wires the client + the engine together.
+
+---
+
 ## 2026-05-23 — G2 A-Track Complete: Schema + Endpoints + Seed (A1, A2, A3)
 **Phase:** G2 (full A-track shipped — backend foundation ready for B-track)
 **Participants:** Cristian, Claude

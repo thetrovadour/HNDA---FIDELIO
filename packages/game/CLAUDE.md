@@ -140,6 +140,16 @@ Append-only. Newest entries at the top. Format:
 
 <!-- New entries go here -->
 
+### 2026-05-26 — B1 design questions locked: (a)/(a)/(a)
+**Decision:** Q1 mist motion: timer keeps ticking AND answers shove it (standing still = death). Q2 wildcard re-skin owner: `GridEngine`. Q3 tier-hint visibility owner: `GridEngine`.
+**Why:** Wildcard and tier hints are gameplay-world properties — they change behavior, cell appearance, and player decisions. They belong in the engine. Renderer stays a pure paintbrush; `QuestionEngine` only fetches questions and reports outcomes. Standing-still-=-death keeps the survival metaphor intact ("player has to keep on playing").
+**Phase:** G2 / B1.
+
+### 2026-05-26 — B1 shipped: GridEngine extension for the question engine
+**Decision:** `GridWorld` extended with `AttemptPuzzle(target, correct, answerTime)`, `ShoveMist(cells)`, `GetTileMetadata(target)`, ratchet (monotonic per-run, rolling-avg-3 speed, 4-band lookup), wildcard re-skin (off-ratchet, forces Tier=5, RNG stream keyed on `(seed, column, row, Tier5AnsweredCount)`), hint visibility (`0.20 + 0.15*(tier-1)`, truthful), mist runway (starts at 10, +1 correct, −2 wrong), frontier metadata snapshot at reveal, new `GameOverReason` enum (MistContact | FrontierExhausted). `ResolvePuzzle` kept as `[Obsolete]` shim until B5 rewires `InputAdapter`. Tuning constants (`WildcardPCap`, `WildcardK`, `InitialMistRunway`, ratchet bands) marked `internal const` for one-file G3 retuning. 21/21 tests green (11 G1 + 10 new).
+**Why:** Engine boundary stays pure C# / no Unity deps / no network — gameplay-world state owned in one place, downstream modules just read via `GetTileMetadata` and write via `AttemptPuzzle`. Surgical extension: every existing G1 caller still works through the obsolete shim, every existing test still passes.
+**Phase:** G2 / B1.
+
 ### 2026-05-23 — G2 plan approved; backend-first execution
 **Decision:** Full G2 plan lives in `packages/game/G2-plan.md` (Track A backend → Track B Unity → C convergence). Approved as-is. Execution begins with A1 (Prisma schema). CLAUDE.md §6 updated to instruct future sessions to read `G{N}-plan.md` and resume from the first unchecked progress item.
 **Why:** Plan-document size would otherwise crowd CLAUDE.md. Separating plan (in `G{N}-plan.md`) from rules+decisions (CLAUDE.md) keeps both readable. "Camina, las cargas se arreglan en el camino" — start moving, iterate against contact with reality.
