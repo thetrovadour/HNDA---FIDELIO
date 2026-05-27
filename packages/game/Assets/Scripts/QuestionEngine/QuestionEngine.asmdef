@@ -1,0 +1,17 @@
+{
+    "name": "QuestionEngine",
+    "rootNamespace": "Catr.QuestionEngine",
+    "references": [
+        "GridEngine",
+        "BackendClient"
+    ],
+    "includePlatforms": [],
+    "excludePlatforms": [],
+    "allowUnsafeCode": false,
+    "overrideReferences": false,
+    "precompiledReferences": [],
+    "autoReferenced": true,
+    "defineConstraints": [],
+    "versionDefines": [],
+    "noEngineReferences": true
+}

@@ -14,6 +14,7 @@ namespace Catr.BackendClient
     {
         private readonly List<QuestionPayload> _pool;
         private readonly HashSet<string> _served = new HashSet<string>();
+        public readonly List<QuestionRequest> RecordedRequests = new List<QuestionRequest>();
         public readonly List<ResolveRecord> RecordedResolves = new List<ResolveRecord>();
 
         public MockBackendClient(IEnumerable<QuestionPayload> pool)
@@ -24,6 +25,7 @@ namespace Catr.BackendClient
         public Task<QuestionPayload> FetchNextAsync(QuestionRequest request, CancellationToken ct = default)
         {
             ct.ThrowIfCancellationRequested();
+            RecordedRequests.Add(request);
 
             IEnumerable<QuestionPayload> candidates;
             if (request.Wildcard)
