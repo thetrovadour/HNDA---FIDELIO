@@ -19,13 +19,13 @@ namespace Catr.QuestionEngine
     public sealed class QuestionFlow
     {
         // T/F tier is locked at 3 (mid-difficulty perceived breather).
-        internal const int TfTier = 3;
+        public const int TfTier = 3;
         // T/F injection cadence range — re-rolled after each TF emission.
-        internal const int CadenceMin = 5;
-        internal const int CadenceMax = 8;
+        public const int CadenceMin = 5;
+        public const int CadenceMax = 8;
         // T/F cap range — rolled once per run from the seed.
-        internal const int TfCapMin = 3;
-        internal const int TfCapMax = 7;
+        public const int TfCapMin = 3;
+        public const int TfCapMax = 7;
 
         private readonly GridWorld _engine;
         private readonly IBackendClient _client;

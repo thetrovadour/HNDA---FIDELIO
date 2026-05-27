@@ -1,12 +1,13 @@
 {
-    "name": "InputAdapter",
-    "rootNamespace": "Catr.InputAdapter",
+    "name": "QuestionUI",
+    "rootNamespace": "Catr.QuestionUI",
     "references": [
         "GridEngine",
         "GridRenderer",
-        "QuestionEngine",
         "BackendClient",
-        "Unity.InputSystem"
+        "QuestionEngine",
+        "Unity.TextMeshPro",
+        "UnityEngine.UI"
     ],
     "includePlatforms": [],
     "excludePlatforms": [],

@@ -2,12 +2,20 @@ using UnityEngine;
 using UnityEngine.InputSystem;
 using Catr.GridEngine;
 using Catr.GridRenderer;
+using Catr.QuestionEngine;
 
 namespace Catr.InputAdapter
 {
     public class InputAdapterBehaviour : MonoBehaviour
     {
         [SerializeField] private GridRendererBehaviour gridRenderer;
+
+        private QuestionFlow _flow;
+
+        public void Bind(QuestionFlow flow)
+        {
+            _flow = flow;
+        }
 
         private void Update()
         {
@@ -40,10 +48,24 @@ namespace Catr.InputAdapter
                 SafeCall(() => e.Commit(target));
         }
 
-        private static void HandleRunningClick(GridWorld e, GridCoord target)
+        private void HandleRunningClick(GridWorld e, GridCoord target)
         {
             if (!IsFrontier(e, target)) return;
-            SafeCall(() => e.ResolvePuzzle(target, correct: true));
+
+            // Black trap tile: instant wrong-answer path, no question fetch.
+            if (e.CategoryFor(target.X, target.Y) == CellCategory.Black)
+            {
+                SafeCall(() => e.AttemptPuzzle(target, correct: false, answerTimeSeconds: 0f));
+                return;
+            }
+
+            if (_flow == null)
+            {
+                Debug.LogWarning("[InputAdapter] No QuestionFlow bound; ignoring frontier click.");
+                return;
+            }
+
+            _ = _flow.RequestQuestion(target);
         }
 
         private static bool IsFrontier(GridWorld e, GridCoord c)

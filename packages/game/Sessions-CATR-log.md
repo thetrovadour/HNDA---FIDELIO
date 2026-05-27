@@ -40,6 +40,79 @@ A clear, actionable opener for the next session.
 
 ---
 
+## 2026-05-27 — G2 B4 + B5: QuestionUI card module + InputAdapter rewire (full mock-backed loop live)
+**Phase:** G2 (B-track — UI shipped, flow wired end-to-end against a mock backend)
+**Participants:** Cristian, Claude
+
+### Goal
+Close out the Unity-side B-track: ship B4 (`QuestionUI/` — Canvas + in-grid card + controller) and B5 (`InputAdapter` rewire + `GameBootstrap` composition root). End the day with a real frontier click producing a real question card driving real engine state.
+
+### What Happened
+1. **Session-start ritual.** Confirmed Game track. Walked the last-3-sessions summary (G2 A-track complete → B1 → B2/B3). Plan first unchecked item: B4.
+2. **B4 plan presented.** 7 open questions surfaced: TMP vs UI.Text, position-once vs per-frame, GameOver-hide-card, T/F same-prefab vs separate, latency-during-resolve, color flash on resolve, language source. Cristian locked all 7 against recommended path: TMP / position-once / GameOver hides ("no screenshots allowed haha") / same prefab / disable-buttons-on-click / dismiss on resolve / `Application.systemLanguage`.
+3. **B4 module written.** `QuestionUI.asmdef` (referencing GridEngine, GridRenderer, BackendClient, QuestionEngine, Unity.TextMeshPro, UnityEngine.UI). Two scripts: `QuestionCardBehaviour` (prefab controller — `Show(ActiveQuestion, Vector3 worldPos)`, `Hide()`, `AnswerClicked` event); `QuestionUIController` (scene glue — `Bind(QuestionFlow, GridWorld)`, subscribes to `QuestionFetched`/`AnswerResolved`/`GameOver`, positions card 1.5 cells above tile or below if Y==0).
+4. **GridRenderer extension.** Exposed `GridToWorld`, `CellSize`, `RowCount` as public so the controller can compute card position without duplicating spatial math.
+5. **Unity prefab construction (step-by-step Editor walkthrough).** Cristian built the prefab live:
+   - QuestionCard Canvas (World Space, 3×2, scale 1, Main Camera wired as Event Camera).
+   - Background (Image, stretched to fill, dark semi-transparent).
+   - PromptText (TMP, anchored stretch/top, Auto Size on; collapsed once Cristian disabled Auto Size and set Font Size = 0.3 — the Min/Max fields were hidden by inspector width).
+   - AnswersContainer (anchored stretch/bottom, Vertical Layout Group, Middle Center).
+   - AnswerButton prefab (saved to `Assets/PreFab/`, child TMP text + Layout Element for height = 0.3).
+6. **Two real Unity gotchas surfaced during compile.**
+   - **asmdef name mismatch.** The QuestionUI asmdef referenced `Catr.GridEngine`/`Catr.BackendClient` etc., but the actual asmdef names are `GridEngine`/`BackendClient` (no `Catr.` prefix). Fixed to bare names. Lesson: asmdef `name` field is the assembly id, not the rootNamespace.
+   - **Internal-across-asmdef.** `QuestionFlow.TfTier` was `internal const`, which worked fine under the sidecar `dotnet test` (single assembly) but broke in Unity once `QuestionEngine.Tests.asmdef` became a separate assembly. Promoted `TfTier`/`CadenceMin`/`CadenceMax`/`TfCapMin`/`TfCapMax` to `public`. Lesson: sidecar tests can mask Unity-only assembly boundary issues.
+7. **B4 dry-run (option a, not b).** Cristian asked for visual confirmation before B5. Wrote `CardDryRun` MonoBehaviour in `Assets/Scripts/QuestionUI/Sandbox/` that fakes a `QuestionFetched` on Space/H. Initial constructor signature was wrong (missed `category`, `tier`, `isWildcard` params — `QuestionPayload` has 8 fields, not 5). Fixed.
+8. **Three card-display gotchas surfaced in dry-run.**
+   - **Z-sort:** World-Space canvas at Z=0 rendered behind the grid sprites. Fix: card World Pos Z = -1.
+   - **Camera framing:** card placed at (0,0,0) was off-screen bottom-left. Fix: bumped World Pos to (2, 6, -1) for testing.
+   - **VerticalLayoutGroup squashing buttons to height 0.** Resolution dance: tried unchecking "Control Child Size: Height" (buttons stayed 0 because no LayoutElement); then added `LayoutElement` (Preferred Height = 0.3) to the AnswerButton prefab AND re-enabled "Control Child Size: Height". That worked — VLG respects the LayoutElement's preferred size.
+9. **B4 verified.** Card spawns on Space with the prompt "¿Cuál es la capital de Honduras?" and 4 answer buttons; clicking an answer disables all 4 (per Color Tint disabled state); H hides. Stayed in front of grid (Z=-1) at the bumped position.
+10. **B5 plan presented.** 4 open questions: mock pool source / composition home / lang source / seed. Cristian: hardcoded mock pool, separate `GameBootstrap` module (modularity mandate), `Application.systemLanguage`, hardcoded seed 42.
+11. **B5 implementation.**
+    - `InputAdapterBehaviour` rewritten — `Bind(QuestionFlow)` method, `HandleRunningClick` now: filters Black tiles → direct `AttemptPuzzle(correct: false, 0f)`; otherwise `_ = _flow.RequestQuestion(target)`. The G1 `ResolvePuzzle(correct: true)` placeholder is gone.
+    - `InputAdapter.asmdef` gained QuestionEngine + BackendClient references.
+    - `GameBootstrap.asmdef` + `GameBootstrapBehaviour` — new module. At `Start()`, builds 8 hand-coded bilingual `QuestionPayload` instances (1 per category at varying tiers + 1 TF Tegucigalpa + 1 wildcard Lempira), wraps in `MockBackendClient`, builds `QuestionFlow` with engine + client + lang + seed=42, calls `Bind` on both `QuestionUIController` and `InputAdapterBehaviour`.
+12. **B5 verified by Cristian.** Walked warmup, hit a Running frontier tile, real card appeared with a real question, clicking an answer routed through `QuestionFlow.ResolveAnswer` → server-first `ResolveAsync` → `AttemptPuzzle`. Card dismisses on resolve. Engine state mutates (mist runway, ratchet) as designed. End-to-end loop live against the mock backend.
+13. **Decision:** wrap session here. C1 (real backend) and B6 (hint badges) deferred to next sitting.
+
+### Decisions Made
+*(Mirrored into `CLAUDE.md` §11 Decision Log)*
+- **B4 — QuestionUI module shipped.** World-Space canvas, in-grid card 1.5 cells above tile (flipped below if Y==0), position-once at `QuestionFetched`, dismiss on `QuestionResolved` or engine `GameOver`. Buttons disable on click (server-first transparency).
+- **B4-Q1..Q7 locks:** TMP / position-once / GameOver-hides / same prefab for MC and TF / disable buttons on click / no color flash for now / `Application.systemLanguage`.
+- **`internal` → `public`** on `QuestionFlow` cadence constants. Sidecar same-assembly tests masked the asmdef boundary.
+- **B5 — InputAdapter rewire + GameBootstrap composition root shipped.** Black trap tile → direct `AttemptPuzzle(correct: false, 0)`, no question fetch. All other frontier clicks route through `QuestionFlow.RequestQuestion`.
+- **B5-Q1..Q4 locks:** hardcoded mock pool / separate GameBootstrap module / Application.systemLanguage / seed=42.
+
+### Artifacts Touched
+- `packages/game/Assets/Scripts/QuestionUI/QuestionUI.asmdef` — new.
+- `packages/game/Assets/Scripts/QuestionUI/QuestionCardBehaviour.cs` — new.
+- `packages/game/Assets/Scripts/QuestionUI/QuestionUIController.cs` — new.
+- `packages/game/Assets/Scripts/QuestionUI/Sandbox/CardDryRun.cs` — new, throwaway dry-run driver (kept for now).
+- `packages/game/Assets/Scripts/QuestionUI/Sandbox/QuestionUI.Sandbox.asmdef` — new.
+- `packages/game/Assets/Scripts/GridRenderer/GridRendererBehaviour.cs` — exposed `GridToWorld`/`CellSize`/`RowCount`.
+- `packages/game/Assets/Scripts/QuestionEngine/QuestionFlow.cs` — cadence constants promoted to `public`.
+- `packages/game/Assets/Scripts/InputAdapter/InputAdapterBehaviour.cs` — rewired through `QuestionFlow`; Black-trap path added.
+- `packages/game/Assets/Scripts/InputAdapter/InputAdapter.asmdef` — added QuestionEngine + BackendClient refs.
+- `packages/game/Assets/Scripts/GameBootstrap/GameBootstrap.asmdef` — new module.
+- `packages/game/Assets/Scripts/GameBootstrap/GameBootstrapBehaviour.cs` — composition root with 8-question mock pool.
+- `packages/game/Assets/PreFab/QuestionCard.prefab` + `AnswerButton.prefab` — Cristian built these in Editor.
+- `packages/game/Assets/Scenes/G1_GridSandbox.unity` — Cristian added `QuestionCard`, `QuestionUIController`, `GameBootstrap` GameObjects with wired SerializeFields.
+- `packages/game/G2-plan.md` — B4 + B5 ticked.
+- `packages/game/CLAUDE.md` — 2 new Decision Log entries.
+
+### Open Threads
+- **`CardDryRun` sandbox driver** — kept in `QuestionUI/Sandbox/` for now. Can be deleted once we're confident B5 doesn't regress.
+- **B6 (`GridRenderer` hint badges)** — small. Reads `GetTileMetadata().HintVisible` and renders a tier badge over frontier tiles.
+- **C1 (real backend)** — swap `MockBackendClient` for `HttpBackendClient` inside `GameBootstrap`. Backend must be running locally with the 10 seed questions loaded.
+- **C2 (100-question content sprint)** — hand-authored bilingual.
+- **`.meta` files for the 6 new scripts/asmdefs** — Editor will generate on next reopen; follow-up commit.
+- **CLAUDE.md root status table still claims "Backend Core — 44/44 tests passing"** — cosmetic carry-over.
+
+### Next Session Starts With
+Open `G2-plan.md` → **B6**, the renderer hint badges. Smallest remaining unit. After B6, C1 — point `GameBootstrap` at `HttpBackendClient`, start the backend, walk the loop against real seeded questions. C1 sealed = G2 sealed. Then C2 (content sprint) is pure writing, no engineering.
+
+---
+
 ## 2026-05-26 — G2 B2 + B3: BackendClient + QuestionFlow (second session of the day)
 **Phase:** G2 (B-track — backend seam + orchestrator shipped)
 **Participants:** Cristian, Claude

@@ -1,11 +1,11 @@
 {
-    "name": "InputAdapter",
-    "rootNamespace": "Catr.InputAdapter",
+    "name": "QuestionUI.Sandbox",
+    "rootNamespace": "Catr.QuestionUI.Sandbox",
     "references": [
-        "GridEngine",
-        "GridRenderer",
+        "QuestionUI",
         "QuestionEngine",
         "BackendClient",
+        "GridEngine",
         "Unity.InputSystem"
     ],
     "includePlatforms": [],

@@ -165,7 +165,13 @@ namespace Catr.GridRenderer
             }
         }
 
-        private Vector3 CellWorldPos(GridCoord c) => new Vector3(c.X * cellSize, (rowCount - 1 - c.Y) * cellSize, 0f);
+        private Vector3 CellWorldPos(GridCoord c) => GridToWorld(c);
+
+        public Vector3 GridToWorld(GridCoord c) => new Vector3(c.X * cellSize, (rowCount - 1 - c.Y) * cellSize, 0f);
+
+        public float CellSize => cellSize;
+
+        public int RowCount => rowCount;
 
         public GridCoord ScreenToGridCoord(Vector2 screenPos)
         {
