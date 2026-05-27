@@ -1,0 +1,16 @@
+{
+    "name": "BackendClient.Unity",
+    "rootNamespace": "Catr.BackendClient",
+    "references": [
+        "BackendClient"
+    ],
+    "includePlatforms": [],
+    "excludePlatforms": [],
+    "allowUnsafeCode": false,
+    "overrideReferences": false,
+    "precompiledReferences": [],
+    "autoReferenced": true,
+    "defineConstraints": [],
+    "versionDefines": [],
+    "noEngineReferences": false
+}

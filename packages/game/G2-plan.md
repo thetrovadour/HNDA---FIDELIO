@@ -254,7 +254,7 @@ Co-author the 100 bilingual questions. Pure content, no engineering.
 - [x] A2 — Express endpoints (`/api/game/questions/next` + `/resolve`, 90/90 tests green)
 - [x] A3 — Seed file scaffold (10 bilingual placeholder questions, idempotent upsert, `npm run db:seed:game`)
 - [x] B1 — `GridEngine` extension (AttemptPuzzle / ShoveMist / GetTileMetadata + ratchet + wildcard/hint rolls; 21/21 tests green)
-- [ ] B2 — `BackendClient/` module
+- [x] B2 — `BackendClient/` module (`IBackendClient` + DTOs + `MockBackendClient` + `HttpBackendClient`; 6/6 mock tests green)
 - [ ] B3 — `QuestionEngine/` module
 - [ ] B4 — `QuestionUI/` module
 - [ ] B5 — `InputAdapter` rewire
