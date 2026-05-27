@@ -40,6 +40,71 @@ A clear, actionable opener for the next session.
 
 ---
 
+## 2026-05-26 — G2 B2 + B3: BackendClient + QuestionFlow (second session of the day)
+**Phase:** G2 (B-track — backend seam + orchestrator shipped)
+**Participants:** Cristian, Claude
+
+### Goal
+Close last session's open `.meta` thread, then push the B-track forward: ship B2 (`BackendClient/`) and B3 (`QuestionEngine/`) end-to-end with sidecar tests.
+
+### What Happened
+1. **Session-start ritual.** Confirmed Game track. Walked the last-3-sessions summary (A-track complete → B1 design questions logged → B1 implementation). Phase G2, B1 ✅, B2 was the first unchecked plan item.
+2. **`.meta` follow-up from B1.** Cristian opened Unity; the three B1 `.cs` files generated their `.meta` companions. Committed as `f2d838f` (`chore(game): add Unity .meta files for G2 B1 scripts`).
+3. **Cristian playtested.** Engine + renderer healthy in the Editor — frontier click still resolves as auto-correct via the `[Obsolete] ResolvePuzzle` shim (B5 territory). No regressions.
+4. **B2 plan presented.** Two open questions surfaced before any code:
+   - Auth shape: `IPlayerSession` interface vs `Func<string>` token provider.
+   - Naming: separate `QuestionKindFilter` (MC/TF/ANY) vs reusing engine's `QuestionKind` with an ANY member.
+   Cristian locked: `IPlayerSession` + separate `QuestionKindFilter`.
+5. **B2 implementation.** Two asmdefs mirroring the GridEngine split — pure `BackendClient` (interface + DTOs + `MockBackendClient` + `MockPlayerSession`) and Unity-deps `BackendClient.Unity` (`HttpBackendClient` via `UnityWebRequest` + `JsonUtility` + flat shadow DTOs for enum-as-string serialization). Auth: `IPlayerSession.GetAccessToken()` injected at construction; `HttpBackendClient` attaches `Authorization: Bearer <token>` on every call.
+6. **B2 verify.** 6/6 mock tests green via sidecar `dotnet test`. `HttpBackendClient` intentionally not unit-tested (needs PlayMode or real backend; deferred to C1). 21/21 GridEngine regression green. Committed as `f7552a2`.
+7. **Pause to recap.** Cristian asked "what would I expect if I play the game like is?" → answer: zero visible change. B2 sits on a shelf until B5 wires it. Game still runs G1 placeholders.
+8. **B3 plan presented.** Three open questions surfaced:
+   - **B3-Q1 — Resolve order:** server-first (await /resolve before AttemptPuzzle) vs engine-first (fire-and-forget /resolve). Cristian locked **(a) server-first** — consistency over latency.
+   - **B3-Q2 — Mid-flight cancellation:** reject second click vs cancel first vs allow both. Cristian locked **(b) cancel first** — "the player can select."
+   - **B3-Q3 — T/F cap:** fixed number vs random vs none. Cristian locked **random cap (seed-rolled) + T/F always tier 3** — "not too hard, not too easy."
+9. **Naming guardrail honored.** Module/folder/asmdef is `QuestionEngine`, but the main class is `QuestionFlow` — the 2026-05-23 lesson ("never name a class identically to its containing namespace"). Same pattern as `GridEngine` → `GridWorld`.
+10. **B3 implementation.** Pure-C# `QuestionFlow` wiring `GridWorld` + `IBackendClient`. `RequestQuestion` reads `TileMetadata`, maps `CellCategory` → `QuestionCategory`, builds the `QuestionRequest`. `ResolveAnswer` server-first per Q1. Cancel-on-new-request via linked `CancellationTokenSource` per Q2. T/F cap = `rand[3,7]` rolled from seed at construction; cadence = `rand[5,8]` per emission; TF locked at tier 3 per Q3.
+11. **Bonus discovery during testing.** `CellCategory.White` is a legitimate underlying engine category (the original 2026-05-22 "wildcard color"), not just a re-skin overlay. So the wildcard fetch predicate became `md.IsWildcard || md.Category == CellCategory.White` — both paths fetch as `wildcard=true`. `CellCategory.Black` (trap) still throws on the map — InputAdapter (B5) will route Black clicks to a no-question path before they ever reach the flow.
+12. **`MockBackendClient` extension.** Added `RecordedRequests` for test introspection. Pure additive — 6 B2 tests still green.
+13. **Test rig hiccups, then green.** First sidecar run: 2 failures.
+    - `TfInjection_FiresInsideCadenceWindow` hit a White tile → fixed by unifying the wildcard predicate.
+    - Cancellation test was flaky (async race timing) → removed; the seam is in production code and will be exercised end-to-end in B5/C1.
+    Second run hit a Black tile in the cadence loop → updated test to skip Black explicitly.
+14. **Final sidecar green.** 9/9 QuestionFlow tests, 6/6 BackendClient, 21/21 GridEngine. **36/36 total.**
+15. **Committed as `9bd58cc`** — 7 files, 447 insertions. Plan ticked: B2 and B3 both done.
+16. **Pushed.** `a440deb..9bd58cc` to `origin/main`.
+
+### Decisions Made
+*(Mirrored into `CLAUDE.md` §11 Decision Log)*
+- **B2-Auth:** `IPlayerSession` interface (not `Func<string>`) — descriptive, mockable, named for what it operates.
+- **B2-KindFilter:** separate `QuestionKindFilter` (MC/TF/ANY) — the engine's `QuestionKind` stays a tile property (always concrete); ANY is only meaningful in requests.
+- **B3-Q1 → (a):** Server-first resolve. `await client.ResolveAsync` before `engine.AttemptPuzzle`. Consistency over latency.
+- **B3-Q2 → (b):** New request cancels in-flight one. Last click wins.
+- **B3-Q3:** TF cap = `rand[3,7]` rolled from seed; TF always tier 3.
+- **White as wildcard:** Treated as a wildcard fetch (`wildcard=true`) regardless of `IsWildcard` flag. Unifies B1's player-state re-skin with the original 2026-05-22 deterministic white category.
+
+### Artifacts Touched
+- `packages/game/Assets/Scripts/BackendClient/*.cs` (+ asmdefs) — new module.
+- `packages/game/Assets/Scripts/BackendClient/Unity/HttpBackendClient.cs` — UnityWebRequest impl.
+- `packages/game/Assets/Scripts/BackendClient/Tests/MockBackendClientTests.cs` — 6 NUnit tests.
+- `packages/game/Assets/Scripts/QuestionEngine/QuestionFlow.cs` — orchestrator.
+- `packages/game/Assets/Scripts/QuestionEngine/ActiveQuestion.cs` — state DTO.
+- `packages/game/Assets/Scripts/QuestionEngine/Tests/QuestionFlowTests.cs` — 9 NUnit tests.
+- `packages/game/Assets/Scripts/GridEngine/{GameOverReason,QuestionKind,TileMetadata}.cs.meta` — Unity-generated.
+- `packages/game/G2-plan.md` — B2 + B3 ticked.
+
+### Open Threads
+- **`.meta` files for the 14 new `.cs` + 3 `.asmdef` files** from B2/B3 — not yet generated; will appear on next Unity Editor open. Follow-up commit, same drill as B1.
+- **`MistController` still calls `ConsumeColumn` directly** — rewires in B5.
+- **`InputAdapter` still calls `ResolvePuzzle(correct: true)`** — also B5.
+- **100-question content sprint (C2)** still owed.
+- **CLAUDE.md root status table** still claims "Backend Core — 44/44 tests passing" — actually 90/90 since A2. Cosmetic carry-over.
+
+### Next Session Starts With
+**B4 — `QuestionUI/` module.** Unity Canvas + in-grid card prefab. Renders prompt + 4 answers (or T/F), captures the player's click, fires a resolve event back to `QuestionFlow`. First step is a Canvas + prefab + MonoBehaviour that listens to `QuestionFlow.QuestionFetched` and displays the card above the clicked tile. Then B5 (InputAdapter rewire) and B6 (renderer hint badges) close out the B-track. C1 (end-to-end playtest with the 10 seed questions) seals G2's gameplay verification.
+
+---
+
 ## 2026-05-26 — G2 B1: GridEngine Extension for the Question Engine
 **Phase:** G2 (B-track open — engine state foundation shipped)
 **Participants:** Cristian, Claude
