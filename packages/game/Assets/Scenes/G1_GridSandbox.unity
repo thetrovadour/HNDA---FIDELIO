@@ -313,6 +313,54 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: e45f2b631ca2c5e93aff603df4a46336, type: 3}
   m_Name: 
   m_EditorClassIdentifier: QuestionUI::Catr.QuestionUI.QuestionCardBehaviour
+--- !u!1 &542319081
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 542319083}
+  - component: {fileID: 542319082}
+  m_Layer: 0
+  m_Name: GameBootstrap
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!114 &542319082
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 542319081}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 1df62f7914d0e487e96341a0961a92cd, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: GameBootstrap::Catr.GameBootstrap.GameBootstrapBehaviour
+  gridRenderer: {fileID: 1063321831}
+  uiController: {fileID: 836821114}
+  inputAdapter: {fileID: 678241917}
+  seed: 42
+--- !u!4 &542319083
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 542319081}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 2.64507, y: 1.9932, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 0}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &678241915
 GameObject:
   m_ObjectHideFlags: 0
@@ -541,52 +589,6 @@ Transform:
   m_Children: []
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
---- !u!1 &1538992792
-GameObject:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  serializedVersion: 6
-  m_Component:
-  - component: {fileID: 1538992794}
-  - component: {fileID: 1538992793}
-  m_Layer: 0
-  m_Name: CardDryRUn
-  m_TagString: Untagged
-  m_Icon: {fileID: 0}
-  m_NavMeshLayer: 0
-  m_StaticEditorFlags: 0
-  m_IsActive: 1
---- !u!114 &1538992793
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1538992792}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 6cafcd867f8de90cdb99dd7420f6ddad, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: QuestionUI.Sandbox::Catr.QuestionUI.Sandbox.CardDryRun
-  card: {fileID: 506461758}
-  worldPos: {x: 2, y: 6, z: -1}
---- !u!4 &1538992794
-Transform:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1538992792}
-  serializedVersion: 2
-  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 0.23288, y: -0.10794, z: 0}
-  m_LocalScale: {x: 1, y: 1, z: 1}
-  m_ConstrainProportionsScale: 0
-  m_Children: []
-  m_Father: {fileID: 0}
-  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &1605678787
 GameObject:
   m_ObjectHideFlags: 0
@@ -748,5 +750,5 @@ SceneRoots:
   - {fileID: 678241916}
   - {fileID: 2998167273153795571}
   - {fileID: 1128823879}
+  - {fileID: 542319083}
   - {fileID: 836821115}
-  - {fileID: 1538992794}
