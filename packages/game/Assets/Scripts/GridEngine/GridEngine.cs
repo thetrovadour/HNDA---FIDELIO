@@ -14,18 +14,21 @@ namespace Catr.GridEngine
         public event Action<int> ColumnConsumed;
         public event Action<GridCoord> TileConsumed;
         public event Action<int> RatchetClimbed;
-        public event Action<int> MistRunwayChanged;
+        public event Action<float> TimeRemainingChanged;
         public event Action<GameOverReason> GameOver;
 
         public int BaseTier { get; }
         public int PlayerTier { get; private set; }
         public int Tier5AnsweredCount { get; private set; }
-        public int MistRunwayCells { get; private set; }
+        public float TimeRemaining { get; private set; }
+        public int MistFrontX { get; private set; }
 
         // Tunable in G3 — kept internal so a single edit retunes the ratchet.
         internal const float WildcardPCap = 0.25f;
         internal const float WildcardK = 0.02f;
-        internal const int InitialMistRunway = 10;
+        internal const float InitialTimeSeconds = 10f;
+        internal const float CorrectBonusSeconds = 1f;
+        internal const float WrongPenaltySeconds = 2f;
 
         private readonly int seed;
         private readonly HashSet<int> consumedColumns = new HashSet<int>();
@@ -44,11 +47,38 @@ namespace Catr.GridEngine
             this.seed = seed;
             BaseTier = baseTier;
             PlayerTier = baseTier;
-            MistRunwayCells = InitialMistRunway;
+            TimeRemaining = InitialTimeSeconds;
+            MistFrontX = -1;
             PlayerPosition = new GridCoord(0, rowCount / 2);
             Phase = GamePhase.Warmup;
             maxRevealedColumn = 1;
             SnapshotFrontierMetadata();
+        }
+
+        public void Tick(float deltaSeconds)
+        {
+            if (Phase == GamePhase.GameOver) return;
+            if (deltaSeconds <= 0) return;
+            TimeRemaining = Math.Max(0f, TimeRemaining - deltaSeconds);
+            TimeRemainingChanged?.Invoke(TimeRemaining);
+            AdvanceMistToMatchTime();
+            if (Phase == GamePhase.GameOver) return;
+            if (TimeRemaining <= 0f)
+            {
+                Phase = GamePhase.GameOver;
+                GameOver?.Invoke(GameOverReason.MistContact);
+            }
+        }
+
+        private void AdvanceMistToMatchTime()
+        {
+            int target = PlayerPosition.X - (int)Math.Floor(TimeRemaining);
+            while (MistFrontX < target)
+            {
+                MistFrontX++;
+                ConsumeColumn(MistFrontX);
+                if (Phase == GamePhase.GameOver) return;
+            }
         }
 
         public bool TryWarmupMove(VerticalDir dir)
@@ -165,12 +195,13 @@ namespace Catr.GridEngine
                 Commit(target);
                 if (correct)
                 {
-                    MistRunwayCells += 1;
-                    MistRunwayChanged?.Invoke(MistRunwayCells);
+                    TimeRemaining += CorrectBonusSeconds;
+                    TimeRemainingChanged?.Invoke(TimeRemaining);
+                    AdvanceMistToMatchTime();
                 }
                 else
                 {
-                    ShoveMist(2);
+                    ShoveMist((int)WrongPenaltySeconds);
                 }
                 return;
             }
@@ -204,22 +235,25 @@ namespace Catr.GridEngine
 
             PlayerPosition = target;
             maxRevealedColumn = target.X + 1;
-            MistRunwayCells += 1;
-            MistRunwayChanged?.Invoke(MistRunwayCells);
+            TimeRemaining += CorrectBonusSeconds;
+            TimeRemainingChanged?.Invoke(TimeRemaining);
             PlayerMoved?.Invoke(PlayerPosition);
 
             SnapshotFrontierMetadata();
             RaiseRevealedForFrontier();
+            AdvanceMistToMatchTime();
         }
 
-        // Returns true if runway hit zero → GameOver(MistContact).
+        // Returns true if time hit zero → GameOver(MistContact).
         public bool ShoveMist(int cells)
         {
             if (cells <= 0) return false;
             if (Phase == GamePhase.GameOver) return true;
-            MistRunwayCells -= cells;
-            MistRunwayChanged?.Invoke(MistRunwayCells);
-            if (MistRunwayCells <= 0)
+            TimeRemaining = Math.Max(0f, TimeRemaining - cells);
+            TimeRemainingChanged?.Invoke(TimeRemaining);
+            AdvanceMistToMatchTime();
+            if (Phase == GamePhase.GameOver) return true;
+            if (TimeRemaining <= 0f)
             {
                 Phase = GamePhase.GameOver;
                 GameOver?.Invoke(GameOverReason.MistContact);

@@ -167,14 +167,14 @@ namespace Catr.GridEngine.Tests
         // ---- G2 B1 tests ----
 
         [Test]
-        public void AttemptPuzzle_Correct_AdvancesPlayer_AndIncrementsRunway()
+        public void AttemptPuzzle_Correct_AdvancesPlayer_AndIncrementsTime()
         {
             var e = NewEngine();
             e.Commit(new GridCoord(1, 4));
-            int runway = e.MistRunwayCells;
+            float time = e.TimeRemaining;
             e.AttemptPuzzle(new GridCoord(2, 4), correct: true, answerTimeSeconds: 3f);
             Assert.AreEqual(new GridCoord(2, 4), e.PlayerPosition);
-            Assert.AreEqual(runway + 1, e.MistRunwayCells);
+            Assert.AreEqual(time + 1f, e.TimeRemaining, 0.001f);
         }
 
         [Test]
@@ -182,7 +182,7 @@ namespace Catr.GridEngine.Tests
         {
             var e = NewEngine();
             e.Commit(new GridCoord(1, 4));
-            int runway = e.MistRunwayCells;
+            float time = e.TimeRemaining;
             GridCoord consumed = default;
             e.TileConsumed += c => consumed = c;
 
@@ -192,7 +192,7 @@ namespace Catr.GridEngine.Tests
             Assert.AreEqual(target, consumed);
             Assert.IsTrue(e.GetTileMetadata(target).Consumed);
             Assert.AreEqual(new GridCoord(1, 4), e.PlayerPosition);
-            Assert.AreEqual(runway - 2, e.MistRunwayCells);
+            Assert.AreEqual(time - 2f, e.TimeRemaining, 0.001f);
         }
 
         [Test]
@@ -212,14 +212,14 @@ namespace Catr.GridEngine.Tests
         }
 
         [Test]
-        public void MistRunway_ReachesZero_RaisesMistContactGameOver()
+        public void Time_ReachesZero_RaisesMistContactGameOver()
         {
             var e = NewEngine();
             e.Commit(new GridCoord(1, 4));
             GameOverReason? reason = null;
             e.GameOver += r => reason = r;
 
-            bool hit = e.ShoveMist(e.MistRunwayCells);
+            bool hit = e.ShoveMist((int)System.Math.Ceiling(e.TimeRemaining));
 
             Assert.IsTrue(hit);
             Assert.AreEqual(GamePhase.GameOver, e.Phase);
