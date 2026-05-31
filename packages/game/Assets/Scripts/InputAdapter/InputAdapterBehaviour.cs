@@ -1,4 +1,5 @@
 using UnityEngine;
+using UnityEngine.EventSystems;
 using UnityEngine.InputSystem;
 using Catr.GridEngine;
 using Catr.GridRenderer;
@@ -22,6 +23,7 @@ namespace Catr.InputAdapter
             if (gridRenderer == null || gridRenderer.Engine == null) return;
             if (Pointer.current == null) return;
             if (!Pointer.current.press.wasPressedThisFrame) return;
+            if (EventSystem.current != null && EventSystem.current.IsPointerOverGameObject()) return;
 
             var e = gridRenderer.Engine;
             if (e.Phase == GamePhase.GameOver) return;
@@ -32,23 +34,21 @@ namespace Catr.InputAdapter
             if (e.Phase == GamePhase.Warmup)
                 HandleWarmupClick(e, target);
             else
-                HandleRunningClick(e, target);
+                HandleFrontierClick(e, target);
         }
 
-        private static void HandleWarmupClick(GridWorld e, GridCoord target)
+        private void HandleWarmupClick(GridWorld e, GridCoord target)
         {
             if (target.X == 0)
             {
-                int dy = target.Y - e.PlayerPosition.Y;
-                if (dy == -1) e.TryWarmupMove(VerticalDir.Up);
-                else if (dy == 1) e.TryWarmupMove(VerticalDir.Down);
+                SafeCall(() => e.TryWarmupMoveTo(target.Y));
                 return;
             }
             if (target.X == 1 && IsFrontier(e, target))
-                SafeCall(() => e.Commit(target));
+                HandleFrontierClick(e, target);
         }
 
-        private void HandleRunningClick(GridWorld e, GridCoord target)
+        private void HandleFrontierClick(GridWorld e, GridCoord target)
         {
             if (!IsFrontier(e, target)) return;
 
@@ -65,7 +65,14 @@ namespace Catr.InputAdapter
                 return;
             }
 
-            _ = _flow.RequestQuestion(target);
+            _ = RequestQuestionLogged(target);
+        }
+
+        private async System.Threading.Tasks.Task RequestQuestionLogged(GridCoord target)
+        {
+            try { await _flow.RequestQuestion(target); }
+            catch (System.OperationCanceledException) { /* superseded by a newer click */ }
+            catch (System.Exception ex) { Debug.LogError($"[InputAdapter] RequestQuestion({target}) failed: {ex}"); }
         }
 
         private static bool IsFrontier(GridWorld e, GridCoord c)

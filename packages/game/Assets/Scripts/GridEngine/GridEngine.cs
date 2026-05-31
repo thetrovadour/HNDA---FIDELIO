@@ -48,6 +48,7 @@ namespace Catr.GridEngine
             PlayerPosition = new GridCoord(0, rowCount / 2);
             Phase = GamePhase.Warmup;
             maxRevealedColumn = 1;
+            SnapshotFrontierMetadata();
         }
 
         public bool TryWarmupMove(VerticalDir dir)
@@ -57,6 +58,18 @@ namespace Catr.GridEngine
             if (newY < 0 || newY >= RowCount) return false;
             PlayerPosition = new GridCoord(0, newY);
             PlayerMoved?.Invoke(PlayerPosition);
+            SnapshotFrontierMetadata();
+            return true;
+        }
+
+        public bool TryWarmupMoveTo(int y)
+        {
+            if (Phase != GamePhase.Warmup) return false;
+            if (y < 0 || y >= RowCount) return false;
+            if (y == PlayerPosition.Y) return true;
+            PlayerPosition = new GridCoord(0, y);
+            PlayerMoved?.Invoke(PlayerPosition);
+            SnapshotFrontierMetadata();
             return true;
         }
 
@@ -102,6 +115,11 @@ namespace Catr.GridEngine
             return md;
         }
 
+        public bool TryGetTileMetadata(GridCoord target, out TileMetadata md)
+        {
+            return frontierMetadata.TryGetValue(target, out md);
+        }
+
         public void Commit(GridCoord target)
         {
             if (Phase != GamePhase.Warmup)
@@ -131,14 +149,31 @@ namespace Catr.GridEngine
 
         public void AttemptPuzzle(GridCoord target, bool correct, float answerTimeSeconds)
         {
-            if (Phase != GamePhase.Running)
-                throw new InvalidOperationException("AttemptPuzzle only valid during Running.");
+            if (Phase == GamePhase.GameOver)
+                throw new InvalidOperationException("AttemptPuzzle not valid after GameOver.");
             if (!IsChoosable(target))
                 throw new ArgumentException($"Target {target} is not choosable.", nameof(target));
             if (!frontierMetadata.TryGetValue(target, out var md))
                 throw new InvalidOperationException($"No frontier metadata for {target}; reveal first.");
             if (md.Consumed)
                 throw new InvalidOperationException($"Tile {target} already consumed.");
+
+            if (Phase == GamePhase.Warmup)
+            {
+                // Click-to-start: always commit. Wrong answer is the trolling tax.
+                if (correct) PushAnswerTime(answerTimeSeconds);
+                Commit(target);
+                if (correct)
+                {
+                    MistRunwayCells += 1;
+                    MistRunwayChanged?.Invoke(MistRunwayCells);
+                }
+                else
+                {
+                    ShoveMist(2);
+                }
+                return;
+            }
 
             if (!correct)
             {

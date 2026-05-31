@@ -7,7 +7,9 @@
         "BackendClient",
         "QuestionEngine",
         "QuestionUI",
-        "InputAdapter"
+        "InputAdapter",
+        "Unity.InputSystem",
+        "Unity.TextMeshPro"
     ],
     "includePlatforms": [],
     "excludePlatforms": [],

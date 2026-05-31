@@ -1,4 +1,5 @@
 using System.Collections.Generic;
+using TMPro;
 using UnityEngine;
 using Catr.GridEngine;
 
@@ -33,6 +34,7 @@ namespace Catr.GridRenderer
         public GridWorld Engine { get; private set; }
 
         private readonly Dictionary<GridCoord, SpriteRenderer> cells = new Dictionary<GridCoord, SpriteRenderer>();
+        private readonly Dictionary<GridCoord, TextMeshPro> badges = new Dictionary<GridCoord, TextMeshPro>();
         private GameObject totem;
         private Vector3 totemTarget;
         private Sprite squareSprite;
@@ -118,6 +120,7 @@ namespace Catr.GridRenderer
             {
                 if (cells[c] != null) Destroy(cells[c].gameObject);
                 cells.Remove(c);
+                badges.Remove(c);
             }
 
             for (int x = minX; x <= maxX; x++)
@@ -139,12 +142,34 @@ namespace Catr.GridRenderer
             sr.sprite = squareSprite;
             sr.sortingOrder = 0;
             cells[c] = sr;
+
+            var badgeGo = new GameObject($"Badge {c}");
+            badgeGo.transform.parent = transform;
+            badgeGo.transform.position = CellWorldPos(c);
+            var tmp = badgeGo.AddComponent<TextMeshPro>();
+            tmp.fontSize = 3f;
+            tmp.alignment = TextAlignmentOptions.Center;
+            tmp.color = Color.white;
+            tmp.sortingOrder = 5;
+            tmp.text = string.Empty;
+            tmp.rectTransform.sizeDelta = new Vector2(cellSize, cellSize);
+            badges[c] = tmp;
         }
 
         private void RefreshCell(GridCoord c)
         {
             if (!cells.TryGetValue(c, out var sr) || sr == null) return;
             sr.color = ColorFor(Engine.GetCellView(c));
+            RefreshBadge(c);
+        }
+
+        private void RefreshBadge(GridCoord c)
+        {
+            if (!badges.TryGetValue(c, out var tmp) || tmp == null) return;
+            if (Engine.TryGetTileMetadata(c, out var md) && md.HintVisible && !md.Consumed)
+                tmp.text = $"T{md.Tier}";
+            else
+                tmp.text = string.Empty;
         }
 
         private Color ColorFor(CellView v)

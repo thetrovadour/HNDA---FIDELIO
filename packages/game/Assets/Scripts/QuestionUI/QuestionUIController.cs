@@ -31,6 +31,7 @@ namespace Catr.QuestionUI
             if (_engine != null)
             {
                 _engine.GameOver -= OnGameOver;
+                _engine.PlayerMoved -= OnPlayerMoved;
             }
 
             _flow = flow;
@@ -39,8 +40,19 @@ namespace Catr.QuestionUI
             _flow.QuestionFetched += OnFetched;
             _flow.AnswerResolved += OnResolved;
             _engine.GameOver += OnGameOver;
+            _engine.PlayerMoved += OnPlayerMoved;
 
             card.AnswerClicked += OnAnswerClicked;
+        }
+
+        private void OnPlayerMoved(GridCoord pos)
+        {
+            // If the player moved (e.g., Warmup teleport) and the active card is for
+            // a tile that's no longer adjacent, the card is stale — hide it.
+            if (_flow?.Active == null) return;
+            var target = _flow.Active.Target;
+            if (target.X != pos.X + 1 || System.Math.Abs(target.Y - pos.Y) > 1)
+                card.Hide();
         }
 
         public string CurrentLanguage()
@@ -55,17 +67,28 @@ namespace Catr.QuestionUI
                 _flow.QuestionFetched -= OnFetched;
                 _flow.AnswerResolved -= OnResolved;
             }
-            if (_engine != null) _engine.GameOver -= OnGameOver;
+            if (_engine != null)
+            {
+                _engine.GameOver -= OnGameOver;
+                _engine.PlayerMoved -= OnPlayerMoved;
+            }
             if (card != null) card.AnswerClicked -= OnAnswerClicked;
         }
 
         private void OnFetched(GridCoord target, ActiveQuestion q)
         {
+            // Race guard: player may have moved between RequestQuestion and the fetch
+            // completing. If the target is no longer adjacent, drop the stale card.
+            var pos = _engine.PlayerPosition;
+            if (target.X != pos.X + 1 || System.Math.Abs(target.Y - pos.Y) > 1)
+            {
+                card.Hide();
+                return;
+            }
+
             Vector3 tileWorld = gridRenderer.GridToWorld(target);
-            float offset = 1.5f * gridRenderer.CellSize;
-            // Flip below if the tile is in the top row (Y == 0 is top per engine semantics).
-            float dy = target.Y == 0 ? -offset : +offset;
-            Vector3 cardPos = tileWorld + new Vector3(0f, dy, 0f);
+            float offsetX = 2.0f * gridRenderer.CellSize;
+            Vector3 cardPos = tileWorld + new Vector3(offsetX, 0f, 0f);
 
             _shownAt = Time.time;
             card.Show(q, cardPos);

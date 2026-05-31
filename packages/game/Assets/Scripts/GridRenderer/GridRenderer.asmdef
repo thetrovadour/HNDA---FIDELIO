@@ -2,7 +2,8 @@
     "name": "GridRenderer",
     "rootNamespace": "Catr.GridRenderer",
     "references": [
-        "GridEngine"
+        "GridEngine",
+        "Unity.TextMeshPro"
     ],
     "includePlatforms": [],
     "excludePlatforms": [],
