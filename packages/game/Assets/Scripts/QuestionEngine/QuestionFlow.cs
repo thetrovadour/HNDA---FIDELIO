@@ -102,7 +102,7 @@ namespace Catr.QuestionEngine
                     wildcard: false);
             }
 
-            var payload = await _client.FetchNextAsync(req, localCt).ConfigureAwait(false);
+            var payload = await _client.FetchNextAsync(req, localCt);
 
             _active = new ActiveQuestion(target, payload, wildcardFetch);
             QuestionFetched?.Invoke(target, _active);
@@ -118,7 +118,7 @@ namespace Catr.QuestionEngine
             bool correct = chosenIndex == active.Payload.CorrectIndex;
 
             // Server-first (B3-Q1): record the resolution before mutating engine state.
-            await _client.ResolveAsync(active.Payload.Id, correct, ct).ConfigureAwait(false);
+            await _client.ResolveAsync(active.Payload.Id, correct, ct);
             _engine.AttemptPuzzle(active.Target, correct, elapsedSeconds);
 
             _active = null;

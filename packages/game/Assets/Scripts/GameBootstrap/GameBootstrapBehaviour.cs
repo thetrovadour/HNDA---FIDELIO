@@ -19,6 +19,11 @@ namespace Catr.GameBootstrap
         [SerializeField] private InputAdapterBehaviour inputAdapter;
         [SerializeField] private int seed = 42;
 
+        [Header("Backend (C1)")]
+        [SerializeField] private bool useHttpBackend = false;
+        [SerializeField] private string backendBaseUrl = "http://localhost:3001";
+        [SerializeField, TextArea(2, 4)] private string jwtToken = "";
+
         private void Start()
         {
             if (gridRenderer == null || gridRenderer.Engine == null)
@@ -28,7 +33,19 @@ namespace Catr.GameBootstrap
             }
 
             var lang = Application.systemLanguage == SystemLanguage.Spanish ? "es" : "en";
-            var client = new MockBackendClient(BuildPool(lang));
+
+            IBackendClient client;
+            if (useHttpBackend && !string.IsNullOrWhiteSpace(jwtToken))
+            {
+                client = new HttpBackendClient(backendBaseUrl, new StaticJwtPlayerSession(jwtToken));
+                Debug.Log($"[GameBootstrap] HTTP backend → {backendBaseUrl}");
+            }
+            else
+            {
+                client = new MockBackendClient(BuildPool(lang));
+                Debug.Log("[GameBootstrap] Mock backend (in-memory question pool)");
+            }
+
             var flow = new QuestionFlow(gridRenderer.Engine, client, lang, seed);
 
             uiController.Bind(flow, gridRenderer.Engine);

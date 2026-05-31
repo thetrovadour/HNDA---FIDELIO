@@ -5,6 +5,7 @@
         "GridEngine",
         "GridRenderer",
         "BackendClient",
+        "BackendClient.Unity",
         "QuestionEngine",
         "QuestionUI",
         "InputAdapter",
