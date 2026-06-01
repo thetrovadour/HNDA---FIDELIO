@@ -51,6 +51,7 @@ namespace Catr.GridRenderer
             Engine.PlayerMoved += OnPlayerMoved;
             Engine.CellRevealed += RefreshCell;
             Engine.ColumnConsumed += RefreshColumn;
+            Engine.TileConsumed += RefreshCell;
 
             SpawnTotem();
             RebuildWindow();

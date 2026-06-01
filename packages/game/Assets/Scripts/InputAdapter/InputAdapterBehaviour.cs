@@ -52,6 +52,11 @@ namespace Catr.InputAdapter
         {
             if (!IsFrontier(e, target)) return;
 
+            // Already-consumed tile (a wrong answer or a black trap landed here): no re-attempt.
+            // Re-querying would let the player retry the same tile until correct, defeating the
+            // 3-strike frontier-exhaustion game-over. The only way forward is a different tile.
+            if (e.TryGetTileMetadata(target, out var meta) && meta.Consumed) return;
+
             // Black trap tile: instant wrong-answer path, no question fetch.
             if (e.CategoryFor(target.X, target.Y) == CellCategory.Black)
             {
@@ -72,6 +77,12 @@ namespace Catr.InputAdapter
         {
             try { await _flow.RequestQuestion(target); }
             catch (System.OperationCanceledException) { /* superseded by a newer click */ }
+            catch (Catr.BackendClient.BackendException ex) when (ex.StatusCode == 404)
+            {
+                // Empty (category, tier) bucket — expected with a sparse seed, not a failure.
+                // No card appears; the click is a no-op. Full coverage removes this in practice.
+                Debug.LogWarning($"[InputAdapter] No question available for {target} ({ex.Message}).");
+            }
             catch (System.Exception ex) { Debug.LogError($"[InputAdapter] RequestQuestion({target}) failed: {ex}"); }
         }
 

@@ -28,7 +28,6 @@ namespace Catr.GridEngine
         internal const float WildcardK = 0.02f;
         internal const float InitialTimeSeconds = 10f;
         internal const float CorrectBonusSeconds = 1f;
-        internal const float WrongPenaltySeconds = 2f;
 
         private readonly int seed;
         private readonly HashSet<int> consumedColumns = new HashSet<int>();
@@ -129,6 +128,12 @@ namespace Catr.GridEngine
             if (c == PlayerPosition)
                 return new CellView(VisualState.Entered, CategoryFor(c.X, c.Y));
 
+            // A frontier tile killed by a wrong answer: render it consumed (black), not as a
+            // live choosable tile. Without this it stays category-colored and the wrong answer
+            // looks like it had no effect.
+            if (frontierMetadata.TryGetValue(c, out var fmd) && fmd.Consumed)
+                return new CellView(VisualState.Consumed, CategoryFor(c.X, c.Y));
+
             if (IsChoosable(c))
                 return new CellView(VisualState.Revealed, CategoryFor(c.X, c.Y));
 
@@ -190,19 +195,23 @@ namespace Catr.GridEngine
 
             if (Phase == GamePhase.Warmup)
             {
-                // Click-to-start: always commit. Wrong answer is the trolling tax.
-                if (correct) PushAnswerTime(answerTimeSeconds);
+                if (!correct)
+                {
+                    // Wrong on the warm-up question: consume the tile, do NOT start the run.
+                    // No advance, no commit — the run only begins on a correct answer (you earn
+                    // your start). The player picks another column-1 tile, or moves along
+                    // column 0 to re-roll the frontier.
+                    frontierMetadata[target] = md.WithConsumed(true);
+                    TileConsumed?.Invoke(target);
+                    return;
+                }
+
+                // Correct: this is the click-to-start commit.
+                PushAnswerTime(answerTimeSeconds);
                 Commit(target);
-                if (correct)
-                {
-                    TimeRemaining += CorrectBonusSeconds;
-                    TimeRemainingChanged?.Invoke(TimeRemaining);
-                    AdvanceMistToMatchTime();
-                }
-                else
-                {
-                    ShoveMist((int)WrongPenaltySeconds);
-                }
+                TimeRemaining += CorrectBonusSeconds;
+                TimeRemainingChanged?.Invoke(TimeRemaining);
+                AdvanceMistToMatchTime();
                 return;
             }
 

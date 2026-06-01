@@ -84,12 +84,12 @@ namespace Catr.GridEngine.Tests
         }
 
         [Test]
-        public void ResolvePuzzle_Correct_AdvancesAndRevealsFrontier()
+        public void AttemptPuzzle_Correct_AdvancesAndRevealsFrontier()
         {
             var e = NewEngine();
             e.Commit(new GridCoord(1, 4));
             var next = new GridCoord(2, 4);
-            e.ResolvePuzzle(next, correct: true);
+            e.AttemptPuzzle(next, correct: true, answerTimeSeconds: 3f);
 
             Assert.AreEqual(next, e.PlayerPosition);
             var frontier = e.ChoosableCells().ToList();
@@ -99,12 +99,41 @@ namespace Catr.GridEngine.Tests
         }
 
         [Test]
-        public void ResolvePuzzle_Wrong_PositionUnchanged()
+        public void AttemptPuzzle_WarmupWrong_DoesNotCommit_ConsumesTile()
+        {
+            var e = NewEngine();
+            var before = e.PlayerPosition;
+            var target = new GridCoord(1, 4);
+            GridCoord consumed = default;
+            e.TileConsumed += c => consumed = c;
+
+            e.AttemptPuzzle(target, correct: false, answerTimeSeconds: 3f);
+
+            Assert.AreEqual(GamePhase.Warmup, e.Phase, "wrong warm-up answer must not start the run");
+            Assert.AreEqual(before, e.PlayerPosition, "totem must not advance on a wrong warm-up answer");
+            Assert.AreEqual(target, consumed);
+            Assert.IsTrue(e.GetTileMetadata(target).Consumed);
+        }
+
+        [Test]
+        public void AttemptPuzzle_WarmupCorrect_CommitsToRunning()
+        {
+            var e = NewEngine();
+            var target = new GridCoord(1, 4);
+
+            e.AttemptPuzzle(target, correct: true, answerTimeSeconds: 3f);
+
+            Assert.AreEqual(GamePhase.Running, e.Phase);
+            Assert.AreEqual(target, e.PlayerPosition);
+        }
+
+        [Test]
+        public void AttemptPuzzle_Wrong_PositionUnchanged()
         {
             var e = NewEngine();
             e.Commit(new GridCoord(1, 4));
             var before = e.PlayerPosition;
-            e.ResolvePuzzle(new GridCoord(2, 4), correct: false);
+            e.AttemptPuzzle(new GridCoord(2, 4), correct: false, answerTimeSeconds: 3f);
             Assert.AreEqual(before, e.PlayerPosition);
         }
 
@@ -193,6 +222,21 @@ namespace Catr.GridEngine.Tests
             Assert.IsTrue(e.GetTileMetadata(target).Consumed);
             Assert.AreEqual(new GridCoord(1, 4), e.PlayerPosition);
             Assert.AreEqual(time - 2f, e.TimeRemaining, 0.001f);
+        }
+
+        [Test]
+        public void GetCellView_WrongConsumedFrontierTile_RendersConsumed()
+        {
+            var e = NewEngine();
+            e.Commit(new GridCoord(1, 4));
+            var target = new GridCoord(2, 4);
+
+            Assert.AreEqual(VisualState.Revealed, e.GetCellView(target).State);
+
+            e.AttemptPuzzle(target, correct: false, answerTimeSeconds: 3f);
+
+            // The tile the player got wrong must read as Consumed (black), not Revealed.
+            Assert.AreEqual(VisualState.Consumed, e.GetCellView(target).State);
         }
 
         [Test]

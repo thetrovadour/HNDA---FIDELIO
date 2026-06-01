@@ -258,6 +258,6 @@ Co-author the 100 bilingual questions. Pure content, no engineering.
 - [x] B3 — `QuestionEngine/` module (`QuestionFlow` orchestrator; server-first resolve; cancel-on-new-request; T/F cadence tier-3 with seed-rolled cap; White treated as wildcard; 9/9 tests green)
 - [x] B4 — `QuestionUI/` module (Canvas + prefab + Show/Hide + controller; dry-run verified)
 - [x] B5 — `InputAdapter` rewire (frontier click → `QuestionFlow.RequestQuestion`; Black trap path; `GameBootstrap` composition root with mock pool)
-- [ ] B6 — `GridRenderer` hint badges
-- [ ] C1 — End-to-end playtest
+- [x] B6 — `GridRenderer` hint badges (per-cell TextMeshPro reading `TryGetTileMetadata`; `T{tier}` shown only on frontier tiles when `HintVisible && !Consumed`; verified in Editor — badges appear stochastically, rate climbs with tier)
+- [x] C1 — End-to-end playtest (Editor ↔ live Express/Postgres over HTTP, 37-question seed; verified: real questions, ratchet climb, mist contact, hint badges, bilingual; fixed wrong-answer blacken + re-click guard + warm-up no-auto-commit; all 4 checklists green)
 - [ ] C2 — Content sprint (100 bilingual questions)
