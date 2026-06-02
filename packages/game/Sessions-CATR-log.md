@@ -40,6 +40,55 @@ A clear, actionable opener for the next session.
 
 ---
 
+## 2026-06-01 — G2 B6 + C1 Sealed: hint badges verified, live-backend playtest, four bug fixes, time/clock tuning
+**Phase:** G2 (B-track sealed; C1 convergence sealed — only C2 content sprint remains)
+**Participants:** Cristian, Claude
+
+### Goal
+Resume G2 from the first unchecked plan item (B6), then drive C1 — the end-to-end playtest of the Unity client against the live FIDELIO Express/Postgres backend over HTTP.
+
+### What Happened
+1. **Session start ritual** — loaded `packages/game/CLAUDE.md`, the G2 plan, and the last sessions. Phase confirmed G2; first unchecked item was B6 (hint badges).
+2. **B6 — inspect & seal.** Found hint badges were already implemented in code (per-cell `TextMeshPro` in `GridRendererBehaviour`, `RefreshBadge` reading `TryGetTileMetadata`, `T{tier}` shown only on frontier tiles when `HintVisible && !Consumed`; probability `0.20 + 0.15*(tier-1)` lives in the engine's `RollHintVisible`). Cristian verified live in the Editor — badges appear stochastically, rate climbs with tier. Marked B6 complete. No code needed.
+3. **C1 backend prep.** Postgres was up; game questions were seeded (10). Discovered the 10-question seed left **20 of 30 (category×tier) cells empty** plus TF/wildcard gaps — ~2/3 of frontier clicks would hard-404 because the client requests deterministic `(category, tier[, kind])` combos and controlled-repeat only repeats within a *non-empty* bucket. Cristian chose to fill coverage. Expanded `seed-questions.json` **10 → 37** (30 MC across 6×5 + 6 tier-3 TF, one per category). Verified zero gaps across all three request paths (normal MC, TF-injection, wildcard). Minted a 7-day JWT for the existing `catr_test@hnda.local` user; live-smoke-tested `/next` + `/resolve` over HTTP (bilingual confirmed) before handing to the Editor.
+4. **C1 playtest — four bugs found and fixed**, all surfaced by Cristian playing:
+   - **Consumed tiles re-clickable (cheat).** Added a guard in `InputAdapterBehaviour.HandleFrontierClick` — clicks on a tile whose metadata is `Consumed` are swallowed (no re-fetch).
+   - **Wrong answers didn't blacken / "advance no matter what" / 3-strike never fired.** Diagnosis flipped twice; the turning point was querying `QuestionServe.was_correct` in the DB (15 wrong / 4 right) which *proved* the client and engine were correct. Root cause was purely visual: `GetCellView` returned `Revealed` for a wrong-consumed frontier tile, and `GridRendererBehaviour` never subscribed to `TileConsumed`. Fixed both — consumed frontier tiles now render `VisualState.Consumed` and repaint live.
+   - **Warm-up wrong still auto-started the run.** Rewrote `AttemptPuzzle`'s Warmup branch: wrong consumes the tile without committing (no advance); only a correct answer commits. Removed the old "click-to-start always commits" rule. Removed/reintroduced `WrongPenaltySeconds` accordingly.
+   - **CS0618** obsolete `ResolvePuzzle` warning — migrated the two test callers to `AttemptPuzzle`.
+   - Added 5 regression tests (blacken-on-wrong, warm-up no-commit, warm-up correct-commits, plus the two retuned ones). C1 sealed: all four playtest checklists green.
+5. **Tuning pass (post-C1 feel).** Cristian felt too much time pressure. Inverted the economy: **correct +1s → +2s, wrong −2s → −1s** (named constants). Clock HUD reformatted **`7s` → `MM:SS` (`00:07`)**. A "Game Over" message was discussed and recommended but deferred (needs Editor UI wiring) — not built.
+
+### Decisions Made
+*(Mirrored into `CLAUDE.md` §11 Decision Log — six new entries dated 2026-06-01.)*
+- B6 sealed; C1 sealed.
+- Seed coverage filled to 37 (functional placeholder content; full 100 still C2).
+- Wrong-answer feedback is a rendering concern; engine/client were already correct.
+- Warm-up wrong no longer starts the run (revises the earlier "always commit" choice).
+- Time economy retuned to +2/−1; clock is MM:SS.
+
+### Artifacts Touched
+- `packages/backend/prisma/seed-questions.json` — 10 → 37 questions.
+- `packages/game/Assets/Scripts/GridEngine/GridEngine.cs` — `GetCellView` consumed-frontier branch, warm-up branch rewrite, time constants (+2/−1).
+- `.../GridRenderer/GridRendererBehaviour.cs` — subscribe `TileConsumed`.
+- `.../InputAdapter/InputAdapterBehaviour.cs` — consumed-tile click guard + calm 404 handling.
+- `.../GameBootstrap/ClockUIController.cs` — MM:SS format.
+- `.../GridEngine/Tests/GridEngineTests.cs` — 5 new/retuned tests; obsolete-API migration.
+- `CLAUDE.md`, `G2-plan.md` — decision log + progress ticks.
+- Commits: `e3ded9f` (C1 + fixes), `b324ea4` (time/clock tuning). Both on `main`.
+
+### Open Threads
+- **C2 — content sprint:** co-author the full 100 bilingual questions (replaces the 37 placeholders).
+- **Game Over UI** — recommended, not built; needs a Canvas text + `GameOverUIController` script.
+- **Warm-up 3-strike?** — warm-up consumption is currently escapable by moving along column 0 (re-rolls the frontier). Acceptable for a staging phase; revisit if it should enforce a real game-over.
+- **Server-authoritative grading** — the server sends `correctIndex` to the client and the client judges correctness, then reports `wasCorrect`. A modified client could always claim "correct." Real integrity gap to close before prize money is live (flagged for the economy/security phase).
+- **Local JWT in the scene** — `G1_GridSandbox.unity` holds a dev JWT + `useHttpBackend=1`; deliberately kept out of git. Re-enter as needed for HTTP playtests.
+
+### Next Session Starts With
+G2 is one item from done. Either run the **C2 content sprint** (100 bilingual questions) or pick up a polish item (Game Over UI, warm-up 3-strike decision). Backend + seed are ready for HTTP playtests; the time/clock tuning needs a feel-check in the Editor.
+
+---
+
 ## 2026-05-27 — G2 B4 + B5: QuestionUI card module + InputAdapter rewire (full mock-backed loop live)
 **Phase:** G2 (B-track — UI shipped, flow wired end-to-end against a mock backend)
 **Participants:** Cristian, Claude
