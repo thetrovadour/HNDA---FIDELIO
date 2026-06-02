@@ -449,9 +449,8 @@ MonoBehaviour:
   seed: 42
   useHttpBackend: 1
   backendBaseUrl: http://localhost:3001
-  jwtToken: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6ImRkNWU3MGQzLTgxZGMtNDk3My1hNTI5LTNhNGY0ZWU0\n 
-    ZGM5MiIsInJvbGUiOiJ1c2VyIiwiaWF0IjoxNzgwMTk0OTUzLCJleHAiOjE3ODA3OTk3NTN9.d8N8TLLp_W_vh0_i\n 
-    gh9bjv_Z_AlX47tErSvHcD8Yevw"
+  jwtToken: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6ImRkNWU3MGQzLTgxZGMtNDk3My1hNTI5LTNhNGY0ZWU0ZGM5MiIsInJvbGUiOiJ1c2VyIiwiaWF0IjoxNzgwMzUyNTcxLCJleHAiOjE3ODA5NTczNzF9.l4O9ZhkJhFmBxj1Hog3NmHS\n 
+    _mhOoM9X7XfXJpdnGTX4"
 --- !u!4 &542319083
 Transform:
   m_ObjectHideFlags: 0
