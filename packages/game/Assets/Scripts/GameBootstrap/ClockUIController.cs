@@ -6,14 +6,13 @@ using Catr.GridRenderer;
 namespace Catr.GameBootstrap
 {
     /// <summary>
-    /// HUD clock that displays GridWorld.TimeRemaining as integer seconds.
+    /// HUD clock that displays GridWorld.TimeRemaining as MM:SS.
     /// Drop on a GameObject with a TMP_Text child (or assign one in inspector).
     /// </summary>
     public class ClockUIController : MonoBehaviour
     {
         [SerializeField] private GridRendererBehaviour gridRenderer;
         [SerializeField] private TMP_Text label;
-        [SerializeField] private string format = "{0}s";
 
         private GridWorld engine;
 
@@ -49,6 +48,10 @@ namespace Catr.GameBootstrap
 
         private void OnTimeChanged(float t) => Render(t);
 
-        private void Render(float t) => label.text = string.Format(format, Mathf.CeilToInt(t));
+        private void Render(float t)
+        {
+            int total = Mathf.CeilToInt(Mathf.Max(0f, t));
+            label.text = $"{total / 60:00}:{total % 60:00}";
+        }
     }
 }

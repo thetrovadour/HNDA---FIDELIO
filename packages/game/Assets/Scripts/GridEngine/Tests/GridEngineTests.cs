@@ -203,11 +203,11 @@ namespace Catr.GridEngine.Tests
             float time = e.TimeRemaining;
             e.AttemptPuzzle(new GridCoord(2, 4), correct: true, answerTimeSeconds: 3f);
             Assert.AreEqual(new GridCoord(2, 4), e.PlayerPosition);
-            Assert.AreEqual(time + 1f, e.TimeRemaining, 0.001f);
+            Assert.AreEqual(time + 2f, e.TimeRemaining, 0.001f);
         }
 
         [Test]
-        public void AttemptPuzzle_Wrong_ConsumesTile_AndShovesMist2()
+        public void AttemptPuzzle_Wrong_ConsumesTile_AndShovesMist1()
         {
             var e = NewEngine();
             e.Commit(new GridCoord(1, 4));
@@ -221,7 +221,7 @@ namespace Catr.GridEngine.Tests
             Assert.AreEqual(target, consumed);
             Assert.IsTrue(e.GetTileMetadata(target).Consumed);
             Assert.AreEqual(new GridCoord(1, 4), e.PlayerPosition);
-            Assert.AreEqual(time - 2f, e.TimeRemaining, 0.001f);
+            Assert.AreEqual(time - 1f, e.TimeRemaining, 0.001f);
         }
 
         [Test]

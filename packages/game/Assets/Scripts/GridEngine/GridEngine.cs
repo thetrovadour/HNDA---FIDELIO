@@ -27,7 +27,8 @@ namespace Catr.GridEngine
         internal const float WildcardPCap = 0.25f;
         internal const float WildcardK = 0.02f;
         internal const float InitialTimeSeconds = 10f;
-        internal const float CorrectBonusSeconds = 1f;
+        internal const float CorrectBonusSeconds = 2f;
+        internal const float WrongPenaltySeconds = 1f;
 
         private readonly int seed;
         private readonly HashSet<int> consumedColumns = new HashSet<int>();
@@ -227,7 +228,7 @@ namespace Catr.GridEngine
                     return;
                 }
 
-                ShoveMist(2);
+                ShoveMist((int)WrongPenaltySeconds);
                 return;
             }
 
